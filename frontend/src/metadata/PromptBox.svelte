@@ -5,21 +5,24 @@
 	import { tooltip } from "@svelte-plugins/tooltips";
 	import { prompts, currentPromptId, status } from "../stores";
 	import { ZenoService } from "../zenoservice";
+	import CircularProgress from "@smui/circular-progress";
 
 	let prompt: string = $prompts.get($currentPromptId).text;
+	let promptBeingUpdated = false;
 
 	$: {
 		$currentPromptId;
 		switchPrompt();
 	}
 
-	let showSubmitButton = false;
+	let allowUpdates = false;
 
 	function switchPrompt() {
 		prompt = $prompts.get($currentPromptId).text;
 	}
 
 	function updatePrompt() {
+		promptBeingUpdated = true;
 		ZenoService.createNewPrompt({ text: prompt, version: "" }).then(() => {
 			ZenoService.getCurrentPromptId().then((res) => {
 				ZenoService.getCompleteColumns().then((cols) => {
@@ -31,6 +34,8 @@
 					prompts.update((pts) => {
 						return pts.set(res[0], { text: prompt, version: res[0] });
 					});
+					promptBeingUpdated = false;
+					allowUpdates = false;
 				});
 			});
 		});
@@ -40,6 +45,11 @@
 <div class="inline">
 	<div class="inline">
 		<h4>Prompt</h4>
+		{#if promptBeingUpdated}
+			<CircularProgress
+				style="height: 15px; width: 15px; margin-left: 10px;"
+				indeterminate />
+		{/if}
 	</div>
 	<div class="inline">
 		<div
@@ -50,10 +60,13 @@
 			}}>
 			<IconButton
 				on:click={() => {
-					updatePrompt();
-				}}>
+					if (allowUpdates) {
+						updatePrompt();
+					}
+				}}
+				style={allowUpdates ? "cursor:pointer" : "cursor:default"}>
 				<Icon component={Svg} viewBox="0 0 24 24">
-					{#if showSubmitButton}
+					{#if allowUpdates}
 						<path fill="var(--G1)" d={mdiUpdate} />
 					{:else}
 						<path fill="var(--G4)" d={mdiUpdate} />
@@ -66,7 +79,7 @@
 <textarea
 	bind:value={prompt}
 	on:input={() => {
-		showSubmitButton = true;
+		allowUpdates = true;
 	}} />
 
 <style>
