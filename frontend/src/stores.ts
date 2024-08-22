@@ -18,6 +18,7 @@ import type {
 	ZenoColumn,
 	ZenoSettings,
 } from "./zenoservice";
+import type { Prompt } from "./zenoservice/models/Prompt";
 
 interface WSResponse {
 	status: string;
@@ -90,6 +91,8 @@ export const slicesForComparison: Writable<Map<string, Slice>> = writable(
 export const folders: Writable<string[]> = folderWritable();
 export const tags: Writable<Map<string, Tag>> = writable(new Map());
 export const reports: Writable<Report[]> = reportWritable();
+export const prompts: Writable<Map<string, Prompt>> = writable(new Map());
+export const currentPromptId: Writable<string> = writable("");
 
 // The tag ids selected by the user.
 export const tagIds: Writable<FilterIds> = writable({ ids: [] });

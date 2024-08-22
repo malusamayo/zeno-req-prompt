@@ -53,6 +53,7 @@
 	import TagCell from "./cells/TagCell.svelte";
 	import MetadataHeader from "./MetadataHeader.svelte";
 	import SliceCellResult from "./cells/SliceCellResult.svelte";
+	import PromptBox from "./PromptBox.svelte";
 
 	let metadataHistograms: InternMap<ZenoColumn, HistogramEntry[]> =
 		new InternMap([], columnHash);
@@ -261,6 +262,7 @@
 
 <div class="side-container">
 	<MetadataHeader />
+	<PromptBox />
 	<div id="slice-header" class="inline">
 		<div class="inline">
 			<h4>Slices</h4>

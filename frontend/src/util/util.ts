@@ -14,6 +14,8 @@ import {
 	slicesForComparison,
 	tab,
 	tags,
+	prompts,
+	currentPromptId,
 } from "../stores";
 import { ZenoService } from "../zenoservice";
 import {
@@ -38,6 +40,13 @@ export async function getInitialData() {
 	const slicesRes = await ZenoService.getSlices();
 	const slicesMap = new Map(Object.entries(slicesRes));
 	slices.set(slicesMap);
+
+	const promptsRes = await ZenoService.getPrompts();
+	const promptsMap = new Map(Object.entries(promptsRes));
+	prompts.set(promptsMap);
+
+	const promptVersionRes = await ZenoService.getCurrentPromptId();
+	currentPromptId.set(promptVersionRes[0]);
 
 	// initial model dependent slices in compare tab
 	slicesForComparison.set(new Map<string, Slice>());

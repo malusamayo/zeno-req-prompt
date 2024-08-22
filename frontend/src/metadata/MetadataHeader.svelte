@@ -6,8 +6,12 @@
 		models,
 		comparisonModel,
 		tab,
+		prompts,
+		currentPromptId,
 	} from "../stores";
 	$: exludeModels = $models.filter((m) => m !== $model);
+
+	$: promptIds = Array.from($prompts.keys());
 </script>
 
 <div id="selections">
@@ -24,11 +28,19 @@
 		</div>
 	{/if}
 	{#if $tab !== "comparison" && $metric !== undefined}
-		<div>
+		<!-- <div>
 			<div class="options-header">Metric</div>
 			<select bind:value={$metric}>
 				{#each $metrics as met}
 					<option value={met}>{met}</option>
+				{/each}
+			</select>
+		</div> -->
+		<div>
+			<div class="options-header">Prompt</div>
+			<select bind:value={$currentPromptId}>
+				{#each promptIds as pid}
+					<option value={pid}>{pid}</option>
 				{/each}
 			</select>
 		</div>
