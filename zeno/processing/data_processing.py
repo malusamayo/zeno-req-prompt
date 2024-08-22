@@ -49,6 +49,7 @@ def run_inference(
     fn: Callable[[str], Callable[[pd.DataFrame, ZenoOptions], ModelReturn]],
     options: ZenoOptions,
     model_name: str,
+    prompt: str,
     cache_path: str,
     df: pd.DataFrame,
     batch_size: int,
@@ -72,7 +73,7 @@ def run_inference(
 
     other_return_cols: Dict[str, ZenoColumn] = {}
     if len(to_predict_indices) > 0:
-        model_fn = fn(model_name)
+        model_fn = fn(model_name, prompt)
 
         # Make output folder if function uses output_path
         src = getsource(model_fn)

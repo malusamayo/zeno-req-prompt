@@ -11,6 +11,7 @@ import type { MetricRequest } from "../models/MetricRequest";
 import type { PlotRequest } from "../models/PlotRequest";
 import type { Points2D } from "../models/Points2D";
 import type { PointsColors } from "../models/PointsColors";
+import type { Prompt } from "../models/Prompt";
 import type { Report } from "../models/Report";
 import type { Slice } from "../models/Slice";
 import type { SliceFinderRequest } from "../models/SliceFinderRequest";
@@ -85,6 +86,48 @@ export class ZenoService {
 		return __request(OpenAPI, {
 			method: "GET",
 			url: "/reports",
+		});
+	}
+
+	/**
+	 * Get Prompts
+	 * @returns Report Successful Response
+	 * @throws ApiError
+	 */
+	public static getPrompts(): CancelablePromise<Record<string, Prompt>> {
+		return __request(OpenAPI, {
+			method: "GET",
+			url: "/prompts",
+		});
+	}
+
+	/**
+	 * Get Current Prompt Version
+	 * @returns Report Successful Response
+	 * @throws ApiError
+	 */
+	public static getCurrentPromptId(): CancelablePromise<Array<string>> {
+		return __request(OpenAPI, {
+			method: "GET",
+			url: "/prompt-version",
+		});
+	}
+
+	/**
+	 * Create New Prompt
+	 * @param requestBody
+	 * @returns any Successful Response
+	 * @throws ApiError
+	 */
+	public static createNewPrompt(requestBody: Prompt): CancelablePromise<any> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/prompt",
+			body: requestBody,
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
 		});
 	}
 

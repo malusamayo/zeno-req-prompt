@@ -7,6 +7,8 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Series
 from pydantic import BaseModel
 
+from zeno.classes.classes import Prompt
+
 
 class ZenoOptions(BaseModel):
     """Parameters passed to Zeno test functions.
@@ -44,6 +46,7 @@ class ZenoParameters(BaseModel):
     functions: Union[List[Callable], str] = []
     view: str = ""
     models: List[str] = []
+    prompts: Dict[str, Prompt] = {}
     id_column: str = ""
     data_column: str = ""
     label_column: str = ""

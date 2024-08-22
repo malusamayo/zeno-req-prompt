@@ -72,3 +72,7 @@ class ColorsProjectRequest(CamelModel):
 class EntryRequest(BaseModel):
     id: Union[int, str]
     columns: List[ZenoColumn] = []
+
+class Prompt(CamelModel):
+    text: str
+    version: str

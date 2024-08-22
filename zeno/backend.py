@@ -62,6 +62,8 @@ class ZenoBackend(object):
         self.view = self.params.view
         self.calculate_histogram_metrics = self.params.calculate_histogram_metrics
         self.model_names = self.params.models
+        self.prompts = self.params.prompts
+        self.current_prompt_id = list(self.prompts.keys())[-1]
 
         self.df = read_metadata(self.metadata)
         self.tests = read_functions(self.functions)
@@ -384,6 +386,7 @@ class ZenoBackend(object):
                             self.predict_function,
                             self.zeno_options,
                             model_name,
+                            self.prompts[self.current_prompt_id],
                             self.cache_path,
                             self.df,
                             self.batch_size,
@@ -580,6 +583,20 @@ class ZenoBackend(object):
         self.folders = folders
         with open(os.path.join(self.cache_path, "folders.pickle"), "wb") as f:
             pickle.dump(self.folders, f)
+
+    def get_new_prompt_version(self,):
+        prompt_versions = list(self.prompts.keys())
+        prompt_versions = [int(x[1:]) for x in prompt_versions]
+        return 'v' + str(max(prompt_versions) + 1)
+
+    def create_new_prompt(self, req: str):
+        if not self.editable:
+            return
+        new_version = self.get_new_prompt_version()
+        self.prompts[new_version] = req
+        self.current_prompt_id = new_version
+        with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
+            pickle.dump(self.prompts, f)
 
     def create_new_tag(self, req: Tag):
         if not self.editable:
