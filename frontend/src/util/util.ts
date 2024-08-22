@@ -75,7 +75,8 @@ export function columnHash(col: ZenoColumn) {
 	return (
 		(col.columnType === ZenoColumnType.METADATA ? "" : col.columnType) +
 		col.name +
-		(col.model ? col.model : "")
+		(col.model ? col.model : "") +
+		(col.promptId ? "_" + col.promptId : "")
 	);
 }
 

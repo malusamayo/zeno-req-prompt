@@ -10,6 +10,7 @@ import { setModelForFilterPredicateGroup } from "./slice";
 export async function getFilteredTable(
 	completeColumns,
 	filterModels: string[],
+	promptIds: string[],
 	diffColumn: ZenoColumn,
 	filterPredicates: FilterPredicateGroup,
 	sliceRange: [number, number],
@@ -21,7 +22,8 @@ export async function getFilteredTable(
 	const requestedColumns = completeColumns.filter(
 		(c) =>
 			c.columnType !== ZenoColumnType.EMBEDDING &&
-			(filterModels.includes(c.model) || c.model === "")
+			(filterModels.includes(c.model) || c.model === "") &&
+			(promptIds.includes(c.promptId) || c.promptId === "")
 	);
 
 	// create diff columns for comparison view

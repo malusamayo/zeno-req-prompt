@@ -10,4 +10,5 @@ export type ZenoColumn = {
 	name: string;
 	metadataType?: MetadataType;
 	model?: string;
+	promptId?: string;
 };

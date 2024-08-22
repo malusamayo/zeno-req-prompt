@@ -37,6 +37,7 @@ class ZenoColumn(CamelModel):
     name: str
     metadata_type: Optional[MetadataType] = MetadataType.OTHER
     model: Optional[str] = ""
+    prompt_id: Optional[str] = ""
 
     # Append the column type to the name unless it is a vanilla metadata column.
     # We don't save the metadata_type since we dynamically change it
@@ -45,10 +46,13 @@ class ZenoColumn(CamelModel):
         m = ""
         if self.model is not None:
             m = self.model
+        p = ""
+        if self.prompt_id is not None and self.prompt_id != "":
+            p = "_" + self.prompt_id
         t = ""
         if self.column_type is not ZenoColumnType.METADATA:
             t = self.column_type
-        return t + self.name + m
+        return t + self.name + m + p
 
     def __hash__(self):
         return hash(str(self))

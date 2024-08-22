@@ -42,6 +42,18 @@ export class ZenoService {
 	}
 
 	/**
+	 * Get Complete Columns
+	 * @returns ZenoSettings Successful Response
+	 * @throws ApiError
+	 */
+	public static getCompleteColumns(): CancelablePromise<ZenoColumn[]> {
+		return __request(OpenAPI, {
+			method: "GET",
+			url: "/complete-columns",
+		});
+	}
+
+	/**
 	 * Get Initial Info
 	 * @returns ZenoVariables Successful Response
 	 * @throws ApiError

@@ -88,6 +88,10 @@ def get_server(zeno: ZenoBackend):
             total_size=zeno.df.shape[0],
         )
 
+    @api_app.get("/complete-columns", response_model=List[ZenoColumn], tags=["zeno"])
+    def get_complete_columns():
+        return zeno.complete_columns
+
     @api_app.get("/initialize", response_model=ZenoVariables, tags=["zeno"])
     def get_initial_info():
         return ZenoVariables(

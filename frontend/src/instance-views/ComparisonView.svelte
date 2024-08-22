@@ -19,6 +19,7 @@
 		compareSort,
 		status,
 		tagIds,
+		currentPromptId,
 	} from "../stores";
 	import { columnHash, columnSort } from "../util/util";
 	import { ZenoColumnType, MetadataType } from "../zenoservice";
@@ -87,6 +88,7 @@
 		$selectionPredicates;
 		$tagIds;
 		$selections.tags;
+		$currentPromptId;
 		start, end, updateTable();
 	}
 
@@ -156,6 +158,7 @@
 		getFilteredTable(
 			$status.completeColumns,
 			[$model, $comparisonModel],
+			[$currentPromptId],
 			selectColumn,
 			$selectionPredicates,
 			[start, end],
@@ -185,7 +188,11 @@
 
 		[$model, $comparisonModel].forEach((mod) => {
 			let obj = $status.completeColumns.find((c) => {
-				return c.columnType === ZenoColumnType.OUTPUT && c.model === mod;
+				return (
+					c.columnType === ZenoColumnType.OUTPUT &&
+					c.model === mod &&
+					c.promptId === $currentPromptId
+				);
 			});
 			let modelColumn = obj ? columnHash(obj) : "";
 			if (tables[mod] && viewDivs[mod]) {

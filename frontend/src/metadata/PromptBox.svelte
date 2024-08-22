@@ -3,7 +3,7 @@
 	import IconButton, { Icon } from "@smui/icon-button";
 	import { Svg } from "@smui/common";
 	import { tooltip } from "@svelte-plugins/tooltips";
-	import { prompts, currentPromptId } from "../stores";
+	import { prompts, currentPromptId, status } from "../stores";
 	import { ZenoService } from "../zenoservice";
 
 	let prompt: string = $prompts.get($currentPromptId).text;
@@ -22,9 +22,15 @@
 	function updatePrompt() {
 		ZenoService.createNewPrompt({ text: prompt, version: "" }).then(() => {
 			ZenoService.getCurrentPromptId().then((res) => {
-				currentPromptId.set(res[0]);
-				prompts.update((pts) => {
-					return pts.set(res[0], { text: prompt, version: res[0] });
+				ZenoService.getCompleteColumns().then((cols) => {
+					status.update((s) => {
+						s.completeColumns = cols;
+						return s;
+					});
+					currentPromptId.set(res[0]);
+					prompts.update((pts) => {
+						return pts.set(res[0], { text: prompt, version: res[0] });
+					});
 				});
 			});
 		});

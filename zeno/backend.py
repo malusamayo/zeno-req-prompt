@@ -23,7 +23,7 @@ from zeno.api import (
     ZenoParameters,
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
-from zeno.classes.classes import MetricKey, PlotRequest, TableRequest, ZenoColumn
+from zeno.classes.classes import MetricKey, PlotRequest, TableRequest, ZenoColumn, Prompt
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
 from zeno.classes.tag import Tag, TagMetricKey
@@ -62,8 +62,6 @@ class ZenoBackend(object):
         self.view = self.params.view
         self.calculate_histogram_metrics = self.params.calculate_histogram_metrics
         self.model_names = self.params.models
-        self.prompts = self.params.prompts
-        self.current_prompt_id = list(self.prompts.keys())[-1]
 
         self.df = read_metadata(self.metadata)
         self.tests = read_functions(self.functions)
@@ -96,6 +94,11 @@ class ZenoBackend(object):
             "slices.pickle", self.cache_path, {}
         )
         self.tags: Dict[str, Tag] = read_pickle("tags.pickle", self.cache_path, {})
+        self.prompts: Dict[str, Prompt] = read_pickle(
+            "prompts.pickle", self.cache_path, self.params.prompts
+        )
+        self.current_prompt_id = list(self.prompts.keys())[-1]
+        
         if "All Instances" not in self.slices:
             orig_slices = self.slices
             all_instance = Slice(
@@ -319,17 +322,19 @@ class ZenoBackend(object):
                     )
                 self.__set_data_processing_returns(predistill_outputs)
 
-    def __inference(self):
+    def __inference(self, model_prompt_pairs=[]):
         """Run models on instances."""
 
         # Check if we need to run inference since Pool is expensive
         models_to_run = []
-        for model_name in self.model_names:
+        if len(model_prompt_pairs) == 0:
+            model_prompt_pairs = [(model_name, prompt_id) for prompt_id in self.prompts.keys() for model_name in self.model_names]
+        for (model_name, prompt_id) in model_prompt_pairs:
             model_column = ZenoColumn(
-                column_type=ZenoColumnType.OUTPUT, name="output", model=model_name
+                column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt_id
             )
             embedding_column = ZenoColumn(
-                column_type=ZenoColumnType.EMBEDDING, name="embedding", model=model_name
+                column_type=ZenoColumnType.EMBEDDING, name="embedding", model=model_name, prompt_id=prompt_id
             )
             model_hash = str(model_column)
             embedding_hash = str(embedding_column)
@@ -341,7 +346,7 @@ class ZenoBackend(object):
             load_series(self.df, embedding_column, embedding_save_path)
 
             if self.df[model_hash].isna().any():
-                models_to_run.append(model_name)
+                models_to_run.append((model_name, prompt_id))
             else:
                 self.df[model_hash] = self.df[model_hash].convert_dtypes()
                 model_column.metadata_type = get_metadata_type(self.df[model_hash])
@@ -364,7 +369,7 @@ class ZenoBackend(object):
                     self.df[str(col)] = self.df[str(col)].convert_dtypes()
                     col.metadata_type = get_metadata_type(self.df[str(col)])
                     self.complete_columns.append(col)
-
+        
         if len(models_to_run) > 0 and self.predict_function is not None:
             if self.multiprocessing:
                 with Pool() as pool:
@@ -372,7 +377,8 @@ class ZenoBackend(object):
                         run_inference,
                         [self.predict_function] * len(models_to_run),
                         [self.zeno_options] * len(models_to_run),
-                        [m for m in models_to_run],
+                        [mp[0] for mp in models_to_run],
+                        [self.prompts[mp[1]] for mp in models_to_run],
                         [self.cache_path] * len(models_to_run),
                         [self.df] * len(models_to_run),
                         [self.batch_size] * len(models_to_run),
@@ -380,13 +386,13 @@ class ZenoBackend(object):
                     )
             else:
                 inference_outputs = []
-                for i, model_name in enumerate(models_to_run):
+                for i, (model_name, prompt_id) in enumerate(models_to_run):
                     inference_outputs.append(
                         run_inference(
                             self.predict_function,
                             self.zeno_options,
                             model_name,
-                            self.prompts[self.current_prompt_id],
+                            self.prompts[prompt_id],
                             self.cache_path,
                             self.df,
                             self.batch_size,
@@ -530,7 +536,7 @@ class ZenoBackend(object):
 
         if model is not None:
             output_col = ZenoColumn(
-                column_type=ZenoColumnType.OUTPUT, name="output", model=model
+                column_type=ZenoColumnType.OUTPUT, name="output", model=model, prompt_id=self.current_prompt_id
             )
             output_hash = str(output_col)
 
@@ -589,12 +595,14 @@ class ZenoBackend(object):
         prompt_versions = [int(x[1:]) for x in prompt_versions]
         return 'v' + str(max(prompt_versions) + 1)
 
-    def create_new_prompt(self, req: str):
+    def create_new_prompt(self, req: Prompt):
         if not self.editable:
             return
         new_version = self.get_new_prompt_version()
+        req.version = new_version
         self.prompts[new_version] = req
         self.current_prompt_id = new_version
+        self.__inference([(model, new_version) for model in self.model_names])
         with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
             pickle.dump(self.prompts, f)
 

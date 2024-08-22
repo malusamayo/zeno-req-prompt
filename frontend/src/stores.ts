@@ -39,25 +39,23 @@ new_uri += "//" + loc.host;
 new_uri += loc.pathname + "api/status";
 
 export const wsResponse = websocketStore(new_uri, "");
-export const status: Readable<WSResponse> = derived(
-	wsResponse,
-	($wsResponse) => {
-		try {
-			return JSON.parse($wsResponse);
-		} catch (e) {
-			return {
-				status: "connecting",
-				doneProcessing: false,
-				completeColumns: [],
-			} as WSResponse;
-		}
-	},
-	{
-		status: "connecting",
-		doneProcessing: false,
-		completeColumns: [],
-	} as WSResponse
-);
+export const status: Writable<WSResponse> = writable({
+	status: "connecting",
+	doneProcessing: false,
+	completeColumns: [],
+});
+
+wsResponse.subscribe(($wsResponse) => {
+	try {
+		status.set(JSON.parse($wsResponse));
+	} catch (e) {
+		status.set({
+			status: "connecting",
+			doneProcessing: false,
+			completeColumns: [],
+		} as WSResponse);
+	}
+});
 export const ready: Writable<boolean> = writable(false);
 
 export const rowsPerPage = writable(0);

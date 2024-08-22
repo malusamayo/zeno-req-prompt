@@ -20,6 +20,7 @@
 		status,
 		tagIds,
 		tags,
+		currentPromptId,
 	} from "../stores";
 	import { columnHash } from "../util/util";
 	import type { ZenoColumn } from "../zenoservice";
@@ -73,6 +74,7 @@
 		$sort;
 		$editId;
 		$rowsPerPage;
+		$currentPromptId;
 		updateTable();
 	}
 
@@ -91,6 +93,7 @@
 		getFilteredTable(
 			$status.completeColumns,
 			[$model],
+			[$currentPromptId],
 			undefined,
 			setModelForFilterPredicateGroup($selectionPredicates, $model),
 			[start, end],
@@ -122,7 +125,11 @@
 		}
 
 		let obj = $status.completeColumns.find((c) => {
-			return c.columnType === ZenoColumnType.OUTPUT && c.model === $model;
+			return (
+				c.columnType === ZenoColumnType.OUTPUT &&
+				c.model === $model &&
+				c.promptId === $currentPromptId
+			);
 		});
 		let modelColumn = obj ? columnHash(obj) : "";
 

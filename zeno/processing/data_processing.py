@@ -10,6 +10,7 @@ from tqdm import trange
 
 from zeno.api import DistillReturn, ModelReturn, ZenoOptions
 from zeno.classes.base import DataProcessingReturn, ZenoColumn, ZenoColumnType
+from zeno.classes.classes import Prompt
 from zeno.util import load_series
 
 
@@ -49,17 +50,17 @@ def run_inference(
     fn: Callable[[str], Callable[[pd.DataFrame, ZenoOptions], ModelReturn]],
     options: ZenoOptions,
     model_name: str,
-    prompt: str,
+    prompt: Prompt,
     cache_path: str,
     df: pd.DataFrame,
     batch_size: int,
     pos: int,
 ) -> List[DataProcessingReturn]:
     model_col_obj = ZenoColumn(
-        column_type=ZenoColumnType.OUTPUT, name="output", model=model_name
+        column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt.version
     )
     embedding_col_obj = ZenoColumn(
-        column_type=ZenoColumnType.EMBEDDING, name="embedding", model=model_name
+        column_type=ZenoColumnType.EMBEDDING, name="embedding", model=model_name, prompt_id=prompt.version
     )
     model_hash = str(model_col_obj)
     embedding_hash = str(embedding_col_obj)
@@ -73,7 +74,7 @@ def run_inference(
 
     other_return_cols: Dict[str, ZenoColumn] = {}
     if len(to_predict_indices) > 0:
-        model_fn = fn(model_name, prompt)
+        model_fn = fn(model_name, prompt.text)
 
         # Make output folder if function uses output_path
         src = getsource(model_fn)
