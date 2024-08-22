@@ -1,6 +1,7 @@
 .zeno_cache/
 node_modules/
 examples/
+data/
 
 *.parquet
 .ruff_cache
