@@ -1,4 +1,4 @@
-.zeno_cache/
+.zeno_cache*/
 node_modules/
 examples/
 data/
