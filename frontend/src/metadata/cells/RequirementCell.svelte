@@ -20,6 +20,7 @@
 	} from "../../stores";
 	import { clickOutside } from "../../util/clickOutside";
 	import { ZenoService, type Slice, type Requirement } from "../../zenoservice";
+	import RequirementCellResult from "./RequirementCellResult.svelte";
 
 	export let requirement: Requirement;
 	export let compare;
@@ -160,9 +161,9 @@
 						</Paper>
 					</div>
 				{/if}
-				<!-- <SliceCellResult {compare} {slice} sliceModel={$model} />
-				{#if compare}
-					<SliceCellResult {compare} {slice} sliceModel={$comparisonModel} />
+				<RequirementCellResult {compare} {requirement} />
+				<!-- {#if compare}
+					<RequirementCellResult {compare} {slice} sliceModel={$comparisonModel} />
 				{/if} -->
 				<div class="inline" style:cursor="pointer">
 					<div
