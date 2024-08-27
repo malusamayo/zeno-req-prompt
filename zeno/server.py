@@ -24,6 +24,7 @@ from zeno.classes.classes import (
     ZenoSettings,
     ZenoVariables,
     Prompt,
+    Requirement,
 )
 from zeno.classes.metadata import HistogramBucket, HistogramRequest, StringFilterRequest
 from zeno.classes.projection import Points2D, PointsColors
@@ -120,9 +121,18 @@ def get_server(zeno: ZenoBackend):
     def get_prompt_version():
         return [zeno.current_prompt_id]
 
-    @api_app.post("/prompt", tags=["zeno"])
+    @api_app.post("/prompt", response_model=List[Prompt], tags=["zeno"])
     def create_new_prompt(req: Prompt):
-        zeno.create_new_prompt(req)
+        prompt = zeno.create_new_prompt(req)
+        return [prompt]
+
+    @api_app.get("/requirements", response_model=List[Requirement], tags=["zeno"])
+    def get_requirements():
+        return zeno.prompts[zeno.current_prompt_id].requirements
+    
+    @api_app.post("/extract-requirements", tags=["zeno"])
+    def extract_requirements():
+        zeno.extract_requirements()
 
     @api_app.post("/folders", tags=["zeno"])
     def set_folders(folders: List[str]):

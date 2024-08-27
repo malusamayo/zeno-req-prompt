@@ -74,7 +74,7 @@ if __name__ == '__main__':
         metadata=data,
         functions=[openai_inference],
         models=['gpt-4o-mini'],
-        prompts={'v1': Prompt(text=prompt, version='v1')},
+        prompts={'v1': Prompt(text=prompt, version='v1', requirements=[])},
         view='text-classification',
         data_column="question",
         label_column="label",

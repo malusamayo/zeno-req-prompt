@@ -3,12 +3,11 @@
 	import IconButton, { Icon } from "@smui/icon-button";
 	import { Svg } from "@smui/common";
 	import { tooltip } from "@svelte-plugins/tooltips";
-	import { prompts, currentPromptId, status } from "../stores";
+	import { prompts, currentPromptId, status, promptUpdating } from "../stores";
 	import { ZenoService } from "../zenoservice";
 	import CircularProgress from "@smui/circular-progress";
 
 	let prompt: string = $prompts.get($currentPromptId).text;
-	let promptBeingUpdated = false;
 
 	$: {
 		$currentPromptId;
@@ -22,22 +21,26 @@
 	}
 
 	function updatePrompt() {
-		promptBeingUpdated = true;
-		ZenoService.createNewPrompt({ text: prompt, version: "" }).then(() => {
-			ZenoService.getCurrentPromptId().then((res) => {
-				ZenoService.getCompleteColumns().then((cols) => {
-					status.update((s) => {
-						s.completeColumns = cols;
-						return s;
-					});
-					currentPromptId.set(res[0]);
-					prompts.update((pts) => {
-						return pts.set(res[0], { text: prompt, version: res[0] });
-					});
-					promptBeingUpdated = false;
-					allowUpdates = false;
+		promptUpdating.set(true);
+		ZenoService.createNewPrompt({
+			text: prompt,
+			version: "",
+			requirements: [],
+		}).then((createdPrompts) => {
+			// ZenoService.getCurrentPromptId().then((res) => {
+			ZenoService.getCompleteColumns().then((cols) => {
+				status.update((s) => {
+					s.completeColumns = cols;
+					return s;
 				});
+				currentPromptId.set(createdPrompts[0].version);
+				prompts.update((pts) => {
+					return pts.set(createdPrompts[0].version, createdPrompts[0]);
+				});
+				promptUpdating.set(false);
+				allowUpdates = false;
 			});
+			// });
 		});
 	}
 </script>
@@ -45,7 +48,7 @@
 <div class="inline">
 	<div class="inline">
 		<h4>Prompt</h4>
-		{#if promptBeingUpdated}
+		{#if $promptUpdating}
 			<CircularProgress
 				style="height: 15px; width: 15px; margin-left: 10px;"
 				indeterminate />

@@ -17,9 +17,8 @@ import type {
 	Tag,
 	ZenoColumn,
 	ZenoSettings,
+	Prompt,
 } from "./zenoservice";
-import type { Prompt } from "./zenoservice/models/Prompt";
-
 interface WSResponse {
 	status: string;
 	doneProcessing: boolean;
@@ -91,6 +90,7 @@ export const tags: Writable<Map<string, Tag>> = writable(new Map());
 export const reports: Writable<Report[]> = reportWritable();
 export const prompts: Writable<Map<string, Prompt>> = writable(new Map());
 export const currentPromptId: Writable<string> = writable("");
+export const promptUpdating: Writable<boolean> = writable(false);
 
 // The tag ids selected by the user.
 export const tagIds: Writable<FilterIds> = writable({ ids: [] });

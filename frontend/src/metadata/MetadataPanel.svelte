@@ -43,6 +43,9 @@
 		tagIds,
 		tags,
 		tab,
+		promptUpdating,
+		prompts,
+		currentPromptId,
 	} from "../stores";
 	import { columnHash, updateModelDependentSlices } from "../util/util";
 	import { ZenoColumnType, type ZenoColumn } from "../zenoservice";
@@ -54,6 +57,7 @@
 	import MetadataHeader from "./MetadataHeader.svelte";
 	import SliceCellResult from "./cells/SliceCellResult.svelte";
 	import PromptBox from "./PromptBox.svelte";
+	import RequirementCell from "./cells/RequirementCell.svelte";
 
 	let metadataHistograms: InternMap<ZenoColumn, HistogramEntry[]> =
 		new InternMap([], columnHash);
@@ -263,6 +267,22 @@
 <div class="side-container">
 	<MetadataHeader />
 	<PromptBox />
+
+	<div id="slice-header" class="inline">
+		<div class="inline">
+			<h4>Requirements</h4>
+			{#if $promptUpdating}
+				<CircularProgress
+					style="height: 15px; width: 15px; margin-left: 10px;"
+					indeterminate />
+			{/if}
+		</div>
+	</div>
+
+	{#each $prompts.get($currentPromptId).requirements as req}
+		<RequirementCell requirement={req} compare={$tab === "comparison"} />
+	{/each}
+
 	<div id="slice-header" class="inline">
 		<div class="inline">
 			<h4>Slices</h4>

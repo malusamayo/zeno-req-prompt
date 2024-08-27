@@ -23,7 +23,7 @@ from zeno.api import (
     ZenoParameters,
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
-from zeno.classes.classes import MetricKey, PlotRequest, TableRequest, ZenoColumn, Prompt
+from zeno.classes.classes import MetricKey, PlotRequest, TableRequest, ZenoColumn, Prompt, Requirement
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
 from zeno.classes.tag import Tag, TagMetricKey
@@ -98,6 +98,10 @@ class ZenoBackend(object):
             "prompts.pickle", self.cache_path, self.params.prompts
         )
         self.current_prompt_id = list(self.prompts.keys())[-1]
+
+        for pid, prompt in self.prompts.items():
+            if len(prompt.requirements) == 0:
+                self.extract_requirements(pid)
         
         if "All Instances" not in self.slices:
             orig_slices = self.slices
@@ -603,8 +607,26 @@ class ZenoBackend(object):
         self.prompts[new_version] = req
         self.current_prompt_id = new_version
         self.__inference([(model, new_version) for model in self.model_names])
+        self.extract_requirements(new_version)
         with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
             pickle.dump(self.prompts, f)
+        return self.prompts[new_version]
+
+    def extract_requirements(self, prompt_id):
+        ### [TODO] Use LLM to extract requirements for prompt_id
+        ### Assign the results to self.prompts[prompt_id].requirements
+        
+        # Mock-up for now
+        self.prompts[prompt_id].requirements = [
+            Requirement(id=1, name="option-num",
+                    description="There should only be four options.",
+                    prompt_snippet="",
+                    evaluation_method=""),
+            Requirement(id=2, name="option-format",
+                    description="Each option should be numbered.",
+                    prompt_snippet="",
+                    evaluation_method=""),
+        ]
 
     def create_new_tag(self, req: Tag):
         if not self.editable:

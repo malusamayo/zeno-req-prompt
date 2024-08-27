@@ -73,6 +73,15 @@ class EntryRequest(BaseModel):
     id: Union[int, str]
     columns: List[ZenoColumn] = []
 
+
+class Requirement(CamelModel):
+    id: str
+    name: str
+    description: str
+    prompt_snippet: str
+    evaluation_method: str
+
 class Prompt(CamelModel):
     text: str
     version: str
+    requirements: List[Requirement]
