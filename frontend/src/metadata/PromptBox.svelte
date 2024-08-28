@@ -103,6 +103,12 @@
 		// 	content = content.concat([{ type: "tag", value: "new-requirement" }]);
 		// }
 	}
+
+	function handlePaste(event) {
+		event.preventDefault();
+		const clipboardData = event.clipboardData.getData("text");
+		document.execCommand("insertHTML", false, clipboardData);
+	}
 </script>
 
 <div class="inline">
@@ -144,7 +150,8 @@
 	bind:this={contentEditableDiv}
 	class="promptbox"
 	on:input={handleInput}
-	on:keydown={handleKeydown}>
+	on:keydown={handleKeydown}
+	on:paste={handlePaste}>
 	{#each content as item}
 		{@const srcLink = `https://img.shields.io/badge/${item.value.replace(
 			"-",
