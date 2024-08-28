@@ -64,7 +64,7 @@
 			])
 			.reduce((acc, val) => acc.concat(val), []);
 		// placeholder to prevent crashing when insertBefore 0 index
-		// content = [{ type: "", value: " " }].concat(content);
+		content = [{ type: "", value: " " }].concat(content);
 
 		console.log(content);
 	}
@@ -86,9 +86,9 @@
 					return { type: "text", value: node.textContent };
 				} else if (
 					node.nodeType === Node.ELEMENT_NODE &&
-					node.dataset.type === "tag"
+					node.hasAttribute("data")
 				) {
-					return { type: "tag", value: node.innerText };
+					return { type: "tag", value: node.getAttribute("data") };
 				}
 			})
 			.filter(Boolean);
@@ -99,7 +99,19 @@
 	}
 
 	// [TODO] allow users to write requirements explicitly
+	// [TODO] prevent from deleting requirement tags
 	function handleKeydown(e) {
+		const selection = window.getSelection();
+		const selectedNode = selection.anchorNode;
+
+		// Check if an image is selected or in focus when Backspace or Delete is pressed
+		// if (
+		// 	(e.key === "Backspace" || e.key === "Delete") &&
+		// 	selectedNode &&
+		// 	selectedNode.nodeName === "IMG"
+		// ) {
+		// 	e.preventDefault(); // Prevent the action
+		// }
 		if (e.key === "k" && e.metaKey) {
 			// content = content.concat([{ type: "tag", value: "" }]);
 		}
@@ -146,19 +158,22 @@
 	on:input={handleInput}
 	on:keydown={handleKeydown}>
 	{#each content as item}
+		{@const srcLink = `https://img.shields.io/badge/${item.value.replace(
+			"-",
+			"--"
+		)}-8A2BE2`}
 		{#if item.type === "text"}
 			{item.value}
 		{:else if item.type === "tag"}
-			<span class="tag" data-type="tag" contenteditable="false"
-				>{item.value}</span>
+			<img src={srcLink} alt="" data={item.value} />
 		{/if}
 	{/each}
 </div>
 
 <style>
-	textarea {
-		min-width: 330px;
-		min-height: 100px;
+	img {
+		pointer-events: none;
+		margin-right: 2px;
 	}
 	.inline {
 		display: flex;
@@ -176,7 +191,8 @@
 
 	.promptbox {
 		outline: 1px solid #767676;
-		min-height: 100px;
+		min-height: 150px;
 		padding: 5px;
+		margin-bottom: 10px;
 	}
 </style>
