@@ -615,18 +615,27 @@ class ZenoBackend(object):
     def extract_requirements(self, prompt_id):
         ### [TODO] Use LLM to extract requirements for prompt_id
         ### Assign the results to self.prompts[prompt_id].requirements
+        ### Update self.prompts[prompt_id].text with xml tags
         
         # Mock-up for now
         self.prompts[prompt_id].requirements = [
-            Requirement(id=1, name="option-num",
+            Requirement(id=0, name="option-num",
                     description="There should only be four options.",
                     prompt_snippet="",
                     evaluation_method=""),
-            Requirement(id=2, name="option-format",
+            Requirement(id=1, name="option-format",
                     description="Each option should be numbered.",
                     prompt_snippet="",
                     evaluation_method=""),
         ]
+        
+        def add_tag(sentence, prompt_id, req_id):
+            if sentence== "" or req_id > 1:
+                return ""
+            return f'<req name="{self.prompts[prompt_id].requirements[req_id].name}">{sentence}.</req>'
+
+        self.prompts[prompt_id].text = "".join([add_tag(s, prompt_id, i) for i, s in enumerate(self.prompts[prompt_id].text.split("."))])
+        self.prompts[prompt_id].text = f"<prompt>{self.prompts[prompt_id].text}</prompt>"
 
     def create_new_tag(self, req: Tag):
         if not self.editable:
