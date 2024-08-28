@@ -11,6 +11,7 @@
 	let prompt: string = $prompts.get($currentPromptId).text;
 	let allowUpdates = false;
 	let content = [];
+	let contentEditableDiv;
 
 	$: {
 		$currentPromptId;
@@ -63,37 +64,20 @@
 				{ type: "text", value: x.textContent },
 			])
 			.reduce((acc, val) => acc.concat(val), []);
-		// placeholder to prevent crashing when insertBefore 0 index
-		content = [{ type: "", value: " " }].concat(content);
-
-		console.log(content);
 	}
 
-	function removeEmptyNodes(parentNode) {
-		parentNode.childNodes.forEach((node) => {
-			if (node.nodeType === Node.TEXT_NODE && node.textContent === "") {
-				parentNode.removeChild(node);
-			}
-		});
-	}
-
-	function handleInput(event) {
-		removeEmptyNodes(event.target);
-		const textNodes = Array.from(event.target.childNodes);
-		const updatedContent = textNodes
-			.map((node: HTMLElement) => {
-				if (node.nodeType === Node.TEXT_NODE) {
-					return { type: "text", value: node.textContent };
-				} else if (
-					node.nodeType === Node.ELEMENT_NODE &&
-					node.hasAttribute("data")
-				) {
-					return { type: "tag", value: node.getAttribute("data") };
+	function handleInput() {
+		content = Array.from(contentEditableDiv.children).map(
+			(node: HTMLElement) => {
+				if (node.nodeType === Node.ELEMENT_NODE) {
+					if (node.hasAttribute("data")) {
+						return { type: "tag", value: node.getAttribute("data") };
+					} else {
+						return { type: "text", value: node.textContent };
+					}
 				}
-			})
-			.filter(Boolean);
-
-		content = updatedContent;
+			}
+		);
 		allowUpdates = true;
 		console.log(content); // Updated content
 	}
@@ -105,16 +89,16 @@
 		const selectedNode = selection.anchorNode;
 
 		// Check if an image is selected or in focus when Backspace or Delete is pressed
-		// if (
-		// 	(e.key === "Backspace" || e.key === "Delete") &&
-		// 	selectedNode &&
-		// 	selectedNode.nodeName === "IMG"
-		// ) {
-		// 	e.preventDefault(); // Prevent the action
-		// }
-		if (e.key === "k" && e.metaKey) {
-			// content = content.concat([{ type: "tag", value: "" }]);
+		if (
+			(e.key === "Backspace" || e.key === "Delete") &&
+			selectedNode &&
+			selectedNode.nodeName === "DIV"
+		) {
+			e.preventDefault(); // Prevent the action
 		}
+		// if (e.key === "k" && e.metaKey) {
+		// 	content = content.concat([{ type: "tag", value: "new-requirement" }]);
+		// }
 	}
 </script>
 
@@ -154,6 +138,7 @@
 </div>
 <div
 	contenteditable="true"
+	bind:this={contentEditableDiv}
 	class="promptbox"
 	on:input={handleInput}
 	on:keydown={handleKeydown}>
@@ -163,7 +148,7 @@
 			"--"
 		)}-8A2BE2`}
 		{#if item.type === "text"}
-			{item.value}
+			<span>{item.value}</span>
 		{:else if item.type === "tag"}
 			<img src={srcLink} alt="" data={item.value} />
 		{/if}
