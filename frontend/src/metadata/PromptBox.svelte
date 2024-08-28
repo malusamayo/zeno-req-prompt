@@ -59,10 +59,13 @@
 		let parsedPrompt = parser.parseFromString(prompt, "text/xml");
 
 		content = Array.from(parsedPrompt.children[0].children)
-			.map((x) => [
-				{ type: "tag", value: x.getAttribute("name") },
-				{ type: "text", value: x.textContent },
-			])
+			.map((x) => {
+				let arr = [];
+				if (x.hasAttribute("name"))
+					arr.push({ type: "tag", value: x.getAttribute("name") });
+				arr.push({ type: "text", value: x.textContent });
+				return arr;
+			})
 			.reduce((acc, val) => acc.concat(val), []);
 	}
 
