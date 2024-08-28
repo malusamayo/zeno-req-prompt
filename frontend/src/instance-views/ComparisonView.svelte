@@ -102,7 +102,7 @@
 
 	model.subscribe((model) => {
 		// make sure Model A and Model B are exclusive
-		if ($comparisonModel.includes(model)) {
+		if ($comparisonModel === model) {
 			$comparisonModel = $models.filter((m) => m !== model)[0];
 			tables[model] = [];
 			viewDivs[model] = [];
