@@ -617,6 +617,8 @@ class ZenoBackend(object):
         ### Assign the results to self.prompts[prompt_id].requirements
         ### Update self.prompts[prompt_id].text with xml tags
         
+        prompt = self.prompts[prompt_id].text
+        print("prompt:",prompt)
         # Mock-up for now
         self.prompts[prompt_id].requirements = [
             Requirement(id=0, name="option-num",
