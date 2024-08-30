@@ -190,6 +190,5 @@
 		min-height: 150px;
 		padding: 5px;
 		margin-bottom: 10px;
-		position: relative;
 	}
 </style>

@@ -6,22 +6,34 @@
 
 	// export let requirement: Requirement;
 	export let name; // = requirement.name;
+
 	let showOptions = false;
+	let menuX = 0;
+	let menuY = 0;
 	$: srcLink = `https://img.shields.io/badge/${name.replace("-", "--")}-8A2BE2`;
+
+	function handleSpanClick(event) {
+		const spanRect = event.target.getBoundingClientRect();
+		menuX = spanRect.left;
+		menuY = spanRect.bottom;
+		showOptions = !showOptions;
+	}
 </script>
 
-<span style="position: relative;">
+<span>
 	<img
 		class="tag"
 		draggable="false"
 		src={srcLink}
 		alt=""
 		data={name}
-		on:click={() => (showOptions = true)}
+		on:click={handleSpanClick}
 		on:keydown={() => {}} />
 	{#if showOptions}
 		<div
 			id="options-container"
+			style="position:fixed; top: {menuY}px; left: {menuX}px; 
+		z-index: 5; width: 70px"
 			use:clickOutside
 			on:click_outside={() => (showOptions = false)}>
 			<Paper style="padding: 3px 0px;" elevation={7}>
@@ -62,17 +74,15 @@
 		margin-right: 2px;
 	}
 	#options-container {
-		top: 12px;
 		/* left: 40px; */
 		z-index: 5;
-		position: absolute;
 	}
 	.option {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
 		cursor: pointer;
-		width: 70px;
+		max-width: 70px;
 		padding: 0px 3px;
 	}
 	.option span {
