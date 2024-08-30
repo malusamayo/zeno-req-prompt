@@ -1,0 +1,84 @@
+<script lang="ts">
+	import { Icon } from "@smui/icon-button";
+	import Paper, { Content } from "@smui/paper";
+	import { clickOutside } from "../../util/clickOutside";
+	import type { Requirement } from "src/zenoservice";
+
+	// export let requirement: Requirement;
+	export let name; // = requirement.name;
+	let showOptions = false;
+	$: srcLink = `https://img.shields.io/badge/${name.replace("-", "--")}-8A2BE2`;
+</script>
+
+<span style="position: relative;">
+	<img
+		class="tag"
+		draggable="false"
+		src={srcLink}
+		alt=""
+		data={name}
+		on:click={() => (showOptions = true)}
+		on:keydown={() => {}} />
+	{#if showOptions}
+		<div
+			id="options-container"
+			use:clickOutside
+			on:click_outside={() => (showOptions = false)}>
+			<Paper style="padding: 3px 0px;" elevation={7}>
+				<Content>
+					<div
+						class="option"
+						on:keydown={() => ({})}
+						on:click={(e) => {
+							e.stopPropagation();
+							showOptions = false;
+						}}>
+						<Icon style="font-size: 12px;" class="material-icons">edit</Icon
+						>&nbsp;
+						<span>Re-write</span>
+					</div>
+					<div
+						class="option"
+						on:keydown={() => ({})}
+						on:click={(e) => {
+							e.stopPropagation();
+							showOptions = false;
+						}}>
+						<Icon style="font-size: 12px;" class="material-icons"
+							>bug_report</Icon
+						>&nbsp;
+						<span>Tests</span>
+					</div>
+				</Content>
+			</Paper>
+		</div>
+	{/if}
+</span>
+
+<style>
+	.tag {
+		cursor: pointer;
+		/* pointer-events: none; */
+		margin-right: 2px;
+	}
+	#options-container {
+		top: 12px;
+		/* left: 40px; */
+		z-index: 5;
+		position: absolute;
+	}
+	.option {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		cursor: pointer;
+		width: 70px;
+		padding: 0px 3px;
+	}
+	.option span {
+		font-size: 12px;
+	}
+	.option:hover {
+		background: var(--G5);
+	}
+</style>

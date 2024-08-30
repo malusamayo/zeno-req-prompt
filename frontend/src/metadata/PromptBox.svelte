@@ -6,12 +6,12 @@
 	import { prompts, currentPromptId, status, promptUpdating } from "../stores";
 	import { ZenoService } from "../zenoservice";
 	import CircularProgress from "@smui/circular-progress";
+	import RequirementChip from "./chips/RequirementChip.svelte";
 
 	const parser = new DOMParser();
 	let prompt: string = $prompts.get($currentPromptId).text;
 	let allowUpdates = false;
-	let content = [];
-	let contentEditableDiv;
+	let contentEditableDiv = document.createElement("div");
 
 	$: {
 		$currentPromptId;
@@ -29,9 +29,18 @@
 
 	function updatePrompt() {
 		promptUpdating.set(true);
-		let newInnerPrompt = content
-			.filter((x) => x.type === "text")
-			.map((x) => x.value)
+		let newInnerPrompt = Array.from(contentEditableDiv.childNodes)
+			.map((node: HTMLElement) => {
+				if (node.nodeType === Node.ELEMENT_NODE) {
+					if (node.hasAttribute("data")) {
+						return "";
+					} else {
+						return node.textContent;
+					}
+				} else if (node.nodeType === Node.TEXT_NODE) {
+					return node.textContent;
+				}
+			})
 			.reduce((acc, val) => acc + val, "");
 		ZenoService.createNewPrompt({
 			text: newInnerPrompt,
@@ -56,9 +65,12 @@
 	}
 
 	function updateContent() {
+		if (contentEditableDiv) {
+			contentEditableDiv.innerHTML = "";
+		}
 		let parsedPrompt = parser.parseFromString(prompt, "text/xml");
 
-		content = Array.from(parsedPrompt.children[0].children)
+		let content = Array.from(parsedPrompt.children[0].children)
 			.map((x) => {
 				let arr = [];
 				if (x.hasAttribute("name"))
@@ -67,22 +79,26 @@
 				return arr;
 			})
 			.reduce((acc, val) => acc.concat(val), []);
+
+		content.forEach((item) => {
+			if (item.type === "text") {
+				const textNode = document.createTextNode(item.value);
+				contentEditableDiv.appendChild(textNode);
+			} else if (item.type === "tag") {
+				const imgNode = document.createElement("span");
+				const reqChip = new RequirementChip({
+					target: imgNode,
+					props: {
+						name: item.value,
+					},
+				});
+				contentEditableDiv.appendChild(imgNode);
+			}
+		});
 	}
 
 	function handleInput() {
-		content = Array.from(contentEditableDiv.children).map(
-			(node: HTMLElement) => {
-				if (node.nodeType === Node.ELEMENT_NODE) {
-					if (node.hasAttribute("data")) {
-						return { type: "tag", value: node.getAttribute("data") };
-					} else {
-						return { type: "text", value: node.textContent };
-					}
-				}
-			}
-		);
 		allowUpdates = true;
-		console.log(content); // Updated content
 	}
 
 	// [TODO] allow users to write requirements explicitly
@@ -95,7 +111,7 @@
 		if (
 			(e.key === "Backspace" || e.key === "Delete") &&
 			selectedNode &&
-			selectedNode.nodeName === "DIV"
+			selectedNode.nodeName === "SPAN"
 		) {
 			e.preventDefault(); // Prevent the action
 		}
@@ -109,6 +125,14 @@
 		const clipboardData = event.clipboardData.getData("text");
 		document.execCommand("insertHTML", false, clipboardData);
 	}
+
+	// $: {
+	// 	console.log(content);
+	// 	console.log(contentEditableDiv);
+	// }
+	// $: {
+	// 	console.log(contentEditableDiv, "hey!!!");
+	// }
 </script>
 
 <div class="inline">
@@ -151,39 +175,14 @@
 	class="promptbox"
 	on:input={handleInput}
 	on:keydown={handleKeydown}
-	on:paste={handlePaste}>
-	{#each content as item}
-		{@const srcLink = `https://img.shields.io/badge/${item.value.replace(
-			"-",
-			"--"
-		)}-8A2BE2`}
-		{#if item.type === "text"}
-			<span>{item.value}</span>
-		{:else if item.type === "tag"}
-			<img src={srcLink} alt="" data={item.value} />
-		{/if}
-	{/each}
-</div>
+	on:paste={handlePaste} />
 
 <style>
-	img {
-		pointer-events: none;
-		margin-right: 2px;
-	}
 	.inline {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 	}
-	.tag {
-		display: inline-block;
-		padding: 2px 5px;
-		margin: 0 2px;
-		background-color: #e0e0e0;
-		border-radius: 4px;
-		cursor: pointer;
-	}
-
 	.promptbox {
 		outline: 1px solid #767676;
 		min-height: 150px;
