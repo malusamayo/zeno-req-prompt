@@ -11,7 +11,7 @@
 	const parser = new DOMParser();
 	let prompt: string = $prompts.get($currentPromptId).text;
 	let allowUpdates = false;
-	let contentEditableDiv = document.createElement("div");
+	let contentEditableDiv: HTMLDivElement;
 
 	$: {
 		$currentPromptId;
@@ -20,7 +20,9 @@
 
 	$: {
 		prompt;
-		updateContent();
+		if (contentEditableDiv) {
+			updateContent();
+		}
 	}
 
 	function switchPrompt() {
@@ -188,5 +190,6 @@
 		min-height: 150px;
 		padding: 5px;
 		margin-bottom: 10px;
+		position: relative;
 	}
 </style>
