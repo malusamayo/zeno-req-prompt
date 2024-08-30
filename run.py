@@ -35,7 +35,7 @@ def openai_inference(model_name, prompt):
 if __name__ == '__main__':
     data = pd.read_csv('data/mmlu.csv').sample(10, random_state=42).reset_index(drop=True)
     data["label"] = ""
-    prompt = "Create 4 answer options for the test question."
+    prompt = ""
     
     # client = OpenAIMultiClient(endpoint="chats", data_template={"model": "gpt-4o-mini"})
     # def chat_completion(inputs):

@@ -620,6 +620,7 @@ class ZenoBackend(object):
         prompt = self.prompts[prompt_id].text
         print("prompt:",prompt)
         # Mock-up for now
+        
         self.prompts[prompt_id].requirements = [
             Requirement(id=0, name="option-num",
                     description="There should only be four options.",
