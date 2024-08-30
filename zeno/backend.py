@@ -6,8 +6,11 @@ import logging
 import os
 import pickle
 import sys
+import json
+import re
 import threading
 from inspect import getsource
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
@@ -23,6 +26,7 @@ from zeno.api import (
     ZenoParameters,
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
+from zeno.openai_client import OpenAIMultiClient
 from zeno.classes.classes import MetricKey, PlotRequest, TableRequest, ZenoColumn, Prompt, Requirement
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
@@ -99,9 +103,9 @@ class ZenoBackend(object):
         )
         self.current_prompt_id = list(self.prompts.keys())[-1]
 
-        for pid, prompt in self.prompts.items():
-            if len(prompt.requirements) == 0:
-                self.extract_requirements(pid)
+        # for pid, prompt in self.prompts.items():
+        #     if len(prompt.requirements) == 0:
+        #         self.extract_requirements(pid)
         
         if "All Instances" not in self.slices:
             orig_slices = self.slices
@@ -611,34 +615,138 @@ class ZenoBackend(object):
         with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
             pickle.dump(self.prompts, f)
         return self.prompts[new_version]
+    
+    def find_best_match(self, prompt, snippet):
+        normalized_snippet = " ".join(snippet.split())
+        prompt_length = len(prompt)
+        snippet_length = len(normalized_snippet)
+        best_match = ""
+        highest_ratio = 0.0
+        start_index = -1
+        end_index = -1
+
+        # Use a sliding window approach to find the best match
+        for i in range(prompt_length - snippet_length + 1):
+            substring = prompt[i:i + snippet_length]
+            normalized_substring = " ".join(substring.split())
+            ratio = SequenceMatcher(None, normalized_snippet, normalized_substring).ratio()
+            if ratio > highest_ratio:
+                highest_ratio = ratio
+                best_match = substring
+                start_index = i
+                end_index = i + snippet_length
+
+        return best_match, start_index, end_index
+
+    def wrap_non_req_text(self, match):
+        if match.group(2):  # This is the text outside <req> tags
+            return f'<text>{match.group(2).strip()}</text>'
+        return match.group(1)  # This is a <req> tag, return it unchanged
 
     def extract_requirements(self, prompt_id):
         ### [TODO] Use LLM to extract requirements for prompt_id
         ### Assign the results to self.prompts[prompt_id].requirements
         ### Update self.prompts[prompt_id].text with xml tags
-        
         prompt = self.prompts[prompt_id].text
-        print("prompt:",prompt)
-        # Mock-up for now
+        # # Mock-up for now
         
-        self.prompts[prompt_id].requirements = [
-            Requirement(id=0, name="option-num",
-                    description="There should only be four options.",
-                    prompt_snippet="",
-                    evaluation_method=""),
-            Requirement(id=1, name="option-format",
-                    description="Each option should be numbered.",
-                    prompt_snippet="",
-                    evaluation_method=""),
-        ]
-        
-        def add_tag(sentence, prompt_id, req_id):
-            if sentence== "" or req_id > 1:
-                return ""
-            return f'<req name="{self.prompts[prompt_id].requirements[req_id].name}">{sentence}.</req>'
+        api_prompt = f"""
+        Given the following prompt, extract a series of success criteria used for evaluating the model outputs from the prompt. 
+        Requirements:
+        1. List requirements one by one in the format: 
+            Name: [name];Prompt Snippet: [prompt snippet];Description: [description];Evaluation Method: [evaluation method].
+        2. Use the exact wording from the prompt for the Prompt Snippet.
+        3. Only include unique criteria mentioned in the original prompt. Merge the ones that are similar. 
+        4. Try to make the evaluation method as clear and objective as possible and give specific steps. 
+        5. Be concise.
+        Prompt: '''{prompt}'''
+        Requirements:
+        """
 
-        self.prompts[prompt_id].text = "".join([add_tag(s, prompt_id, i) for i, s in enumerate(self.prompts[prompt_id].text.split("."))])
+        functions = [
+            {
+                "name": "extract_requirements",
+                "description": "Extract requirements from the prompt",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "requirements": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "promptSnippet": {"type": "string"},
+                                    "description": {"type": "string"},
+                                    "evaluationMethod": {"type": "string"}
+                                },
+                                "required": ["name", "promptSnippet", "description", "evaluationMethod"]
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+
+        payload = {
+            'model': 'gpt-4',
+            'messages': [
+                {'role': 'system', 'content': 'You are a helpful assistant.'},
+                {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
+            ],
+            'functions': functions,
+            'function_call': "auto",  # Automatically use the function call
+            'temperature': 0.7,
+            'max_tokens': 2048,
+            'top_p': 1.0,
+            'frequency_penalty': 0.0,
+            'presence_penalty': 0.0
+        }
+
+        if prompt != '<prompt></prompt>':
+            client = OpenAIMultiClient()
+
+            client.request(
+                data=payload,
+                endpoint="chat.completions"
+            )
+        
+            for response in client:
+                if response.failed:
+                    print("Error generating response")
+                    return
+            
+                result = response.response
+                first_choice = result.choices[0]
+                function_call = first_choice.message.function_call
+                function_call_args = function_call.arguments
+        
+            # Convert the JSON string to a Python dictionary
+                extracted_data = json.loads(function_call_args)
+                extracted_requirements = extracted_data.get('requirements', [])
+
+
+            # Loop through each extracted requirement and add it to the list
+                for idx, req in enumerate(extracted_requirements):
+                    print(req)
+                    prompt_snippet=req.get('promptSnippet', '')
+                    requirement = Requirement(
+                        id=idx,  # Generate a unique ID
+                        name=req.get('name', 'Unnamed Requirement'),
+                        description=req.get('description', ''),
+                        prompt_snippet=req.get('promptSnippet', ''),
+                        evaluation_method=req.get('evaluationMethod', '')
+                    )
+                    self.prompts[prompt_id].requirements.append(requirement)
+
+                    best_match, start_index, end_index = self.find_best_match(prompt, prompt_snippet.strip())
+                    wrapped_snippet = f'<req name="{self.prompts[prompt_id].requirements[idx].name}">{best_match}</req>'
+                    prompt = prompt[:start_index] + wrapped_snippet + prompt[end_index:]
+                break
+        pattern = re.compile(r'(<req name=".*?">.*?</req>)|([^<]+)')
+        self.prompts[prompt_id].text = pattern.sub(self.wrap_non_req_text, prompt)
         self.prompts[prompt_id].text = f"<prompt>{self.prompts[prompt_id].text}</prompt>"
+
 
     def create_new_tag(self, req: Tag):
         if not self.editable:
