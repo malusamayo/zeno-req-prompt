@@ -112,24 +112,72 @@
 			});
 		}
 	}}>
-	{#if showTooltip}
+	<!-- {#if showTooltip}
 		<div class="tooltip-container">
 			<div class="tooltip">
 				{requirement.description}
 			</div>
 		</div>
+	{/if} -->
+
+	{#if showTooltip}
+	<div class="requirement-modal">
+		<label>Name:</label>
+		<input
+			type="text"
+			bind:value={requirement.name}
+		/>
+		<label>Prompt Snippet:</label>
+		<textarea
+			bind:value={requirement.promptSnippet}
+		></textarea>
+		<label>Description:</label>
+		<textarea
+			bind:value={requirement.description}
+		></textarea>
+		<label>Evaluation Method:</label>
+		<textarea
+			bind:value={requirement.evaluationMethod}
+			style="min-height: 120px;"
+		></textarea>
+		<button on:click={() => (showTooltip = false)} class="close-button">Close</button>
+	</div>
 	{/if}
 
 	<div class="group" style:width="100%">
 		<div class="group" style:width="100%">
 			<div class="inline">
+				<!-- <div
+					class="group"
+					style:color="var(--G1)"
+					on:mouseover={() => (showTooltip = false)}
+					on:mouseout={() => (showTooltip = false)}
+					on:focus={() => (showTooltip = false)}
+					on:blur={() => (showTooltip = false)}
+					on:click={() => (showTooltip = true)}
+					tabindex="0"
+					role="button"
+					on:keydown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							showTooltip = true;
+							e.preventDefault(); // Prevent default spacebar scrolling
+						}
+					}}>
+					{requirement.name}
+				</div> -->
+
 				<div
 					class="group"
 					style:color="var(--G1)"
-					on:mouseover={() => (showTooltip = true)}
-					on:mouseout={() => (showTooltip = false)}
-					on:focus={() => (showTooltip = true)}
-					on:blur={() => (showTooltip = false)}>
+					on:click={() => (showTooltip = true)}
+					tabindex="0"
+					role="button"
+					on:keydown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							showTooltip = true;
+							e.preventDefault(); // Prevent default spacebar scrolling
+						}
+					}}>
 					{requirement.name}
 				</div>
 			</div>
@@ -139,7 +187,7 @@
 				on:click_outside={() => {
 					showOptions = false;
 				}}>
-				{#if showOptions}
+				<!-- {#if showOptions}
 					<div id="options-container">
 						<Paper style="padding: 3px 0px;" elevation={7}>
 							<Content>
@@ -160,12 +208,12 @@
 							</Content>
 						</Paper>
 					</div>
-				{/if}
+				{/if} -->
 				<RequirementCellResult {compare} {requirement} />
 				<!-- {#if compare}
 					<RequirementCellResult {compare} {slice} sliceModel={$comparisonModel} />
 				{/if} -->
-				<div class="inline" style:cursor="pointer">
+				<!-- <div class="inline" style:cursor="pointer">
 					<div
 						style:width="36px"
 						use:clickOutside
@@ -186,7 +234,7 @@
 							</IconButton>
 						{/if}
 					</div>
-				</div>
+				</div> -->
 			</div>
 		</div>
 	</div>
@@ -293,5 +341,58 @@
 	}
 	.option:hover {
 		background: var(--G5);
+	}
+	.requirement-modal {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background-color: white;
+		padding: 20px;
+		border-radius: 8px;
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+		z-index: 1000;
+		width: 400px;
+	}
+	.requirement-modal {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background-color: white;
+		padding: 20px;
+		border-radius: 8px;
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+		z-index: 1000;
+		width: 450px;
+	}
+
+	.requirement-modal label {
+		display: block;
+		margin-top: 10px;
+		padding-left: 10px; /* Adds space between the label and the window border */
+	}
+
+	.requirement-modal input,
+	.requirement-modal textarea {
+		width: calc(100% - 20px); /* Adjust width to account for padding */
+		padding: 8px;
+		margin-top: 5px;
+		margin-left: 10px; /* Align inputs with labels */
+	}
+
+	.close-button {
+		display: block;
+		margin: 20px auto 0 auto; /* Center the button horizontally and add margin at the top */
+		padding: 10px 20px;
+		background-color: #f0f0f0;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.close-button:hover {
+		background-color: #e0e0e0; /* Slightly darker background on hover */
 	}
 </style>
