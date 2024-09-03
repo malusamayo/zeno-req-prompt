@@ -12,7 +12,9 @@
 		showSliceFinder,
 		showNewTag,
 		status,
+		showNewRequirement,
 	} from "./stores";
+	import NewRequirementPopup from "./metadata/popups/NewRequirementPopup.svelte";
 </script>
 
 {#if $ready && $status.completeColumns.length > 0}
@@ -28,6 +30,9 @@
 	{/if}
 	{#if $showNewTag}
 		<NewTagPopup />
+	{/if}
+	{#if $showNewRequirement}
+		<NewRequirementPopup />
 	{/if}
 	<div class="container">
 		<MetadataPanel />

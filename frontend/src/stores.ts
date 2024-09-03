@@ -18,6 +18,7 @@ import type {
 	ZenoColumn,
 	ZenoSettings,
 	Prompt,
+	Requirement,
 } from "./zenoservice";
 interface WSResponse {
 	status: string;
@@ -155,8 +156,10 @@ export const report: Writable<number> = writable(undefined);
 export const showNewFolder: Writable<boolean> = writable(false);
 export const showNewSlice: Writable<boolean> = writable(false);
 export const showNewTag: Writable<boolean> = writable(false);
+export const showNewRequirement: Writable<boolean> = writable(false);
 export const sliceToEdit: Writable<Slice> = writable(null);
 export const folderToEdit: Writable<string> = writable(null);
+export const requirementToEdit: Writable<Requirement> = writable(null);
 export const showSliceFinder: Writable<boolean> = writable(false);
 
 export const metricRange: Writable<[number, number]> = writable([

@@ -3,13 +3,29 @@
 	import Paper, { Content } from "@smui/paper";
 	import { clickOutside } from "../../util/clickOutside";
 	import type { Requirement } from "src/zenoservice";
+	import {
+		currentPromptId,
+		prompts,
+		requirementToEdit,
+		showNewFolder,
+		showNewRequirement,
+		showNewSlice,
+		showSliceFinder,
+	} from "../../stores";
 
 	// export let requirement: Requirement;
 	export let name; // = requirement.name;
-
+	let requirement: Requirement;
 	let showOptions = false;
 	let menuX = 0;
 	let menuY = 0;
+
+	$: {
+		name;
+		requirement = $prompts
+			.get($currentPromptId)
+			.requirements.filter((r) => r.name === name)[0];
+	}
 	$: srcLink = `https://img.shields.io/badge/${name.replace("-", "--")}-8A2BE2`;
 
 	function handleSpanClick(event) {
@@ -17,6 +33,12 @@
 		menuX = spanRect.left;
 		menuY = spanRect.bottom;
 		showOptions = !showOptions;
+
+		showNewSlice.set(false);
+		showNewFolder.set(false);
+		showSliceFinder.set(false);
+		showNewRequirement.update((d) => !d);
+		requirementToEdit.set(requirement);
 	}
 </script>
 

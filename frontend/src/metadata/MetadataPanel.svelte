@@ -46,6 +46,7 @@
 		promptUpdating,
 		prompts,
 		currentPromptId,
+		showNewRequirement,
 	} from "../stores";
 	import { columnHash, updateModelDependentSlices } from "../util/util";
 	import { ZenoColumnType, type ZenoColumn } from "../zenoservice";
@@ -334,6 +335,7 @@
 					on:click={() => {
 						folderToEdit.set(undefined);
 						showNewSlice.set(false);
+						showNewRequirement.set(false);
 						showNewFolder.update((b) => !b);
 						showSliceFinder.set(false);
 					}}>
