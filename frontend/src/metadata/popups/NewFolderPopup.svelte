@@ -101,7 +101,7 @@
 <style>
 	#paper-container {
 		position: fixed;
-		left: 440px;
+		left: 580px;
 		top: 70px;
 		z-index: 20;
 	}

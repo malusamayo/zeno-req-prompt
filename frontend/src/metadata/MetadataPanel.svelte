@@ -552,9 +552,9 @@
 	}
 	.side-container {
 		height: calc(100vh - 65px);
-		width: 360px;
-		min-width: 360px;
-		max-width: 360px;
+		width: 500px;
+		min-width: 500px;
+		max-width: 500px;
 		padding-top: 10px;
 		padding-bottom: 50px;
 		padding-left: 15px;
