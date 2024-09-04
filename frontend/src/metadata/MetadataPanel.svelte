@@ -60,7 +60,7 @@
 	import MetadataHeader from "./MetadataHeader.svelte";
 	import SliceCellResult from "./cells/SliceCellResult.svelte";
 	import PromptBox from "./PromptBox.svelte";
-	import RequirementCell from "./cells/RequirementCell.svelte";
+	import RequirementPanel from "./RequirementPanel.svelte";
 
 	let metadataHistograms: InternMap<ZenoColumn, HistogramEntry[]> =
 		new InternMap([], columnHash);
@@ -270,56 +270,7 @@
 <div class="side-container">
 	<MetadataHeader />
 
-	<div id="slice-header" class="inline">
-		<div class="inline">
-			<h4>Requirements</h4>
-			{#if $promptUpdating}
-				<CircularProgress
-					style="height: 15px; width: 15px; margin-left: 10px;"
-					indeterminate />
-			{/if}
-		</div>
-
-		<div class="inline">
-			<div
-				use:tooltip={{
-					content: "Compile requirements to prompt.",
-					position: "left",
-					theme: "zeno-tooltip",
-				}}>
-				<IconButton on:click={() => {}}>
-					<Icon component={Svg} viewBox="0 0 24 24">
-						{#if $selectionPredicates.predicates.length > 0}
-							<path fill="#6a1a9a" d={mdiCogs} />
-						{:else}
-							<path fill="var(--G1)" d={mdiCogs} />
-						{/if}
-					</Icon>
-				</IconButton>
-			</div>
-		</div>
-	</div>
-
-	{#each $prompts.get($currentPromptId).requirements as req}
-		<RequirementCell requirement={req} compare={$tab === "comparison"} />
-	{/each}
-
-	<div class="inline">
-		<input placeholder="Write a new requirement here." />
-		<div>
-			<IconButton
-				on:click={() => {
-					sliceToEdit.set(undefined);
-					showNewSlice.update((d) => !d);
-					showNewFolder.set(false);
-					showSliceFinder.set(false);
-				}}>
-				<Icon component={Svg} viewBox="0 0 24 24">
-					<path fill="var(--G1)" d={mdiMagicStaff} />
-				</Icon>
-			</IconButton>
-		</div>
-	</div>
+	<RequirementPanel />
 
 	<PromptBox />
 
@@ -630,19 +581,5 @@
 		height: 24px;
 		cursor: help;
 		fill: var(--G2);
-	}
-	input {
-		position: relative;
-		overflow: visible;
-		border: 0.5px solid var(--G4);
-		border-radius: 4px;
-		margin-top: 5px;
-		display: flex;
-		padding-left: 10px;
-		padding-right: 10px;
-		min-height: 36px;
-		width: 85%;
-		font-size: small;
-		font-weight: lighter;
 	}
 </style>

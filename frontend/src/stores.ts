@@ -91,7 +91,18 @@ export const tags: Writable<Map<string, Tag>> = writable(new Map());
 export const reports: Writable<Report[]> = reportWritable();
 export const prompts: Writable<Map<string, Prompt>> = writable(new Map());
 export const currentPromptId: Writable<string> = writable("");
+export const requirements: Writable<Array<Requirement>> = writable([]);
 export const promptUpdating: Writable<boolean> = writable(false);
+
+currentPromptId.subscribe(($currentPromptId) => {
+	if (get(prompts).has($currentPromptId)) {
+		requirements.set(
+			JSON.parse(
+				JSON.stringify(get(prompts).get($currentPromptId).requirements)
+			)
+		);
+	}
+});
 
 // The tag ids selected by the user.
 export const tagIds: Writable<FilterIds> = writable({ ids: [] });
