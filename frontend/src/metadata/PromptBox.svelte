@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mdiUpdate } from "@mdi/js";
+	import { mdiCogs, mdiUpdate } from "@mdi/js";
 	import IconButton, { Icon } from "@smui/icon-button";
 	import { Svg } from "@smui/common";
 	import { tooltip } from "@svelte-plugins/tooltips";
@@ -66,18 +66,37 @@
 		});
 	}
 
+	function runPrompt() {
+		promptUpdating.set(true);
+		ZenoService.runPrompt([$currentPromptId]).then(() => {
+			ZenoService.getCompleteColumns().then((cols) => {
+				status.update((s) => {
+					s.completeColumns = cols;
+					return s;
+				});
+				promptUpdating.set(false);
+			});
+		});
+	}
+
 	function updateContent() {
 		if (contentEditableDiv) {
 			contentEditableDiv.innerHTML = "";
 		}
 		let parsedPrompt = parser.parseFromString(prompt, "text/xml");
 
-		let content = Array.from(parsedPrompt.children[0].children)
-			.map((x) => {
+		let content = Array.from(parsedPrompt.children[0].childNodes)
+			.map((node: HTMLElement) => {
 				let arr = [];
-				if (x.hasAttribute("name"))
-					arr.push({ type: "tag", value: x.getAttribute("name") });
-				arr.push({ type: "text", value: x.textContent });
+				if (node.nodeType === Node.ELEMENT_NODE) {
+					if (node.hasAttribute("name")) {
+						arr.push({ type: "tag", value: node.getAttribute("name") });
+					}
+
+					arr.push({ type: "text", value: node.textContent });
+				} else if (node.nodeType === Node.TEXT_NODE) {
+					arr.push({ type: "text", value: node.textContent });
+				}
 				return arr;
 			})
 			.reduce((acc, val) => acc.concat(val), []);
@@ -156,16 +175,32 @@
 			<IconButton
 				on:click={() => {
 					if (allowUpdates) {
-						updatePrompt();
+						// updatePrompt();
 					}
 				}}
 				style={allowUpdates ? "cursor:pointer" : "cursor:default"}>
 				<Icon component={Svg} viewBox="0 0 24 24">
 					{#if allowUpdates}
-						<path fill="var(--G1)" d={mdiUpdate} />
+						<path fill="var(--G1)" d={mdiCogs} />
 					{:else}
-						<path fill="var(--G4)" d={mdiUpdate} />
+						<path fill="var(--G4)" d={mdiCogs} />
 					{/if}
+				</Icon>
+			</IconButton>
+		</div>
+		<div
+			use:tooltip={{
+				content: "Run prompts",
+				position: "left",
+				theme: "zeno-tooltip",
+			}}>
+			<IconButton
+				on:click={() => {
+					runPrompt();
+				}}
+				style="cursor:pointer">
+				<Icon component={Svg} viewBox="0 0 24 24">
+					<path fill="var(--G1)" d={mdiUpdate} />
 				</Icon>
 			</IconButton>
 		</div>
