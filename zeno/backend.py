@@ -610,11 +610,13 @@ class ZenoBackend(object):
         req.version = new_version
         self.prompts[new_version] = req
         self.current_prompt_id = new_version
-        self.__inference([(model, new_version) for model in self.model_names])
-        self.extract_requirements(new_version)
+        self.compile_prompt(new_version)
         with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
             pickle.dump(self.prompts, f)
         return self.prompts[new_version]
+
+    def run_prompt(self, prompt_version):
+        self.__inference([(model, prompt_version) for model in self.model_names])
     
     def find_best_match(self, prompt, snippet):
         normalized_snippet = " ".join(snippet.split())
@@ -746,6 +748,22 @@ class ZenoBackend(object):
         pattern = re.compile(r'(<req name=".*?">.*?</req>)|([^<]+)')
         self.prompts[prompt_id].text = pattern.sub(self.wrap_non_req_text, prompt)
         self.prompts[prompt_id].text = f"<prompt>{self.prompts[prompt_id].text}</prompt>"
+
+
+    def compile_prompt(self, prompt_id):
+        ### [TODO] Use LLM to compile requirements to prompt
+        ### Input: self.prompts[prompt_id].requirements
+        ### Output: self.prompts[prompt_id].text with xml tags
+
+        self.prompts[prompt_id].text = "<prompt>This is an example prompt.</prompt>"
+
+
+    def evaluate_requirement(self, prompt_id, requirement_id):
+        ### [TODO] Use LLM to evaluate prompt outputs based on requirements
+        requirement = self.prompts[prompt_id].requirements[requirement_id]
+
+        ### construct a proper evaluator
+        # requirement.evaluation_method
 
 
     def create_new_tag(self, req: Tag):

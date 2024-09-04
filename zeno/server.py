@@ -126,6 +126,10 @@ def get_server(zeno: ZenoBackend):
         prompt = zeno.create_new_prompt(req)
         return [prompt]
 
+    @api_app.post("/run-prompt", tags=["zeno"])
+    def run_prompt(req: List[str]):
+        zeno.run_prompt(req[0])
+
     @api_app.get("/requirements", response_model=List[Requirement], tags=["zeno"])
     def get_requirements():
         return zeno.prompts[zeno.current_prompt_id].requirements
