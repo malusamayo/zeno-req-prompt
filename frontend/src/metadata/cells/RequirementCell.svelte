@@ -71,7 +71,12 @@
 		// deleteSlice(slice.sliceName);
 	}
 
-	function setSelected(e) {
+	function setSelected() {
+		showNewSlice.set(false);
+		showNewFolder.set(false);
+		showSliceFinder.set(false);
+		showNewRequirement.update((d) => !d);
+		requirementToEdit.set(requirement);
 		if (compare && compareButton) {
 			return;
 		}
@@ -84,7 +89,7 @@
 	{selected ? 'selected' : ''} 
 	{compare ? 'compare-slice-cell' : ''}
 	{compare && compareButton ? '' : 'pointer'}"
-	on:click={(e) => setSelected(e)}
+	on:click={() => setSelected()}
 	draggable="true"
 	on:mouseover={() => (hovering = true)}
 	on:focus={() => (hovering = true)}
@@ -94,7 +99,7 @@
 		ev.dataTransfer.setData("text/plain", transferData);
 		ev.dataTransfer.dropEffect = "copy";
 	}}
-	on:keydown={() => ({})}
+	on:keydown={() => setSelected()}
 	on:dragend={(ev) => {
 		// If dragged out of a folder, remove from the folder it was in.
 		if (ev.dataTransfer.dropEffect === "none") {
@@ -145,28 +150,7 @@
 					{requirement.name}
 				</div> -->
 
-				<div
-					class="group"
-					style:color="var(--G1)"
-					on:click={() => {
-						showNewSlice.set(false);
-						showNewFolder.set(false);
-						showSliceFinder.set(false);
-						showNewRequirement.update((d) => !d);
-						requirementToEdit.set(requirement);
-					}}
-					tabindex="0"
-					role="button"
-					on:keydown={(e) => {
-						if (e.key === "Enter" || e.key === " ") {
-							e.preventDefault(); // Prevent default spacebar scrolling
-							showNewSlice.set(false);
-							showNewFolder.set(false);
-							showSliceFinder.set(false);
-							showNewRequirement.update((d) => !d);
-							requirementToEdit.set(requirement);
-						}
-					}}>
+				<div class="group" style:color="var(--G1)" tabindex="0" role="button">
 					{requirement.name}
 				</div>
 			</div>
