@@ -52,7 +52,7 @@
 {#if res}
 	<!-- {#await result then res} -->
 	<div
-		class={compare ? "compare " + compareButtonstyle : "flex-row"}
+		class={"compare " + compareButtonstyle}
 		on:keydown={() => ({})}
 		on:click={selectFilter}>
 		<span>

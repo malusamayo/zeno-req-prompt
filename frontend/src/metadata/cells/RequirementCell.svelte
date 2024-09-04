@@ -25,6 +25,7 @@
 	import { clickOutside } from "../../util/clickOutside";
 	import { ZenoService, type Slice, type Requirement } from "../../zenoservice";
 	import RequirementCellResult from "./RequirementCellResult.svelte";
+	import RequirementChip from "../chips/RequirementChip.svelte";
 
 	export let requirement: Requirement;
 	export let compare;
@@ -131,27 +132,12 @@
 	<div class="group" style:width="100%">
 		<div class="group" style:width="100%">
 			<div class="inline">
-				<!-- <div
-					class="group"
-					style:color="var(--G1)"
-					on:mouseover={() => (showTooltip = false)}
-					on:mouseout={() => (showTooltip = false)}
-					on:focus={() => (showTooltip = false)}
-					on:blur={() => (showTooltip = false)}
-					on:click={() => (showTooltip = true)}
-					tabindex="0"
-					role="button"
-					on:keydown={(e) => {
-						if (e.key === 'Enter' || e.key === ' ') {
-							showTooltip = true;
-							e.preventDefault(); // Prevent default spacebar scrolling
-						}
-					}}>
-					{requirement.name}
-				</div> -->
+				<div class="hori-group" style:color="var(--G1)">
+					<RequirementChip name={requirement.name} />
 
-				<div class="group" style:color="var(--G1)" tabindex="0" role="button">
-					{requirement.name}
+					<div class="description">
+						{requirement.description}
+					</div>
 				</div>
 			</div>
 			<div
@@ -279,6 +265,12 @@
 		justify-content: space-between;
 		align-items: center;
 	}
+	.hori-group {
+		flex-direction: row;
+		align-items: center;
+		margin-top: 5px;
+		margin-bottom: 5px;
+	}
 	.pointer {
 		cursor: pointer;
 	}
@@ -314,5 +306,9 @@
 	}
 	.option:hover {
 		background: var(--G5);
+	}
+	.description {
+		font-size: small;
+		font-weight: lighter;
 	}
 </style>

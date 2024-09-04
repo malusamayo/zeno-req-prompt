@@ -4,9 +4,11 @@
 	import type { Requirement } from "../../zenoservice";
 	import { clickOutside } from "../../util/clickOutside";
 	import { showNewRequirement, requirementToEdit } from "../../stores";
+	import Textfield from "@smui/textfield";
 
 	let requirement: Requirement;
 	let paperHeight;
+	let nameInput;
 
 	$: if ($showNewRequirement) {
 		updateRequirement();
@@ -37,16 +39,18 @@
 			? 'overflow-y: scroll'
 			: 'overflow-y: show'}">
 		<Content>
-			<label>Name:</label>
-			<input type="text" bind:value={requirement.name} />
-			<label>Prompt Snippet:</label>
-			<textarea bind:value={requirement.promptSnippet} />
-			<label>Description:</label>
+			<Textfield
+				label="Requirement Name"
+				bind:value={requirement.name}
+				bind:this={nameInput} />
+			<label>Description</label>
 			<textarea bind:value={requirement.description} />
-			<label>Evaluation Method:</label>
+			<label>Evaluation Method</label>
 			<textarea
 				bind:value={requirement.evaluationMethod}
 				style="min-height: 120px;" />
+			<label>Prompt Snippet</label>
+			<textarea bind:value={requirement.promptSnippet} />
 			<div id="submit">
 				<!-- <Button
 					variant="outlined"
@@ -91,30 +95,12 @@
 	label {
 		display: block;
 		margin-top: 10px;
-		padding-left: 10px; /* Adds space between the label and the window border */
 	}
 
 	input,
 	textarea {
 		width: calc(100% - 20px); /* Adjust width to account for padding */
 		padding: 8px;
-		margin-top: 5px;
-		margin-left: 10px; /* Align inputs with labels */
 		resize: none;
-	}
-
-	.close-button {
-		display: block;
-		margin: 20px auto 0 auto; /* Center the button horizontally and add margin at the top */
-		padding: 10px 20px;
-		background-color: #f0f0f0;
-		border: none;
-		border-radius: 4px;
-		cursor: pointer;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-
-	.close-button:hover {
-		background-color: #e0e0e0; /* Slightly darker background on hover */
 	}
 </style>
