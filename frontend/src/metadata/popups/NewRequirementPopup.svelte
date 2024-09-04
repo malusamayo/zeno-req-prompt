@@ -3,10 +3,15 @@
 	import Paper, { Content } from "@smui/paper";
 	import type { Requirement } from "../../zenoservice";
 	import { clickOutside } from "../../util/clickOutside";
-	import { showNewRequirement, requirementToEdit } from "../../stores";
+	import {
+		showNewRequirement,
+		requirementToEdit,
+		requirements,
+	} from "../../stores";
 	import Textfield from "@smui/textfield";
 
 	let requirement: Requirement;
+	let isNewRequirement;
 	let paperHeight;
 	let nameInput;
 
@@ -18,9 +23,30 @@
 		if ($requirementToEdit) {
 			requirement = JSON.parse(JSON.stringify($requirementToEdit));
 		}
+		isNewRequirement = !$requirements.map((r) => r.id).includes(requirement.id);
 	}
 
 	// TODO: handle updates / submit
+
+	function createRequirement() {
+		requirements.update(($reqs) => {
+			if (isNewRequirement) {
+				$reqs = [...$reqs, requirement];
+			} else {
+				$reqs = $reqs.map((r) => {
+					if (r.id === requirement.id) {
+						return requirement;
+					} else {
+						return r;
+					}
+				});
+			}
+			return $reqs;
+		});
+
+		showNewRequirement.set(false);
+		requirementToEdit.set(null);
+	}
 </script>
 
 <div
@@ -52,16 +78,9 @@
 			<label>Prompt Snippet</label>
 			<textarea bind:value={requirement.promptSnippet} />
 			<div id="submit">
-				<!-- <Button
-					variant="outlined"
-					on:click={createSlice}
-					disabled={(!$sliceToEdit && $slices.has(sliceName)) ||
-						($sliceToEdit &&
-							originalName !== sliceName &&
-							$slices.has(sliceName)) ||
-						!isValidPredicates}>
-					{$sliceToEdit ? "Update Slice" : "Create Slice"}
-				</Button> -->
+				<Button variant="outlined" on:click={createRequirement}>
+					{isNewRequirement ? "Create" : "Update"}
+				</Button>
 				<Button
 					style="margin-right: 10px"
 					variant="outlined"
