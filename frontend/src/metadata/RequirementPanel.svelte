@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mdiCogs, mdiMagicStaff } from "@mdi/js";
+	import { mdiCogs, mdiMagicStaff, mdiPlus } from "@mdi/js";
 	import Button from "@smui/button";
 	import CircularProgress from "@smui/circular-progress";
 	import { Svg } from "@smui/common";
@@ -100,7 +100,7 @@
 				showSliceFinder.set(false);
 			}}>
 			<Icon component={Svg} viewBox="0 0 24 24">
-				<path fill="var(--G1)" d={mdiMagicStaff} />
+				<path fill="var(--G1)" d={mdiPlus} />
 			</Icon>
 		</IconButton>
 	</div>

@@ -1,7 +1,9 @@
 <script lang="ts">
 	import Button from "@smui/button";
+	import { Svg } from "@smui/common";
+	import IconButton, { Icon } from "@smui/icon-button";
 	import Paper, { Content } from "@smui/paper";
-	import type { Requirement } from "../../zenoservice";
+	import { ZenoService, type Requirement } from "../../zenoservice";
 	import { clickOutside } from "../../util/clickOutside";
 	import {
 		showNewRequirement,
@@ -9,6 +11,7 @@
 		requirements,
 	} from "../../stores";
 	import Textfield from "@smui/textfield";
+	import { mdiMagicStaff } from "@mdi/js";
 
 	let requirement: Requirement;
 	let isNewRequirement;
@@ -47,6 +50,14 @@
 		showNewRequirement.set(false);
 		requirementToEdit.set(null);
 	}
+
+	function optimizeRequirement() {
+		ZenoService.optimizeRequirement([requirement]).then(
+			(optimizedRequirement) => {
+				requirement = optimizedRequirement;
+			}
+		);
+	}
 </script>
 
 <div
@@ -65,10 +76,18 @@
 			? 'overflow-y: scroll'
 			: 'overflow-y: show'}">
 		<Content>
-			<Textfield
-				label="Requirement Name"
-				bind:value={requirement.name}
-				bind:this={nameInput} />
+			<div class="inline">
+				<Textfield
+					label="Requirement Name"
+					bind:value={requirement.name}
+					bind:this={nameInput} />
+
+				<IconButton on:click={optimizeRequirement}>
+					<Icon component={Svg} viewBox="0 0 24 24">
+						<path fill="var(--G1)" d={mdiMagicStaff} />
+					</Icon>
+				</IconButton>
+			</div>
 			<label>Description</label>
 			<textarea bind:value={requirement.description} />
 			<label>Evaluation Method</label>
@@ -121,5 +140,11 @@
 		width: calc(100% - 20px); /* Adjust width to account for padding */
 		padding: 8px;
 		resize: none;
+	}
+
+	.inline {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 	}
 </style>

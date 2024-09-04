@@ -646,9 +646,13 @@ class ZenoBackend(object):
         return match.group(1)  # This is a <req> tag, return it unchanged
 
     def extract_requirements(self, prompt_id):
-        ### [TODO] Use LLM to extract requirements for prompt_id
-        ### Assign the results to self.prompts[prompt_id].requirements
-        ### Update self.prompts[prompt_id].text with xml tags
+        '''Use LLM to extract requirements for prompt_id
+
+        Input: self.prompts[prompt_id].text
+        Output: 
+        - self.prompts[prompt_id].requirements, extracted from the prompt
+        - self.prompts[prompt_id].text, updated with xml tags on requirements
+        '''
         prompt = self.prompts[prompt_id].text
         # # Mock-up for now
         
@@ -749,6 +753,11 @@ class ZenoBackend(object):
         self.prompts[prompt_id].text = pattern.sub(self.wrap_non_req_text, prompt)
         self.prompts[prompt_id].text = f"<prompt>{self.prompts[prompt_id].text}</prompt>"
 
+    def optimize_requirement(self, requirement: Requirement):
+        ### [TODO] Use LLM to optimize local requirements
+        ### Input: requirement, with description field filled in
+        ### Output: requirement, with description optimized (if needed) and other fields filled in
+        return requirement
 
     def compile_prompt(self, prompt_id):
         ### [TODO] Use LLM to compile requirements to prompt

@@ -22,7 +22,7 @@ import type { TagMetricKey } from "../models/TagMetricKey";
 import type { ZenoColumn } from "../models/ZenoColumn";
 import type { ZenoSettings } from "../models/ZenoSettings";
 import type { ZenoVariables } from "../models/ZenoVariables";
-import type { Prompt } from "..";
+import type { Prompt, Requirement } from "..";
 
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
@@ -131,7 +131,9 @@ export class ZenoService {
 	 * @returns any Successful Response
 	 * @throws ApiError
 	 */
-	public static createNewPrompt(requestBody: Prompt): CancelablePromise<any> {
+	public static createNewPrompt(
+		requestBody: Prompt
+	): CancelablePromise<Array<Prompt>> {
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/prompt",
@@ -153,6 +155,26 @@ export class ZenoService {
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/run-prompt",
+			body: requestBody,
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Optimize one requirement
+	 * @param requestBody
+	 * @returns any Successful Response
+	 * @throws ApiError
+	 */
+	public static optimizeRequirement(
+		requestBody: Array<Requirement>
+	): CancelablePromise<Requirement> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/optimize-requirement",
 			body: requestBody,
 			mediaType: "application/json",
 			errors: {

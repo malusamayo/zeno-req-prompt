@@ -138,6 +138,11 @@ def get_server(zeno: ZenoBackend):
     def extract_requirements():
         zeno.extract_requirements()
 
+    @api_app.post("/optimize-requirement", response_model=Requirement, tags=["zeno"])
+    def optimize_requirement(req: List[Requirement]):
+        req = zeno.optimize_requirement(req[0])
+        return req
+
     @api_app.post("/folders", tags=["zeno"])
     def set_folders(folders: List[str]):
         zeno.set_folders(folders)
