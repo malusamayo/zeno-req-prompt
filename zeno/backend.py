@@ -13,6 +13,8 @@ from inspect import getsource
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
+from pydantic import BaseModel
+from openai import OpenAI
 
 import pandas as pd
 from pandas import DataFrame
@@ -755,6 +757,77 @@ class ZenoBackend(object):
         ### [TODO] Use LLM to optimize local requirements
         ### Input: requirement, with description field filled in
         ### Output: requirement, with description optimized (if needed) and other fields filled in
+        api_prompt = f"""
+        You are given a requirement with the following fields: 'name', 'description', and 'evaluation_method'. 
+        
+        1. If any field has an empty string ("" or ''), you MUST generate an appropriate value for that field based on the content of the 'description' or available context.
+        2. For fields that already have a value (i.e., they are not an empty string), DO NOT MODIFY them. Keep their content exactly as it is.
+        3. For the 'evaluation_method', if it is an empty string, generate a clear, step-by-step method based on the 'description' that explains how to evaluate whether the requirement is met. The evaluation method should include specific, measurable steps.
+
+        ### Example of a completed requirement:
+        - Name: "Limit answer length"
+        - Description: "All answers must be concise, not exceeding 50 words."
+        - Evaluation method: 
+            1. Review the answers and ensure none exceed 50 words.
+            2. Flag any answers exceeding the word limit for revision.
+            3. Verify that all flagged answers are revised to meet the word count requirement.
+
+        Your task is to fill in **any** missing fields with appropriate content. If all fields have content, return them as is. If any field is an empty string (""), generate its value based on the requirement's description or context.
+
+        The current requirement is: {requirement}
+
+        Return the following fields:
+        - name
+        - description
+        - evaluation_method
+        """
+
+        payload = {
+            'model': 'gpt-4-turbo',
+            'messages': [
+                {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
+                {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
+            ],
+            'temperature': 0.7,
+            'max_tokens': 2048,
+            'top_p': 1.0,
+            'frequency_penalty': 0.0,
+            'presence_penalty': 0.0,
+            'response_format': {"type": "json_object"}  
+        }
+
+        client = OpenAIMultiClient()
+
+        client.request(
+            data=payload,
+            endpoint="chat.completions"
+        )
+
+        for response in client:
+            if response.failed:
+                print("Error generating response")
+                return
+
+            output_text = response.response.choices[0].message.content
+
+            try:
+            # Parse the JSON response
+                optimize_req = json.loads(output_text)
+            except json.JSONDecodeError:
+                print("Failed to parse the response as JSON.")
+                return
+            
+            name = optimize_req.get('name', "")
+            description = optimize_req.get('description', "")
+            evaluation_method = optimize_req.get('evaluation_method', "")
+            if isinstance(evaluation_method, list):
+                evaluation_method = "\n".join(evaluation_method)  # Join list elements into a single string
+
+            requirement.name = name
+            requirement.description = description
+            requirement.evaluation_method = evaluation_method
+            break
+        
         return requirement
 
     def compile_prompt(self, prompt_id):
