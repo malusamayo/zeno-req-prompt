@@ -19,11 +19,13 @@
 		showNewRequirement,
 		requirementToEdit,
 		requirements,
+		promptToUpdate,
 	} from "../stores";
 	import { ZenoService } from "../zenoservice";
 	import RequirementCell from "./cells/RequirementCell.svelte";
 
 	let newRequirementInput = "";
+	let requirementAdding = false;
 
 	function get_max_requirement_id() {
 		return Math.max(
@@ -32,8 +34,33 @@
 		);
 	}
 
+	function add_requirement() {
+		let requirement = {
+			id: (get_max_requirement_id() + 1).toString(),
+			name: "",
+			description: newRequirementInput,
+			promptSnippet: "",
+			evaluationMethod: "",
+		};
+
+		requirementAdding = true;
+		ZenoService.optimizeRequirement([requirement]).then(
+			(optimizedRequirement) => {
+				requirement = optimizedRequirement;
+				requirements.update(($reqs) => {
+					$reqs[requirement.id] = requirement;
+					return $reqs;
+				});
+				promptToUpdate.set(true);
+				newRequirementInput = "";
+				requirementAdding = false;
+			}
+		);
+	}
+
 	function compile_to_prompt() {
 		promptUpdating.set(true);
+		console.log($requirements);
 		ZenoService.createNewPrompt({
 			text: "",
 			version: "",
@@ -46,19 +73,27 @@
 			promptUpdating.set(false);
 		});
 	}
+
+	$: {
+		$promptToUpdate;
+		if ($promptToUpdate) {
+			compile_to_prompt();
+			promptToUpdate.set(false);
+		}
+	}
 </script>
 
 <div id="requirement-header" class="inline">
 	<div class="inline">
 		<h4>Requirements</h4>
-		{#if $promptUpdating}
+		{#if requirementAdding}
 			<CircularProgress
 				style="height: 15px; width: 15px; margin-left: 10px;"
 				indeterminate />
 		{/if}
 	</div>
 
-	<div class="inline">
+	<!-- <div class="inline">
 		<div
 			use:tooltip={{
 				content: "Compile requirements to prompt.",
@@ -75,7 +110,7 @@
 				</Icon>
 			</IconButton>
 		</div>
-	</div>
+	</div> -->
 </div>
 
 {#each Object.entries($requirements) as [id, req]}
@@ -86,26 +121,13 @@
 	<input
 		placeholder="Write a new requirement here."
 		bind:value={newRequirementInput} />
-	<div>
-		<IconButton
-			on:click={() => {
-				requirementToEdit.set({
-					id: (get_max_requirement_id() + 1).toString(),
-					name: "",
-					description: newRequirementInput,
-					promptSnippet: "",
-					evaluationMethod: "",
-				});
-				showNewRequirement.update((d) => !d);
-				showNewSlice.set(false);
-				showNewFolder.set(false);
-				showSliceFinder.set(false);
-			}}>
+	<span>
+		<IconButton on:click={add_requirement}>
 			<Icon component={Svg} viewBox="0 0 24 24">
 				<path fill="var(--G1)" d={mdiPlus} />
 			</Icon>
 		</IconButton>
-	</div>
+	</span>
 </div>
 
 <style>

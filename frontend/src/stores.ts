@@ -95,6 +95,7 @@ export const requirements: Writable<{ [key: string]: Requirement }> = writable(
 	{}
 );
 export const promptUpdating: Writable<boolean> = writable(false);
+export const promptToUpdate: Writable<boolean> = writable(false);
 
 currentPromptId.subscribe(($currentPromptId) => {
 	if (get(prompts).has($currentPromptId)) {

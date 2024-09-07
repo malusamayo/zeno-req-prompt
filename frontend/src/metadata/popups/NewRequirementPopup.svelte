@@ -9,6 +9,7 @@
 		showNewRequirement,
 		requirementToEdit,
 		requirements,
+		promptToUpdate,
 	} from "../../stores";
 	import Textfield from "@smui/textfield";
 	import { mdiMagicStaff } from "@mdi/js";
@@ -39,6 +40,7 @@
 
 		showNewRequirement.set(false);
 		requirementToEdit.set(null);
+		promptToUpdate.set(true);
 	}
 
 	function optimizeRequirement() {
