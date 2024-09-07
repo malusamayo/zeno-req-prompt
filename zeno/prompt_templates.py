@@ -2,7 +2,8 @@ REQUIREMENT_OPTIMIZER_PROMPT = """You are given a requirement with the following
 
 1. If any field has an empty string ("" or ''), you MUST generate an appropriate value for that field based on the content of the 'description' or available context.
 2. For fields that already have a value (i.e., they are not an empty string), DO NOT MODIFY them. Keep their content exactly as it is.
-3. For the 'evaluation_method', if it is an empty string, generate a clear, step-by-step method based on the 'description' that explains how to evaluate whether the requirement is met. The evaluation method should include specific, measurable steps.
+3. For the 'name' field, if it is an empty string, generate a name based on the 'description' that is concise and descriptive of the requirement. The name should be in lowercase and contain hyphens (-) instead of spaces.
+4. For the 'evaluation_method', if it is an empty string, generate a clear, step-by-step method based on the 'description' that explains how to evaluate whether the requirement is met. The evaluation method should include specific, measurable steps.
 
 ### Examples:
 {{ 
@@ -37,7 +38,7 @@ PROMPT_COMPILER_PROMPT = """Given the following requirements, generate a prompt 
             [
                 {{ 
                     "requirement_id": requirement_id, 
-                    "prompt_snippet": prompt snippet
+                    "prompt_snippet": prompt_snippet
                 }}
             ] 
     }}
