@@ -696,7 +696,7 @@ class ZenoBackend(object):
         ]
 
         payload = {
-            'model': 'gpt-4',
+            'model': 'gpt-4-turbo',
             'messages': [
                 {'role': 'system', 'content': 'You are a helpful assistant.'},
                 {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
@@ -743,7 +743,7 @@ class ZenoBackend(object):
                         prompt_snippet=req.get('promptSnippet', ''),
                         evaluation_method=req.get('evaluationMethod', '')
                     )
-                    self.prompts[prompt_id].requirements.append(requirement)
+                    self.prompts[prompt_id].requirements[idx] = requirement
 
                     best_match, start_index, end_index = self.find_best_match(prompt, prompt_snippet.strip())
                     wrapped_snippet = f'<req name="{self.prompts[prompt_id].requirements[idx].name}">{best_match}</req>'
@@ -835,64 +835,42 @@ class ZenoBackend(object):
         ### Input: self.prompts[prompt_id].requirements
         ### Output: self.prompts[prompt_id].text with xml tags
         requirements = self.prompts[prompt_id].requirements
+
+        print(requirements)
         
         api_prompt = f"""
             Given the following requirements, generate a prompt that satisfies all the requirements listed. For each requirement:
             1. If the requirement's prompt_snippet field is empty, generate a prompt snippet that corresponds to the requirement within the generated prompt. Use the exact wording from the generated prompt for the Prompt Snippet. The format should be (requirement_id, prompt snippet), and include it in the output array of all generated prompt snippets for requirements without existing content in the prompt_snippet field.
             2. If the requirement has content in the prompt_snippet field, use the exact words from this field in the generated prompt.
             3. Ensure the generated prompt addresses all the requirements.
-            4. The output format should be: Prompt: [generated prompt]; Requirements_prompt_snippets: [(requirement_id, prompt snippet)]
+            4. The output format should be: 
+                {{ 
+                    "prompt": generated_prompt, 
+                    "requirements_prompt_snippets": 
+                        [
+                            {{ 
+                                "requirement_id": requirement_id, 
+                                "prompt_snippet": prompt snippet
+                            }}
+                        ] 
+                }}
             Requirements: '''{requirements}'''
-            Prompt:
-            Requirements_prompt_snippets:
         """
 
-        functions = [
-                    {
-                        "name": "generate_prompts",
-                        "description": "Generate prompts from given requirements",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "compile_output": {
-                                    "type": "object",
-                                    "properties": {
-                                        "Prompt": {"type": "string"},  # First element
-                                        "Requirements_prompt_snippets": {  # Second element (array of objects)
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "requirement_id": {"type": "integer"},
-                                                    "prompt_snippet": {"type": "string"}
-                                                },
-                                                "required": ["requirement_id", "prompt_snippet"]
-                                            }
-                                        }
-                                    },
-                                    "required": ["Prompt", "Requirements_prompt_snippets"]  # Ensure both are present
-                                }
-                            },
-                            "required": ["compile_output"]
-                        }
-                    }
-                ]
-
-
         payload = {
-            'model': 'gpt-4',
+            'model': 'gpt-4-turbo',
             'messages': [
-                {'role': 'system', 'content': 'You are a helpful assistant.'},
+                {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
                 {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
             ],
-            'functions': functions,
-            'function_call': "auto",  # Automatically use the function call
             'temperature': 0.7,
             'max_tokens': 2048,
             'top_p': 1.0,
             'frequency_penalty': 0.0,
-            'presence_penalty': 0.0
+            'presence_penalty': 0.0,
+            'response_format': {"type": "json_object"}  
         }
+
 
         client = OpenAIMultiClient()
 
@@ -902,43 +880,35 @@ class ZenoBackend(object):
         )
 
         for response in client:
-                if response.failed:
-                    print("Error generating response")
-                    return
+            if response.failed:
+                print("Error generating response")
+                return
+        
+            output_text = response.response.choices[0].message.content
+    
+            try:
+            # Parse the JSON response
+                compile_output = json.loads(output_text)
+            except json.JSONDecodeError:
+                print("Failed to parse the response as JSON.")
+                return
             
-                result = response.response
-                first_choice = result.choices[0]
-                function_call = first_choice.message.function_call
-                function_call_args = function_call.arguments
-        
-            # Convert the JSON string to a Python dictionary
-                res = json.loads(function_call_args)
-                compile_output = res.get('compile_output', None)
-                if compile_output is None:
-                    print("Error: 'compile_output' not found in response")
-                    return
-                prompt = compile_output.get('Prompt', "")
-                Requirements_prompt_snippets = compile_output.get('Requirements_prompt_snippets', [])
+            prompt = compile_output.get('prompt', "")
+            requirements_prompt_snippets = compile_output.get('requirements_prompt_snippets', [])
 
-                for req_prompt in Requirements_prompt_snippets:
-                    id = req_prompt.get("requirement_id",None)
-                    prompt_snippet = req_prompt.get("prompt_snippet",'')
-                    self.prompts[prompt_id].requirements[id].prompt_snippet = prompt_snippet
+            for req_prompt in requirements_prompt_snippets:
+                id = req_prompt.get("requirement_id",None)
+                prompt_snippet = req_prompt.get("prompt_snippet",'')
+                self.prompts[prompt_id].requirements[id].prompt_snippet = prompt_snippet
 
-                for idx in range(len(self.prompts[prompt_id].requirements)):
-                    cur_req = self.prompts[prompt_id].requirements[idx]
-                    best_match, start_index, end_index = self.find_best_match(prompt, cur_req.prompt_snippet.strip())
-                    wrapped_snippet = f'<req name="{self.prompts[prompt_id].requirements[idx].name}">{best_match}</req>'
-                    prompt = prompt[:start_index] + wrapped_snippet + prompt[end_index:]
-                break
+            for _, req in self.prompts[prompt_id].requirements.items():
+                best_match, start_index, end_index = self.find_best_match(prompt, req.prompt_snippet.strip())
+                wrapped_snippet = f'<req name="{req.name}" id="{req.id}">{best_match}</req>'
+                prompt = prompt[:start_index] + wrapped_snippet + prompt[end_index:]
+            
+            break
         
-        pattern = re.compile(r'(<req name=".*?">.*?</req>)|([^<]+)')
-        self.prompts[prompt_id].text = pattern.sub(self.wrap_non_req_text, prompt)
-        self.prompts[prompt_id].text = f"<prompt>{self.prompts[prompt_id].text}</prompt>"
-        
-        # print(self.prompts[prompt_id].requirements)
-        # print(self.prompts[prompt_id].text)
-        # self.prompts[prompt_id].text = "<prompt>This is an example prompt.</prompt>"
+        self.prompts[prompt_id].text = f"<prompt>{prompt}</prompt>"
 
     def evaluate_requirement(self, prompt_id, requirement_id):
         ### [TODO] Use LLM to evaluate prompt outputs based on requirements
