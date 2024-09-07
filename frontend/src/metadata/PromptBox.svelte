@@ -47,7 +47,7 @@
 		ZenoService.createNewPrompt({
 			text: newInnerPrompt,
 			version: "",
-			requirements: [],
+			requirements: {},
 		}).then((createdPrompts) => {
 			// ZenoService.getCurrentPromptId().then((res) => {
 			ZenoService.getCompleteColumns().then((cols) => {

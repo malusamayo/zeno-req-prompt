@@ -130,7 +130,7 @@ def get_server(zeno: ZenoBackend):
     def run_prompt(req: List[str]):
         zeno.run_prompt(req[0])
 
-    @api_app.get("/requirements", response_model=List[Requirement], tags=["zeno"])
+    @api_app.get("/requirements", response_model=Dict[str, Requirement], tags=["zeno"])
     def get_requirements():
         return zeno.prompts[zeno.current_prompt_id].requirements
     

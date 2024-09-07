@@ -21,13 +21,15 @@
 		requirements,
 	} from "../stores";
 	import { ZenoService } from "../zenoservice";
-	import type { Requirement } from "../../zenoservice";
 	import RequirementCell from "./cells/RequirementCell.svelte";
 
 	let newRequirementInput = "";
 
 	function get_max_requirement_id() {
-		return Math.max(...$requirements.map((r) => Number(r.id)));
+		return Math.max(
+			Math.max(...Object.keys($requirements).map((id) => Number(id))),
+			0
+		);
 	}
 
 	function compile_to_prompt() {
@@ -76,7 +78,7 @@
 	</div>
 </div>
 
-{#each $requirements as req}
+{#each Object.entries($requirements) as [id, req]}
 	<RequirementCell requirement={req} compare={$tab === "comparison"} />
 {/each}
 

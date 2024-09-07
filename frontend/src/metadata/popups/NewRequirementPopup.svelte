@@ -26,24 +26,14 @@
 		if ($requirementToEdit) {
 			requirement = JSON.parse(JSON.stringify($requirementToEdit));
 		}
-		isNewRequirement = !$requirements.map((r) => r.id).includes(requirement.id);
+		isNewRequirement = !Object.keys($requirements).includes(requirement.id);
 	}
 
 	// TODO: handle updates / submit
 
 	function createRequirement() {
 		requirements.update(($reqs) => {
-			if (isNewRequirement) {
-				$reqs = [...$reqs, requirement];
-			} else {
-				$reqs = $reqs.map((r) => {
-					if (r.id === requirement.id) {
-						return requirement;
-					} else {
-						return r;
-					}
-				});
-			}
+			$reqs[requirement.id] = requirement;
 			return $reqs;
 		});
 

@@ -13,5 +13,5 @@ export type Requirement = {
 export type Prompt = {
 	text: string;
 	version: string;
-	requirements: Requirement[];
+	requirements: { [id: string]: Requirement };
 };

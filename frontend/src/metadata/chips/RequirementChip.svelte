@@ -6,6 +6,7 @@
 	import {
 		currentPromptId,
 		prompts,
+		requirements,
 		requirementToEdit,
 		showNewFolder,
 		showNewRequirement,
@@ -22,9 +23,9 @@
 
 	$: {
 		name;
-		requirement = $prompts
-			.get($currentPromptId)
-			.requirements.filter((r) => r.name === name)[0];
+		requirement = Object.values($requirements).filter(
+			(r) => r.name === name
+		)[0];
 	}
 	$: srcLink = `https://img.shields.io/badge/${name.replace("-", "--")}-8A2BE2`;
 

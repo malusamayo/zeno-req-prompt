@@ -1,6 +1,6 @@
 """Internal classes for Zeno."""
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, Dict
 
 from pydantic import BaseModel
 
@@ -84,4 +84,4 @@ class Requirement(CamelModel):
 class Prompt(CamelModel):
     text: str
     version: str
-    requirements: List[Requirement]
+    requirements: Dict[str, Requirement]
