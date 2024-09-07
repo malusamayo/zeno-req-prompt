@@ -47,6 +47,7 @@ from zeno.util import (
     read_metadata,
     read_pickle,
 )
+from zeno.prompt_templates import REQUIREMENT_OPTIMIZER_PROMPT, PROMPT_COMPILER_PROMPT, REQUIREMENT_EXTRACTOR_PROMPT
 
 
 class ZenoBackend(object):
@@ -657,130 +658,75 @@ class ZenoBackend(object):
         '''
         prompt = self.prompts[prompt_id].text
         
-        api_prompt = f"""
-        Given the following prompt, extract a series of success criteria used for evaluating the model outputs from the prompt. 
-        Requirements:
-        1. List requirements one by one in the format: 
-            Name: [name];Prompt Snippet: [prompt snippet];Description: [description];Evaluation Method: [evaluation method].
-        2. Use the exact wording from the prompt for the Prompt Snippet.
-        3. Only include unique criteria mentioned in the original prompt. Merge the ones that are similar. 
-        4. Try to make the evaluation method as clear and objective as possible and give specific steps. 
-        5. Be concise.
-        Prompt: '''{prompt}'''
-        Requirements:
-        """
-
-        functions = [
-            {
-                "name": "extract_requirements",
-                "description": "Extract requirements from the prompt",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "requirements": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "name": {"type": "string"},
-                                    "promptSnippet": {"type": "string"},
-                                    "description": {"type": "string"},
-                                    "evaluationMethod": {"type": "string"}
-                                },
-                                "required": ["name", "promptSnippet", "description", "evaluationMethod"]
-                            }
-                        }
-                    }
-                }
-            }
-        ]
+        api_prompt = REQUIREMENT_EXTRACTOR_PROMPT.format(prompt=prompt)
 
         payload = {
             'model': 'gpt-4-turbo',
             'messages': [
-                {'role': 'system', 'content': 'You are a helpful assistant.'},
+                {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
                 {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
             ],
-            'functions': functions,
-            'function_call': "auto",  # Automatically use the function call
             'temperature': 0.7,
             'max_tokens': 2048,
             'top_p': 1.0,
             'frequency_penalty': 0.0,
-            'presence_penalty': 0.0
+            'presence_penalty': 0.0,
+            'response_format': {"type": "json_object"}  
         }
 
-        if prompt != '<prompt></prompt>':
-            client = OpenAIMultiClient()
+        client = OpenAIMultiClient()
 
-            client.request(
-                data=payload,
-                endpoint="chat.completions"
-            )
-        
-            for response in client:
-                if response.failed:
-                    print("Error generating response")
-                    return
+        client.request(
+            data=payload,
+            endpoint="chat.completions"
+        )
+    
+        for response in client:
+            if response.failed:
+                print("Error generating response")
+                return
+
+            output_text = response.response.choices[0].message.content
+
+            try:
+                # Parse the JSON response
+                extracted_data = json.loads(output_text)
+            except json.JSONDecodeError:
+                print("Failed to parse the response as JSON.")
+                return
             
-                result = response.response
-                first_choice = result.choices[0]
-                function_call = first_choice.message.function_call
-                function_call_args = function_call.arguments
-        
-            # Convert the JSON string to a Python dictionary
-                extracted_data = json.loads(function_call_args)
-                extracted_requirements = extracted_data.get('requirements', [])
-
+            extracted_requirements = extracted_data.get('requirements', [])
 
             # Loop through each extracted requirement and add it to the list
-                for idx, req in enumerate(extracted_requirements):
-                    prompt_snippet=req.get('promptSnippet', '')
-                    requirement = Requirement(
-                        id=idx,  # Generate a unique ID
-                        name=req.get('name', 'Unnamed Requirement'),
-                        description=req.get('description', ''),
-                        prompt_snippet=req.get('promptSnippet', ''),
-                        evaluation_method=req.get('evaluationMethod', '')
-                    )
-                    self.prompts[prompt_id].requirements[idx] = requirement
+            for idx, req in enumerate(extracted_requirements):
+                prompt_snippet=req.get('prompt_snippet', '')
+                requirement = Requirement(
+                    id=idx,  # Generate a unique ID
+                    name=req.get('name', 'Unnamed Requirement'),
+                    description=req.get('description', ''),
+                    prompt_snippet=req.get('prompt_snippet', ''),
+                    evaluation_method=req.get('evaluation_method', '')
+                )
+                self.prompts[prompt_id].requirements[idx] = requirement
 
-                    best_match, start_index, end_index = self.find_best_match(prompt, prompt_snippet.strip())
-                    wrapped_snippet = f'<req name="{self.prompts[prompt_id].requirements[idx].name}">{best_match}</req>'
-                    prompt = prompt[:start_index] + wrapped_snippet + prompt[end_index:]
-                break
-        pattern = re.compile(r'(<req name=".*?">.*?</req>)|([^<]+)')
-        self.prompts[prompt_id].text = pattern.sub(self.wrap_non_req_text, prompt)
-        self.prompts[prompt_id].text = f"<prompt>{self.prompts[prompt_id].text}</prompt>"
+                best_match, start_index, end_index = self.find_best_match(prompt, prompt_snippet.strip())
+                wrapped_snippet = f'<req name="{self.prompts[prompt_id].requirements[idx].name}">{best_match}</req>'
+                prompt = prompt[:start_index] + wrapped_snippet + prompt[end_index:]
+            break
+        self.prompts[prompt_id].text = f"<prompt>{prompt}</prompt>"
 
     def optimize_requirement(self, requirement: Requirement):
-        ### [TODO] Use LLM to optimize local requirements
-        ### Input: requirement, with description field filled in
-        ### Output: requirement, with description optimized (if needed) and other fields filled in
-        api_prompt = f"""
-        You are given a requirement with the following fields: 'name', 'description', and 'evaluation_method'. 
-        
-        1. If any field has an empty string ("" or ''), you MUST generate an appropriate value for that field based on the content of the 'description' or available context.
-        2. For fields that already have a value (i.e., they are not an empty string), DO NOT MODIFY them. Keep their content exactly as it is.
-        3. For the 'evaluation_method', if it is an empty string, generate a clear, step-by-step method based on the 'description' that explains how to evaluate whether the requirement is met. The evaluation method should include specific, measurable steps.
+        '''Use LLM to optimize local requirements
 
-        ### Example of a completed requirement:
-        - Name: "Limit answer length"
-        - Description: "All answers must be concise, not exceeding 50 words."
-        - Evaluation method: 
-            1. Review the answers and ensure none exceed 50 words.
-            2. Flag any answers exceeding the word limit for revision.
-            3. Verify that all flagged answers are revised to meet the word count requirement.
+        Input: requirement, with description field filled in
+        Output: requirement, with description optimized (if needed) and other fields filled in
+        '''
 
-        Your task is to fill in **any** missing fields with appropriate content. If all fields have content, return them as is. If any field is an empty string (""), generate its value based on the requirement's description or context.
-
-        The current requirement is: {requirement}
-
-        Return the following fields:
-        - name
-        - description
-        - evaluation_method
-        """
+        api_prompt = REQUIREMENT_OPTIMIZER_PROMPT.format(
+            name=requirement.name, 
+            description=requirement.description, 
+            evaluation_method=requirement.evaluation_method
+        )
 
         payload = {
             'model': 'gpt-4-turbo',
@@ -831,31 +777,17 @@ class ZenoBackend(object):
         return requirement
 
     def compile_prompt(self, prompt_id):
-        ### [TODO] Use LLM to compile requirements to prompt
-        ### Input: self.prompts[prompt_id].requirements
-        ### Output: self.prompts[prompt_id].text with xml tags
-        requirements = self.prompts[prompt_id].requirements
+        ''' Use LLM to compile requirements to a prompt
 
-        print(requirements)
+        Input: self.prompts[prompt_id].requirements
+        Output: 
+        - self.prompts[prompt_id].text with xml tags
+        - self.prompts[prompt_id].requirements with prompt_snippets filled in
+        '''
+
+        requirements = self.prompts[prompt_id].requirements
         
-        api_prompt = f"""
-            Given the following requirements, generate a prompt that satisfies all the requirements listed. For each requirement:
-            1. If the requirement's prompt_snippet field is empty, generate a prompt snippet that corresponds to the requirement within the generated prompt. Use the exact wording from the generated prompt for the Prompt Snippet. The format should be (requirement_id, prompt snippet), and include it in the output array of all generated prompt snippets for requirements without existing content in the prompt_snippet field.
-            2. If the requirement has content in the prompt_snippet field, use the exact words from this field in the generated prompt.
-            3. Ensure the generated prompt addresses all the requirements.
-            4. The output format should be: 
-                {{ 
-                    "prompt": generated_prompt, 
-                    "requirements_prompt_snippets": 
-                        [
-                            {{ 
-                                "requirement_id": requirement_id, 
-                                "prompt_snippet": prompt snippet
-                            }}
-                        ] 
-                }}
-            Requirements: '''{requirements}'''
-        """
+        api_prompt = PROMPT_COMPILER_PROMPT.format(requirements=requirements)
 
         payload = {
             'model': 'gpt-4-turbo',
@@ -897,7 +829,7 @@ class ZenoBackend(object):
             requirements_prompt_snippets = compile_output.get('requirements_prompt_snippets', [])
 
             for req_prompt in requirements_prompt_snippets:
-                id = req_prompt.get("requirement_id",None)
+                id = req_prompt.get("requirement_id", None)
                 prompt_snippet = req_prompt.get("prompt_snippet",'')
                 self.prompts[prompt_id].requirements[id].prompt_snippet = prompt_snippet
 
@@ -909,6 +841,7 @@ class ZenoBackend(object):
             break
         
         self.prompts[prompt_id].text = f"<prompt>{prompt}</prompt>"
+        print( self.prompts[prompt_id])
 
     def evaluate_requirement(self, prompt_id, requirement_id):
         ### [TODO] Use LLM to evaluate prompt outputs based on requirements
