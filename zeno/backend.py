@@ -46,8 +46,9 @@ from zeno.util import (
     read_functions,
     read_metadata,
     read_pickle,
+    requirements_to_str,
 )
-from zeno.prompt_templates import REQUIREMENT_OPTIMIZER_PROMPT, PROMPT_COMPILER_PROMPT, REQUIREMENT_EXTRACTOR_PROMPT
+from zeno.prompt_templates import REQUIREMENT_CREATOR_PROMPT, REQUIREMENT_OPTIMIZER_PROMPT, PROMPT_COMPILER_PROMPT, REQUIREMENT_EXTRACTOR_PROMPT
 
 
 class ZenoBackend(object):
@@ -722,10 +723,8 @@ class ZenoBackend(object):
         Output: requirement, with description optimized (if needed) and other fields filled in
         '''
 
-        api_prompt = REQUIREMENT_OPTIMIZER_PROMPT.format(
-            name=requirement.name, 
-            description=requirement.description, 
-            evaluation_method=requirement.evaluation_method
+        api_prompt = REQUIREMENT_CREATOR_PROMPT.format(
+            user_input=requirement.description, 
         )
 
         payload = {
@@ -787,7 +786,7 @@ class ZenoBackend(object):
 
         requirements = self.prompts[prompt_id].requirements
         
-        api_prompt = PROMPT_COMPILER_PROMPT.format(requirements=requirements)
+        api_prompt = PROMPT_COMPILER_PROMPT.format(requirements=requirements_to_str(requirements))
 
         payload = {
             'model': 'gpt-4-turbo',
@@ -831,7 +830,7 @@ class ZenoBackend(object):
             for req_prompt in requirements_prompt_snippets:
                 id = req_prompt.get("requirement_id", None)
                 prompt_snippet = req_prompt.get("prompt_snippet",'')
-                self.prompts[prompt_id].requirements[id].prompt_snippet = prompt_snippet
+                self.prompts[prompt_id].requirements[str(id)].prompt_snippet = prompt_snippet
 
             for _, req in self.prompts[prompt_id].requirements.items():
                 best_match, start_index, end_index = self.find_best_match(prompt, req.prompt_snippet.strip())

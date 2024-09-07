@@ -271,3 +271,13 @@ def generate_diff_cols(
     else:
         df.loc[:, "diff"] = df[str(diff_col_1)] != df[str(diff_col_2)]
     return df
+
+
+def requirements_to_str(requirements: Dict[str, Any]) -> str:
+    """Convert requirements dictionary to string"""
+    return "{" + ",\n".join(
+        [
+            """\"{id}\" : {{"description": "{description}", "prompt_snippet": "{prompt_snippet}"}}""".format(id=id, description=r.description, prompt_snippet=r.prompt_snippet)
+            for id, r in requirements.items()
+        ]
+    ) + "}"
