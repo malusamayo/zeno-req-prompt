@@ -16,6 +16,7 @@
 
 	// export let requirement: Requirement;
 	export let name; // = requirement.name;
+	export let id;
 	let requirement: Requirement;
 	let showOptions = false;
 	let menuX = 0;
@@ -23,9 +24,7 @@
 
 	$: {
 		name;
-		requirement = Object.values($requirements).filter(
-			(r) => r.name === name
-		)[0];
+		requirement = $requirements[id];
 	}
 	$: srcLink = `https://img.shields.io/badge/${name.replace("-", "--")}-8A2BE2`;
 

@@ -90,7 +90,11 @@
 				let arr = [];
 				if (node.nodeType === Node.ELEMENT_NODE) {
 					if (node.hasAttribute("name")) {
-						arr.push({ type: "tag", value: node.getAttribute("name") });
+						arr.push({
+							type: "tag",
+							value: node.getAttribute("name"),
+							id: node.getAttribute("id"),
+						});
 					}
 
 					arr.push({ type: "text", value: node.textContent });
@@ -111,6 +115,7 @@
 					target: imgNode,
 					props: {
 						name: item.value,
+						id: item.id,
 					},
 				});
 				contentEditableDiv.appendChild(imgNode);

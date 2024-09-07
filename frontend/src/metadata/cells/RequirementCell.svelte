@@ -133,7 +133,7 @@
 		<div class="group" style:width="100%">
 			<div class="inline">
 				<div class="hori-group" style:color="var(--G1)">
-					<RequirementChip name={requirement.name} />
+					<RequirementChip name={requirement.name} id={requirement.id} />
 
 					<div class="description">
 						{requirement.description}
