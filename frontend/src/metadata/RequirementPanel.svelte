@@ -39,10 +39,10 @@
 			version: "",
 			requirements: $requirements,
 		}).then((createdPrompts) => {
-			currentPromptId.set(createdPrompts[0].version);
 			prompts.update((pts) => {
 				return pts.set(createdPrompts[0].version, createdPrompts[0]);
 			});
+			currentPromptId.set(createdPrompts[0].version);
 			promptUpdating.set(false);
 		});
 	}
