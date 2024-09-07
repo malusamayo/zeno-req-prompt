@@ -32,10 +32,10 @@
 	)}-a463f2`;
 
 	function handleSpanClick(event) {
-		const spanRect = event.target.getBoundingClientRect();
-		menuX = spanRect.left;
-		menuY = spanRect.bottom;
-		showOptions = !showOptions;
+		// const spanRect = event.target.getBoundingClientRect();
+		// menuX = spanRect.left;
+		// menuY = spanRect.bottom;
+		// showOptions = !showOptions;
 
 		showNewSlice.set(false);
 		showNewFolder.set(false);
@@ -97,6 +97,7 @@
 		cursor: pointer;
 		/* pointer-events: none; */
 		margin-right: 2px;
+		margin-bottom: -2.5px;
 	}
 	#options-container {
 		/* left: 40px; */

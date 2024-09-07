@@ -3,10 +3,17 @@
 	import IconButton, { Icon } from "@smui/icon-button";
 	import { Svg } from "@smui/common";
 	import { tooltip } from "@svelte-plugins/tooltips";
-	import { prompts, currentPromptId, status, promptUpdating } from "../stores";
+	import {
+		prompts,
+		currentPromptId,
+		status,
+		promptUpdating,
+		requirements,
+	} from "../stores";
 	import { ZenoService } from "../zenoservice";
 	import CircularProgress from "@smui/circular-progress";
 	import RequirementChip from "./chips/RequirementChip.svelte";
+	import RequirementSpan from "./chips/RequirementSpan.svelte";
 
 	const parser = new DOMParser();
 	let prompt: string = $prompts.get($currentPromptId).text;
@@ -95,9 +102,14 @@
 							value: node.getAttribute("name"),
 							id: node.getAttribute("id"),
 						});
+						arr.push({
+							type: "req-text",
+							value: node.textContent,
+							id: node.getAttribute("id"),
+						});
+					} else {
+						arr.push({ type: "text", value: node.textContent });
 					}
-
-					arr.push({ type: "text", value: node.textContent });
 				} else if (node.nodeType === Node.TEXT_NODE) {
 					arr.push({ type: "text", value: node.textContent });
 				}
@@ -108,6 +120,17 @@
 		content.forEach((item) => {
 			if (item.type === "text") {
 				const textNode = document.createTextNode(item.value);
+				contentEditableDiv.appendChild(textNode);
+			} else if (item.type === "req-text") {
+				const textNode = document.createElement("span");
+				textNode.id = item.id;
+				const reqSpan = new RequirementSpan({
+					target: textNode,
+					props: {
+						content: item.value,
+						id: item.id,
+					},
+				});
 				contentEditableDiv.appendChild(textNode);
 			} else if (item.type === "tag") {
 				const imgNode = document.createElement("span");
@@ -125,6 +148,15 @@
 
 	function handleInput() {
 		allowUpdates = true;
+		requirements.update((reqs) => {
+			Object.entries(reqs).forEach(([id, req]) => {
+				const reqSpan = document.getElementById(id);
+				if (reqSpan) {
+					req.promptSnippet = reqSpan.textContent;
+				}
+			});
+			return reqs;
+		});
 	}
 
 	// [TODO] allow users to write requirements explicitly
@@ -156,9 +188,6 @@
 	// 	console.log(content);
 	// 	console.log(contentEditableDiv);
 	// }
-	// $: {
-	// 	console.log(contentEditableDiv, "hey!!!");
-	// }
 </script>
 
 <div class="inline">
@@ -171,7 +200,7 @@
 		{/if}
 	</div>
 	<div class="inline">
-		<div
+		<!-- <div
 			use:tooltip={{
 				content: "Update prompts",
 				position: "left",
@@ -180,7 +209,7 @@
 			<IconButton
 				on:click={() => {
 					if (allowUpdates) {
-						// updatePrompt();
+						updatePrompt();
 					}
 				}}
 				style={allowUpdates ? "cursor:pointer" : "cursor:default"}>
@@ -192,7 +221,7 @@
 					{/if}
 				</Icon>
 			</IconButton>
-		</div>
+		</div> -->
 		<div
 			use:tooltip={{
 				content: "Run prompts",
@@ -230,5 +259,6 @@
 		min-height: 150px;
 		padding: 5px;
 		margin-bottom: 10px;
+		line-height: 22px;
 	}
 </style>
