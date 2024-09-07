@@ -26,7 +26,10 @@
 		name;
 		requirement = $requirements[id];
 	}
-	$: srcLink = `https://img.shields.io/badge/${name.replace("-", "--")}-8A2BE2`;
+	$: srcLink = `https://img.shields.io/badge/${name.replaceAll(
+		"-",
+		"--"
+	)}-a463f2`;
 
 	function handleSpanClick(event) {
 		const spanRect = event.target.getBoundingClientRect();
