@@ -21,6 +21,8 @@
 		showNewFolder,
 		showSliceFinder,
 		requirementToEdit,
+		requirements,
+		promptToUpdate,
 	} from "../../stores";
 	import { clickOutside } from "../../util/clickOutside";
 	import { ZenoService, type Slice, type Requirement } from "../../zenoservice";
@@ -52,36 +54,22 @@
 		return idxs.join(",");
 	}
 
-	function removeSlice() {
+	function removeRequirement() {
 		confirmDelete = false;
 		relatedReports = 0;
 
-		// selections.update((m) => {
-		// 	for (let key in m.metadata) {
-		// 		m.metadata[key] = { predicates: [], join: "&" };
-		// 	}
-		// 	return { slices: [], metadata: { ...m.metadata }, tags: [] };
-		// });
-		// reports.update((reps) => {
-		// 	reps = reps.map((r) => {
-		// 		r.slices = r.slices.filter((p) => p !== slice.sliceName);
-		// 		return r;
-		// 	});
-		// 	return reps;
-		// });
-		// deleteSlice(slice.sliceName);
+		requirements.update((reqs) => {
+			delete reqs[requirement.id];
+			return reqs;
+		});
+
+		promptToUpdate.set(true);
 	}
 
 	function setSelected() {
-		showNewSlice.set(false);
-		showNewFolder.set(false);
-		showSliceFinder.set(false);
-		showNewRequirement.update((d) => !d);
-		requirementToEdit.set(requirement);
 		if (compare && compareButton) {
 			return;
 		}
-		// selectSliceCell(e, slice.sliceName);
 	}
 </script>
 
@@ -146,7 +134,7 @@
 				on:click_outside={() => {
 					showOptions = false;
 				}}>
-				<!-- {#if showOptions}
+				{#if showOptions}
 					<div id="options-container">
 						<Paper style="padding: 3px 0px;" elevation={7}>
 							<Content>
@@ -156,23 +144,39 @@
 									on:click={(e) => {
 										e.stopPropagation();
 										showOptions = false;
-										// sliceToEdit.set(slice);
-										showNewSlice.set(true);
+										showNewSlice.set(false);
+										showNewFolder.set(false);
+										showSliceFinder.set(false);
+										showNewRequirement.update((d) => !d);
+										requirementToEdit.set(requirement);
 									}}>
 									<Icon style="font-size: 18px;" class="material-icons"
 										>edit</Icon
 									>&nbsp;
 									<span>Edit</span>
 								</div>
+								<div
+									class="option"
+									on:keydown={() => ({})}
+									on:click={(e) => {
+										e.stopPropagation();
+										showOptions = false;
+										removeRequirement();
+									}}>
+									<Icon style="font-size: 18px;" class="material-icons"
+										>delete_outline</Icon
+									>&nbsp;
+									<span>Remove</span>
+								</div>
 							</Content>
 						</Paper>
 					</div>
-				{/if} -->
+				{/if}
 				<RequirementCellResult {compare} {requirement} />
 				<!-- {#if compare}
 					<RequirementCellResult {compare} {slice} sliceModel={$comparisonModel} />
 				{/if} -->
-				<!-- <div class="inline" style:cursor="pointer">
+				<div class="inline" style:cursor="pointer">
 					<div
 						style:width="36px"
 						use:clickOutside
@@ -193,7 +197,7 @@
 							</IconButton>
 						{/if}
 					</div>
-				</div> -->
+				</div>
 			</div>
 		</div>
 	</div>
@@ -218,7 +222,7 @@
 			}}>
 			<Label>No</Label>
 		</Button>
-		<Button use={[InitialFocus]} on:click={() => removeSlice()}>
+		<Button use={[InitialFocus]} on:click={() => removeRequirement()}>
 			<Label>Yes</Label>
 		</Button>
 	</Actions>
