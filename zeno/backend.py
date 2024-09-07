@@ -251,10 +251,10 @@ class ZenoBackend(object):
         print(self.status)
         self.__predistill()
 
-        self.status = "Running inference"
-        print(self.status)
-        self.__inference()
-        self.done_running_inference = True
+        # self.status = "Running inference"
+        # print(self.status)
+        # self.__inference()
+        # self.done_running_inference = True
 
         self.status = "Running postdistill functions"
         print(self.status)
