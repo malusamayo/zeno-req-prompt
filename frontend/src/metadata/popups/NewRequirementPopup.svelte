@@ -86,7 +86,7 @@
 			<textarea
 				bind:value={requirement.evaluationMethod}
 				style="min-height: 120px;" />
-			<label>Prompt Snippet</label>
+			<label>Prompt Implementation</label>
 			<textarea bind:value={requirement.promptSnippet} />
 			<div id="submit">
 				<Button variant="outlined" on:click={createRequirement}>

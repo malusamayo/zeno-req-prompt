@@ -93,10 +93,10 @@
 		{/if}
 	</div>
 
-	<!-- <div class="inline">
+	<div class="inline">
 		<div
 			use:tooltip={{
-				content: "Compile requirements to prompt.",
+				content: "Compile to prompt.",
 				position: "left",
 				theme: "zeno-tooltip",
 			}}>
@@ -110,7 +110,7 @@
 				</Icon>
 			</IconButton>
 		</div>
-	</div> -->
+	</div>
 </div>
 
 {#each Object.entries($requirements) as [id, req]}

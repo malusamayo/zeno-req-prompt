@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mdiCogs, mdiUpdate } from "@mdi/js";
+	import { mdiCogs, mdiPlayOutline, mdiUpdate } from "@mdi/js";
 	import IconButton, { Icon } from "@smui/icon-button";
 	import { Svg } from "@smui/common";
 	import { tooltip } from "@svelte-plugins/tooltips";
@@ -54,7 +54,7 @@
 		ZenoService.createNewPrompt({
 			text: newInnerPrompt,
 			version: "",
-			requirements: {},
+			requirements: $requirements,
 		}).then((createdPrompts) => {
 			// ZenoService.getCurrentPromptId().then((res) => {
 			ZenoService.getCompleteColumns().then((cols) => {
@@ -74,14 +74,17 @@
 	}
 
 	function runPrompt() {
-		promptUpdating.set(true);
+		status.update((s) => {
+			s.status = "Running inference";
+			return s;
+		});
 		ZenoService.runPrompt([$currentPromptId]).then(() => {
 			ZenoService.getCompleteColumns().then((cols) => {
 				status.update((s) => {
+					s.status = "Done processing";
 					s.completeColumns = cols;
 					return s;
 				});
-				promptUpdating.set(false);
 			});
 		});
 	}
@@ -173,9 +176,10 @@
 		) {
 			e.preventDefault(); // Prevent the action
 		}
-		// if (e.key === "k" && e.metaKey) {
-		// 	content = content.concat([{ type: "tag", value: "new-requirement" }]);
-		// }
+		if (e.key === "s" && e.metaKey) {
+			e.preventDefault();
+			updatePrompt();
+		}
 	}
 
 	function handlePaste(event) {
@@ -200,9 +204,9 @@
 		{/if}
 	</div>
 	<div class="inline">
-		<!-- <div
+		<div
 			use:tooltip={{
-				content: "Update prompts",
+				content: "Save changes",
 				position: "left",
 				theme: "zeno-tooltip",
 			}}>
@@ -215,16 +219,16 @@
 				style={allowUpdates ? "cursor:pointer" : "cursor:default"}>
 				<Icon component={Svg} viewBox="0 0 24 24">
 					{#if allowUpdates}
-						<path fill="var(--G1)" d={mdiCogs} />
+						<path fill="var(--G1)" d={mdiUpdate} />
 					{:else}
-						<path fill="var(--G4)" d={mdiCogs} />
+						<path fill="var(--G4)" d={mdiUpdate} />
 					{/if}
 				</Icon>
 			</IconButton>
-		</div> -->
+		</div>
 		<div
 			use:tooltip={{
-				content: "Run prompts",
+				content: "Start inference",
 				position: "left",
 				theme: "zeno-tooltip",
 			}}>
@@ -234,7 +238,7 @@
 				}}
 				style="cursor:pointer">
 				<Icon component={Svg} viewBox="0 0 24 24">
-					<path fill="var(--G1)" d={mdiUpdate} />
+					<path fill="var(--G1)" d={mdiPlayOutline} />
 				</Icon>
 			</IconButton>
 		</div>
