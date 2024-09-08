@@ -614,7 +614,11 @@ class ZenoBackend(object):
         req.version = new_version
         self.prompts[new_version] = req
         self.current_prompt_id = new_version
-        self.compile_prompt(new_version)
+        if req.text == "":
+            self.compile_prompt(new_version)
+        elif len(req.requirements) == 0:
+            self.extract_requirements(new_version)
+        self.add_tags_to_prompt(new_version)
         with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
             pickle.dump(self.prompts, f)
         return self.prompts[new_version]
@@ -644,10 +648,13 @@ class ZenoBackend(object):
 
         return best_match, start_index, end_index
 
-    def wrap_non_req_text(self, match):
-        if match.group(2):  # This is the text outside <req> tags
-            return f'<text>{match.group(2).strip()}</text>'
-        return match.group(1)  # This is a <req> tag, return it unchanged
+    def add_tags_to_prompt(self, prompt_id):
+        prompt = self.prompts[prompt_id].text
+        for _, req in self.prompts[prompt_id].requirements.items():
+            best_match, start_index, end_index = self.find_best_match(prompt, req.prompt_snippet.strip())
+            wrapped_snippet = f'<req name="{req.name}" id="{req.id}">{best_match}</req>'
+            prompt = prompt[:start_index] + wrapped_snippet + prompt[end_index:]
+        self.prompts[prompt_id].text = f"<prompt>{prompt}</prompt>"
 
     def extract_requirements(self, prompt_id):
         '''Use LLM to extract requirements for prompt_id
@@ -710,11 +717,8 @@ class ZenoBackend(object):
                 )
                 self.prompts[prompt_id].requirements[idx] = requirement
 
-                best_match, start_index, end_index = self.find_best_match(prompt, prompt_snippet.strip())
-                wrapped_snippet = f'<req name="{self.prompts[prompt_id].requirements[idx].name}">{best_match}</req>'
-                prompt = prompt[:start_index] + wrapped_snippet + prompt[end_index:]
             break
-        self.prompts[prompt_id].text = f"<prompt>{prompt}</prompt>"
+        self.prompts[prompt_id].text = prompt
 
     def optimize_requirement(self, requirement: Requirement):
         '''Use LLM to optimize local requirements
@@ -831,16 +835,10 @@ class ZenoBackend(object):
                 id = req_prompt.get("requirement_id", None)
                 prompt_snippet = req_prompt.get("prompt_snippet",'')
                 self.prompts[prompt_id].requirements[str(id)].prompt_snippet = prompt_snippet
-
-            for _, req in self.prompts[prompt_id].requirements.items():
-                best_match, start_index, end_index = self.find_best_match(prompt, req.prompt_snippet.strip())
-                wrapped_snippet = f'<req name="{req.name}" id="{req.id}">{best_match}</req>'
-                prompt = prompt[:start_index] + wrapped_snippet + prompt[end_index:]
-            
+    
             break
         
-        self.prompts[prompt_id].text = f"<prompt>{prompt}</prompt>"
-        print( self.prompts[prompt_id])
+        self.prompts[prompt_id].text = prompt
 
     def evaluate_requirement(self, prompt_id, requirement_id):
         ### [TODO] Use LLM to evaluate prompt outputs based on requirements
