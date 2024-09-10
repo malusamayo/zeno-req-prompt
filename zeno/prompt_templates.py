@@ -76,10 +76,10 @@ REQUIREMENT_EXTRACTOR_PROMPT = """Given the following prompt, extract a series o
 Requirements:
 1. List requirements one by one in the format: 
     {{ 
-        "name": "{name}", 
-        "description": "{description}",
-        "evaluation_method": "{evaluation_method}",
-        "prompt_snippet": "{prompt_snippet}"
+        "name": name, 
+        "description": description,
+        "evaluation_method": evaluation_method,
+        "prompt_snippet": prompt_snippet
     }}
 2. Use the exact wording from the prompt for the Prompt Snippet.
 3. Only include unique criteria mentioned in the original prompt. Merge the ones that are similar. 
