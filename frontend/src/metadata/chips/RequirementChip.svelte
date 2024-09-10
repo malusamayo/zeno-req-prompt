@@ -54,7 +54,7 @@
 		data={name}
 		on:click={handleSpanClick}
 		on:keydown={() => {}} />
-	{#if showOptions}
+	<!-- {#if showOptions}
 		<div
 			id="options-container"
 			style="position:fixed; top: {menuY}px; left: {menuX}px; 
@@ -89,7 +89,7 @@
 				</Content>
 			</Paper>
 		</div>
-	{/if}
+	{/if} -->
 </span>
 
 <style>

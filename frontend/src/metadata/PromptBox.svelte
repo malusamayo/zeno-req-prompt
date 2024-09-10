@@ -36,21 +36,33 @@
 		prompt = $prompts.get($currentPromptId).text;
 	}
 
+	function getInnerText(el) {
+		var sel,
+			range,
+			innerText = "";
+		if (
+			typeof document.getSelection != null &&
+			typeof document.body.createTextRange != "undefined"
+		) {
+			range = document.body.createTextRange();
+			range.moveToElementText(el);
+			innerText = range.text;
+		} else if (
+			typeof window.getSelection != "undefined" &&
+			typeof document.createRange != "undefined"
+		) {
+			sel = window.getSelection();
+			sel.selectAllChildren(el);
+			innerText = "" + sel;
+			sel.removeAllRanges();
+		}
+		return innerText;
+	}
+
 	function updatePrompt() {
 		promptUpdating.set(true);
-		let newInnerPrompt = Array.from(contentEditableDiv.childNodes)
-			.map((node: HTMLElement) => {
-				if (node.nodeType === Node.ELEMENT_NODE) {
-					if (node.hasAttribute("data")) {
-						return "";
-					} else {
-						return node.textContent;
-					}
-				} else if (node.nodeType === Node.TEXT_NODE) {
-					return node.textContent;
-				}
-			})
-			.reduce((acc, val) => acc + val, "");
+		let newInnerPrompt = getInnerText(contentEditableDiv);
+		console.log(newInnerPrompt);
 		ZenoService.createNewPrompt({
 			text: newInnerPrompt,
 			version: "",
@@ -93,7 +105,9 @@
 		if (contentEditableDiv) {
 			contentEditableDiv.innerHTML = "";
 		}
-		let parsedPrompt = parser.parseFromString(prompt, "text/xml");
+
+		let promptWithNewlines = prompt.replace(/\n/g, "[NEWLINE]");
+		let parsedPrompt = parser.parseFromString(promptWithNewlines, "text/xml");
 
 		let content = Array.from(parsedPrompt.children[0].childNodes)
 			.map((node: HTMLElement) => {
@@ -122,7 +136,19 @@
 
 		content.forEach((item) => {
 			if (item.type === "text") {
-				const textNode = document.createTextNode(item.value);
+				// item.value.split("[NEWLINE]").forEach((line, idx, arr) => {
+				// 	if (line !== "") {
+				// 		const textNode = document.createTextNode(line);
+				// 		contentEditableDiv.appendChild(textNode);
+				// 	}
+				// 	if (idx < arr.length - 1) {
+				// 		const brElement = document.createElement("br");
+				// 		contentEditableDiv.appendChild(brElement);
+				// 	}
+				// });
+				const textNode = document.createTextNode(
+					item.value.replace(/\[NEWLINE\]/g, "\n")
+				);
 				contentEditableDiv.appendChild(textNode);
 			} else if (item.type === "req-text") {
 				const textNode = document.createElement("span");
@@ -187,11 +213,6 @@
 		const clipboardData = event.clipboardData.getData("text");
 		document.execCommand("insertHTML", false, clipboardData);
 	}
-
-	// $: {
-	// 	console.log(content);
-	// 	console.log(contentEditableDiv);
-	// }
 </script>
 
 <div class="inline">
@@ -264,5 +285,6 @@
 		padding: 5px;
 		margin-bottom: 10px;
 		line-height: 22px;
+		white-space: pre-wrap;
 	}
 </style>
