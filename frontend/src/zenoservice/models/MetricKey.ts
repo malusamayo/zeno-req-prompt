@@ -8,4 +8,6 @@ export type MetricKey = {
 	sli: Slice;
 	model: string;
 	metric: string;
+	promptId?: string;
+	requirementId?: string;
 };

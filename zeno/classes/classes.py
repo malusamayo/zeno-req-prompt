@@ -34,6 +34,8 @@ class MetricKey(CamelModel):
     sli: Slice
     model: str
     metric: str
+    prompt_id: Optional[str] = None
+    requirement_id: Optional[str] = None
 
 
 class MetricRequest(CamelModel):

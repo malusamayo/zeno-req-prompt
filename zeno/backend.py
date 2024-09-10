@@ -12,7 +12,7 @@ import threading
 from inspect import getsource
 from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, Tuple
 from pydantic import BaseModel
 from openai import OpenAI
 
@@ -125,6 +125,14 @@ class ZenoBackend(object):
             self.params.id_column, self.params.data_column, self.params.label_column
         )
         self.__parse_test_functions(self.tests)
+
+
+        def calculate_pass_rate(df: DataFrame, ops: ZenoOptions) -> MetricReturn:
+            """Calculate pass rate for a requirement."""
+            pass_rate = df[ops.output_column].mean()
+            return MetricReturn(metric=pass_rate)
+
+        self.metric_functions["pass-rate"] = calculate_pass_rate
 
         # Options passed to Zeno functions.
         self.zeno_options = ZenoOptions(
@@ -252,10 +260,14 @@ class ZenoBackend(object):
         print(self.status)
         self.__predistill()
 
-        # self.status = "Running inference"
-        # print(self.status)
-        # self.__inference()
-        # self.done_running_inference = True
+        self.status = "Running inference"
+        print(self.status)
+        self.__inference(run_additional_inference=False)
+        self.done_running_inference = True
+
+        self.status = "Running evaluators"
+        print(self.status)
+        self.__run_evaluation(run_additional_inference=False)
 
         self.status = "Running postdistill functions"
         print(self.status)
@@ -334,7 +346,7 @@ class ZenoBackend(object):
                     )
                 self.__set_data_processing_returns(predistill_outputs)
 
-    def __inference(self, model_prompt_pairs=[]):
+    def __inference(self, model_prompt_pairs=[], run_additional_inference=True) -> None:
         """Run models on instances."""
 
         # Check if we need to run inference since Pool is expensive
@@ -358,11 +370,16 @@ class ZenoBackend(object):
             load_series(self.df, embedding_column, embedding_save_path)
 
             if self.df[model_hash].isna().any():
-                models_to_run.append((model_name, prompt_id))
+                if not run_additional_inference:
+                    del self.df[model_hash]
+                    del self.df[embedding_hash]
+                else:
+                    models_to_run.append((model_name, prompt_id))
             else:
                 self.df[model_hash] = self.df[model_hash].convert_dtypes()
                 model_column.metadata_type = get_metadata_type(self.df[model_hash])
-                self.complete_columns.append(model_column)
+                if model_column not in self.complete_columns:
+                    self.complete_columns.append(model_column)
 
                 # Check if there were saved postdistill columns:
                 for f in glob.glob(
@@ -475,6 +492,75 @@ class ZenoBackend(object):
                     )
             self.__set_data_processing_returns(post_outputs)
 
+    
+    def __run_evaluation(self, model_prompt_req_triplets: List[Tuple[str, str, str]]=[], run_additional_inference=True) -> None:
+        
+        evaluations_to_run = []
+        if len(model_prompt_req_triplets) == 0:
+            model_prompt_req_triplets = [
+                (model_name, prompt_id, requirement_id) 
+                for model_name in self.model_names
+                for prompt_id in self.prompts.keys() 
+                for requirement_id in self.prompts[prompt_id].requirements.keys()
+            ]
+        
+        for (model_name, prompt_id, requirement_id) in model_prompt_req_triplets:
+
+            print(f"Running evaluation for model {model_name} on prompt {prompt_id} and requirement {requirement_id}")
+            
+            score_col = ZenoColumn(
+                column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}", model=model_name, prompt_id=prompt_id
+            )
+            rationale_col = ZenoColumn(
+                column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}Rationale", model=model_name, prompt_id=prompt_id
+            )
+            score_hash = str(score_col)
+            rationale_hash = str(rationale_col)
+
+            load_series(self.df, score_col, Path(self.cache_path, score_hash + ".pickle"))
+            load_series(self.df, rationale_col, Path(self.cache_path, rationale_hash + ".pickle"))
+
+            if self.df[score_hash].isna().any() or self.df[rationale_hash].isna().any():
+                if not run_additional_inference:
+                    del self.df[score_hash]
+                    del self.df[rationale_hash]
+                else:
+                    evaluations_to_run.append((model_name, prompt_id, requirement_id))
+            else:
+                self.df[score_hash] = self.df[score_hash].convert_dtypes()
+                score_col.metadata_type = get_metadata_type(self.df[score_hash])
+                if score_col not in self.complete_columns:
+                    self.complete_columns.append(score_col)
+                
+                self.df[rationale_hash] = self.df[rationale_hash].convert_dtypes()
+                rationale_col.metadata_type = get_metadata_type(self.df[rationale_hash])
+                if rationale_col not in self.complete_columns:
+                    self.complete_columns.append(rationale_col)
+
+        if len(evaluations_to_run) > 0:
+            inference_outputs = []
+            for i, (model_name, prompt_id, requirement_id) in enumerate(evaluations_to_run):
+
+                score_col = ZenoColumn(
+                    column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}", model=model_name, prompt_id=prompt_id
+                )
+                rationale_col = ZenoColumn(
+                    column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}Rationale", model=model_name, prompt_id=prompt_id
+                )
+                score_hash = str(score_col)
+                rationale_hash = str(rationale_col)
+                    
+                scores, rationales = self.evaluate_requirement(prompt_id, requirement_id)
+
+                scores.to_pickle(os.path.join(self.cache_path, score_hash + ".pickle"))
+                rationales.to_pickle(os.path.join(self.cache_path, rationale_hash + ".pickle"))
+                                
+                inference_outputs.append([
+                    DataProcessingReturn(column=score_col, output=scores),
+                    DataProcessingReturn(column=rationale_col, output=rationales)
+                ])
+            self.__set_data_processing_returns(inference_outputs)
+
     def get_metrics_for_slices(
         self,
         requests: List[MetricKey],
@@ -497,7 +583,7 @@ class ZenoBackend(object):
                 return_metrics.append(GroupMetric(metric=None, size=filt_df.shape[0]))
             else:
                 metric = self.calculate_metric(
-                    filt_df, metric_key.model, metric_key.metric
+                    filt_df, metric_key.model, metric_key.metric, metric_key.prompt_id, metric_key.requirement_id
                 )
                 return_metrics.append(GroupMetric(metric=metric, size=filt_df.shape[0]))
         return return_metrics
@@ -541,16 +627,24 @@ class ZenoBackend(object):
         return return_metrics
 
     def calculate_metric(
-        self, df: DataFrame, model: Union[str, None], metric: str
+        self, df: DataFrame, model: Union[str, None], metric: str, prompt_id: Optional[str] = None, requirement_id: Optional[str] = None
     ) -> Union[float, None]:
         if not self.done_running_inference:
             return None
+        
+        if prompt_id is None or requirement_id is None:
+            return None
 
         if model is not None:
-            output_col = ZenoColumn(
-                column_type=ZenoColumnType.OUTPUT, name="output", model=model, prompt_id=self.current_prompt_id
+            # print(f"Calculating metric {metric} for model {model} on prompt {prompt_id} and requirement {requirement_id}")
+
+            score_col = ZenoColumn(
+                column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}", model=model, prompt_id=prompt_id
             )
-            output_hash = str(output_col)
+            score_hash = str(score_col)
+
+            if score_hash not in self.df.columns:
+                return None
 
             distill_fns = [
                 c
@@ -564,8 +658,8 @@ class ZenoBackend(object):
 
             local_ops = self.zeno_options.copy(
                 update={
-                    "output_column": output_hash,
-                    "output_path": os.path.join(self.cache_path, output_hash),
+                    "output_column": score_hash,
+                    "output_path": os.path.join(self.cache_path, score_hash + ".pickle"),
                     "distill_columns": dict(
                         zip(
                             [c.name for c in distill_fns], [str(c) for c in distill_fns]
@@ -625,6 +719,7 @@ class ZenoBackend(object):
 
     def run_prompt(self, prompt_version):
         self.__inference([(model, prompt_version) for model in self.model_names])
+        self.__run_evaluation([(model, prompt_version, req_id) for req_id in self.prompts[prompt_version].requirements.keys() for model in self.model_names])
     
     def find_best_match(self, prompt, snippet):
         normalized_snippet = " ".join(snippet.split())
@@ -840,12 +935,20 @@ class ZenoBackend(object):
         
         self.prompts[prompt_id].text = prompt
 
-    def evaluate_requirement(self, prompt_id, requirement_id):
-        ### [TODO] Use LLM to evaluate prompt outputs based on requirements
-        requirement = self.prompts[prompt_id].requirements[requirement_id]
 
-        ### construct a proper evaluator
-        # requirement.evaluation_method
+    def evaluate_requirement(self, prompt_id, requirement_id):
+        ''' [TODO] Use LLM to evaluate prompt outputs based on requirements
+
+        Input: prompt_id, requirement_id
+        Output: 
+        - A pd.Series of 0/1 evaluation scores to indicate whether the requirement is met
+        - A pd.Series of rationale for the evaluation
+        '''
+        print(f"Evaluating requirement {requirement_id} for prompt {prompt_id}")
+        # requirement = self.prompts[prompt_id].requirements[requirement_id]
+
+        from random import uniform
+        return self.df[str(self.data_column)].map(lambda x: uniform(0, 1) > 0.5), self.df[str(self.data_column)].map(lambda x: "Random rationale")
 
 
     def create_new_tag(self, req: Tag):

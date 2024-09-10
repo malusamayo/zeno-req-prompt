@@ -1,5 +1,12 @@
 <script lang="ts">
-	import { metric, status, selections, model, settings } from "../../stores";
+	import {
+		metric,
+		status,
+		selections,
+		model,
+		settings,
+		currentPromptId,
+	} from "../../stores";
 	import {
 		getMetricsForSlices,
 		doesModelDependOnPredicates,
@@ -16,7 +23,11 @@
 
 	let result;
 
-	let res = [{ metric: Math.random(), size: $settings.totalSize }];
+	let slice = {
+		sliceName: "",
+		folder: "",
+		filterPredicates: { predicates: [], join: "" },
+	};
 
 	$: modelDependSliceName = "";
 
@@ -26,15 +37,34 @@
 	// $selections.slices.includes(slice.sliceName) ||
 	// $selections.slices.includes(modelDependSliceName);
 
+	$: outputColumns = $status.completeColumns.filter(
+		(c) =>
+			c.name === `evalR${requirement.id}` && c.promptId === $currentPromptId
+	);
+
+	$: {
+		$currentPromptId;
+		result = null;
+	}
+
 	$: {
 		$status;
-		// result = getMetricsForSlices([
-		// 	<MetricKey>{
-		// 		sli: slice,
-		// 		model: sliceModel,
-		// 		metric: $metric,
-		// 	},
-		// ]);
+		// if ($status.completeColumns.map((c) => c.name).includes("model")) {
+		// 	compareButton = doesModelDependOnPredicates(
+		// 		requirement.filterPredicates.predicates
+		// 	);
+		// }
+		if (outputColumns.length > 0) {
+			result = getMetricsForSlices([
+				<MetricKey>{
+					sli: slice,
+					model: $model,
+					metric: $metric,
+					promptId: $currentPromptId,
+					requirementId: requirement.id,
+				},
+			]);
+		}
 	}
 
 	$: compareButtonstyle = compareButton
@@ -49,22 +79,22 @@
 	}
 </script>
 
-{#if res}
-	<!-- {#await result then res} -->
-	<div
-		class={"compare " + compareButtonstyle}
-		on:keydown={() => ({})}
-		on:click={selectFilter}>
-		<span>
-			{res[0].metric !== undefined && res[0].metric !== null
-				? res[0].metric.toFixed(2)
-				: ""}
-		</span>
-		<span id="size">
-			({res[0].size.toLocaleString()})
-		</span>
-	</div>
-	<!-- {/await} -->
+{#if result}
+	{#await result then res}
+		<div
+			class={"compare " + compareButtonstyle}
+			on:keydown={() => ({})}
+			on:click={selectFilter}>
+			<span>
+				{res[0].metric !== undefined && res[0].metric !== null
+					? res[0].metric.toFixed(2)
+					: ""}
+			</span>
+			<span id="size">
+				({res[0].size.toLocaleString()})
+			</span>
+		</div>
+	{/await}
 {/if}
 
 <style>
