@@ -14,11 +14,14 @@
 	import CircularProgress from "@smui/circular-progress";
 	import RequirementChip from "./chips/RequirementChip.svelte";
 	import RequirementSpan from "./chips/RequirementSpan.svelte";
+	import Dialog, { Actions, Content, InitialFocus, Title } from "@smui/dialog";
+	import Button, { Label } from "@smui/button";
 
 	const parser = new DOMParser();
 	let prompt: string = $prompts.get($currentPromptId).text;
 	let allowUpdates = false;
 	let contentEditableDiv: HTMLDivElement;
+	let confirmRunPrompt = false;
 
 	$: {
 		$currentPromptId;
@@ -254,7 +257,7 @@
 			}}>
 			<IconButton
 				on:click={() => {
-					runPrompt();
+					confirmRunPrompt = true;
 				}}
 				style="cursor:pointer">
 				<Icon component={Svg} viewBox="0 0 24 24">
@@ -271,6 +274,27 @@
 	on:input={handleInput}
 	on:keydown={handleKeydown}
 	on:paste={handlePaste} />
+
+<Dialog
+	bind:open={confirmRunPrompt}
+	scrimClickAction=""
+	escapeKeyAction=""
+	aria-labelledby="delete-slice"
+	aria-describedby="delete-slice">
+	<Title id="simple-title">Run prompt</Title>
+	<Content id="simple-content">Run prompt on all examples. Continue?</Content>
+	<Actions>
+		<Button
+			on:click={() => {
+				confirmRunPrompt = false;
+			}}>
+			<Label>No</Label>
+		</Button>
+		<Button use={[InitialFocus]} on:click={() => runPrompt()}>
+			<Label>Yes</Label>
+		</Button>
+	</Actions>
+</Dialog>
 
 <style>
 	.inline {
