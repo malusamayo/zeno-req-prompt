@@ -60,7 +60,6 @@
 
 	function compile_to_prompt() {
 		promptUpdating.set(true);
-		console.log($requirements);
 		ZenoService.createNewPrompt({
 			text: "",
 			version: "",

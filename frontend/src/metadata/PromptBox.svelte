@@ -62,7 +62,6 @@
 	function updatePrompt() {
 		promptUpdating.set(true);
 		let newInnerPrompt = getInnerText(contentEditableDiv);
-		console.log(newInnerPrompt);
 		ZenoService.createNewPrompt({
 			text: newInnerPrompt,
 			version: "",

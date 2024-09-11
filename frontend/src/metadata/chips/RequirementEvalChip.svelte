@@ -29,8 +29,6 @@
 		id;
 		requirement = $requirements[id];
 		name = requirement.name;
-		rationale =
-			"n a paging system: 1. **True for Larger Pages**: Larger pages indeed lead to smaller page tables. This is because fewer pages are needed to map the same amount of memory, which can save memory space used by the page table. 2. **True for Smaller Pages**: Smaller pages can reduce internal fragmentation, which is the wasted space within allocated pa";
 	}
 
 	$: srcLink = `https://img.shields.io/badge/${name.replaceAll("-", "--")}-${
