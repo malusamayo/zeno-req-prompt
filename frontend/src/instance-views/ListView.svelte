@@ -21,6 +21,7 @@
 	import { columnHash } from "../util/util";
 	import { ZenoColumnType } from "../zenoservice";
 	import type { ViewRenderFunction } from "./instance-views";
+	import ItemView from "./ItemView.svelte";
 
 	export let currentResult;
 	export let viewFunction: ViewRenderFunction;
@@ -132,7 +133,10 @@
 {#if table}
 	<div class="container sample-container">
 		{#each table as inst, i (inst[idHash])}
-			<div class="instance" bind:this={viewDivs[i]} />
+			<!-- <div class="instance" bind:this={viewDivs[i]} /> -->
+			{#if table[i]}
+				<ItemView item={inst} />
+			{/if}
 		{/each}
 	</div>
 	<Pagination slot="paginate" class="pagination">

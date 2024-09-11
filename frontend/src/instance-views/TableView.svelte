@@ -275,7 +275,7 @@
 	}
 	.sample-container {
 		height: calc(100vh - 180px);
-		width: calc(100vw - 460px);
+		width: calc(100vw - 600px);
 		overflow: scroll;
 		align-content: baseline;
 		border-bottom: 1px solid var(--G5);
