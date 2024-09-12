@@ -44,6 +44,11 @@ class MetricRequest(CamelModel):
     filter_ids: Optional[FilterIds] = None
     tag_list: Optional[List[str]] = None
 
+class InferenceRequest(CamelModel):
+    model: str
+    prompt_id: str
+    filter_ids: Optional[FilterIds] = None
+    requirement_id: Optional[str] = None
 
 class TableRequest(CamelModel):
     columns: List[ZenoColumn]

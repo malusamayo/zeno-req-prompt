@@ -17,6 +17,7 @@ from zeno.classes.classes import (
     ColorsProjectRequest,
     EmbedProject2DRequest,
     EntryRequest,
+    InferenceRequest,
     MetricRequest,
     PlotRequest,
     StatusResponse,
@@ -127,8 +128,8 @@ def get_server(zeno: ZenoBackend):
         return [prompt]
 
     @api_app.post("/run-prompt", tags=["zeno"])
-    def run_prompt(req: List[str]):
-        zeno.run_prompt(req[0])
+    def run_prompt(req: InferenceRequest):
+        zeno.run_prompt(req)
 
     @api_app.get("/requirements", response_model=Dict[str, Requirement], tags=["zeno"])
     def get_requirements():

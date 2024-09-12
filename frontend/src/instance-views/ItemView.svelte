@@ -7,8 +7,9 @@
 		settings,
 		status,
 	} from "../stores";
-	import { ZenoColumnType } from "../zenoservice";
+	import { ZenoColumnType, ZenoService } from "../zenoservice";
 	import RequirementEvalChip from "../metadata/chips/RequirementEvalChip.svelte";
+	import { TrailingIcon } from "@smui/chips";
 
 	export let item;
 	let modelColumn;
@@ -20,6 +21,7 @@
 	$: {
 		$model;
 		$currentPromptId;
+		$status;
 
 		let obj = $status.completeColumns.find((c) => {
 			return (
@@ -60,6 +62,26 @@
 
 		requirementIds = Object.keys($requirements);
 	}
+
+	function runPrompt() {
+		status.update((s) => {
+			s.status = "Running inference";
+			return s;
+		});
+		ZenoService.runPrompt({
+			model: $model,
+			promptId: $currentPromptId,
+			filterIds: { ids: [item[columnHash($settings.idColumn)]] },
+		}).then(() => {
+			ZenoService.getCompleteColumns().then((cols) => {
+				status.update((s) => {
+					s.status = "Done processing";
+					s.completeColumns = cols;
+					return s;
+				});
+			});
+		});
+	}
 </script>
 
 <div class="box svelte-ohpquu">
@@ -67,7 +89,15 @@
 	<span class="value svelte-ohpquu">
 		{item[columnHash($settings.dataColumn)]}
 	</span>
-	{#if modelColumn !== ""}
+	<TrailingIcon
+		class="material-icons"
+		style="margin-bottom: 5px; margin-left: 0px; cursor: pointer;"
+		on:click={() => {
+			runPrompt();
+		}}>
+		play_circle
+	</TrailingIcon>
+	{#if modelColumn !== "" && item[modelColumn] !== null}
 		<br />
 		<span class="label svelte-ohpquu">output:</span>
 		<span class="value svelte-ohpquu">
@@ -77,10 +107,12 @@
 	{#if Object.keys(evalColumns).length > 0}
 		<br />
 		{#each requirementIds as reqId}
-			<RequirementEvalChip
-				id={reqId}
-				isPass={item[evalColumns[reqId]] === true}
-				rationale={item[rationaleColumns[reqId]]} />
+			{#if evalColumns[reqId] !== "" && item[evalColumns[reqId]] !== null}
+				<RequirementEvalChip
+					id={reqId}
+					isPass={item[evalColumns[reqId]] === true}
+					rationale={item[rationaleColumns[reqId]]} />
+			{/if}
 		{/each}
 	{/if}
 </div>

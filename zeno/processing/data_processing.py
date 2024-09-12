@@ -3,14 +3,14 @@
 import os
 from inspect import getsource
 from pathlib import Path
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
 import pandas as pd
 from tqdm import trange
 
 from zeno.api import DistillReturn, ModelReturn, ZenoOptions
 from zeno.classes.base import DataProcessingReturn, ZenoColumn, ZenoColumnType
-from zeno.classes.classes import Prompt
+from zeno.classes.classes import FilterIds, Prompt
 from zeno.util import load_series
 
 
@@ -55,6 +55,7 @@ def run_inference(
     df: pd.DataFrame,
     batch_size: int,
     pos: int,
+    to_predict_indices: Optional[FilterIds] = None,
 ) -> List[DataProcessingReturn]:
     model_col_obj = ZenoColumn(
         column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt.version
@@ -70,7 +71,10 @@ def run_inference(
     model_save_path = Path(cache_path, model_hash + ".pickle")
     embedding_save_path = Path(cache_path, embedding_hash + ".pickle")
 
-    to_predict_indices = model_col.loc[pd.isna(model_col)].index
+    if to_predict_indices is None:
+        to_predict_indices = model_col.loc[pd.isna(model_col)].index
+    else:
+        to_predict_indices = pd.Index(to_predict_indices.ids)
 
     other_return_cols: Dict[str, ZenoColumn] = {}
     if len(to_predict_indices) > 0:

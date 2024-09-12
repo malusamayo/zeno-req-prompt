@@ -18,6 +18,7 @@ export type { HistogramBucket } from "./models/HistogramBucket";
 export type { HistogramColumnRequest } from "./models/HistogramColumnRequest";
 export type { HistogramRequest } from "./models/HistogramRequest";
 export type { HTTPValidationError } from "./models/HTTPValidationError";
+export type { InferenceRequest } from "./models/InferenceRequest";
 export { MetadataType } from "./models/MetadataType";
 export type { MetricKey } from "./models/MetricKey";
 export type { MetricRequest } from "./models/MetricRequest";

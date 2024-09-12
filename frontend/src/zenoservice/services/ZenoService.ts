@@ -22,7 +22,7 @@ import type { TagMetricKey } from "../models/TagMetricKey";
 import type { ZenoColumn } from "../models/ZenoColumn";
 import type { ZenoSettings } from "../models/ZenoSettings";
 import type { ZenoVariables } from "../models/ZenoVariables";
-import type { Prompt, Requirement } from "..";
+import type { InferenceRequest, Prompt, Requirement } from "..";
 
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
@@ -151,7 +151,10 @@ export class ZenoService {
 	 * @returns any Successful Response
 	 * @throws ApiError
 	 */
-	public static runPrompt(requestBody: Array<string>): CancelablePromise<any> {
+	public static runPrompt(
+		requestBody: InferenceRequest
+	): CancelablePromise<any> {
+		console.log(requestBody);
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/run-prompt",

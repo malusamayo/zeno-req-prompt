@@ -5,6 +5,7 @@
 	import { tooltip } from "@svelte-plugins/tooltips";
 	import {
 		prompts,
+		model,
 		currentPromptId,
 		status,
 		promptUpdating,
@@ -92,15 +93,17 @@
 			s.status = "Running inference";
 			return s;
 		});
-		ZenoService.runPrompt([$currentPromptId]).then(() => {
-			ZenoService.getCompleteColumns().then((cols) => {
-				status.update((s) => {
-					s.status = "Done processing";
-					s.completeColumns = cols;
-					return s;
+		ZenoService.runPrompt({ model: $model, promptId: $currentPromptId }).then(
+			() => {
+				ZenoService.getCompleteColumns().then((cols) => {
+					status.update((s) => {
+						s.status = "Done processing";
+						s.completeColumns = cols;
+						return s;
+					});
 				});
-			});
-		});
+			}
+		);
 	}
 
 	function updateContent() {

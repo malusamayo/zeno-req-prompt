@@ -29,7 +29,7 @@ from zeno.api import (
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
 from zeno.openai_client import OpenAIMultiClient
-from zeno.classes.classes import MetricKey, PlotRequest, TableRequest, ZenoColumn, Prompt, Requirement
+from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, TableRequest, ZenoColumn, Prompt, Requirement
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
 from zeno.classes.tag import Tag, TagMetricKey
@@ -289,7 +289,8 @@ class ZenoBackend(object):
                 self.df.loc[:, c_hash] = out.output
                 self.df[c_hash] = self.df[c_hash].convert_dtypes()
                 out.column.metadata_type = get_metadata_type(self.df[c_hash])
-                self.complete_columns.append(out.column)
+                if out.column not in self.complete_columns:
+                    self.complete_columns.append(out.column)
 
     def __predistill(self) -> None:
         """Run distilling functions not dependent on model outputs."""
@@ -346,14 +347,15 @@ class ZenoBackend(object):
                     )
                 self.__set_data_processing_returns(predistill_outputs)
 
-    def __inference(self, model_prompt_pairs=[], run_additional_inference=True) -> None:
+    def __inference(self, requests: List[InferenceRequest] =[], run_additional_inference=True) -> None:
         """Run models on instances."""
 
         # Check if we need to run inference since Pool is expensive
         models_to_run = []
-        if len(model_prompt_pairs) == 0:
-            model_prompt_pairs = [(model_name, prompt_id) for prompt_id in self.prompts.keys() for model_name in self.model_names]
-        for (model_name, prompt_id) in model_prompt_pairs:
+        if len(requests) == 0:
+            requests = [InferenceRequest(model=model_name, prompt_id=prompt_id) for prompt_id in self.prompts.keys() for model_name in self.model_names]
+        for req in requests:
+            (model_name, prompt_id, tag_ids) = (req.model, req.prompt_id, req.filter_ids)
             model_column = ZenoColumn(
                 column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt_id
             )
@@ -369,13 +371,9 @@ class ZenoBackend(object):
             load_series(self.df, model_column, model_save_path)
             load_series(self.df, embedding_column, embedding_save_path)
 
-            if self.df[model_hash].isna().any():
-                if not run_additional_inference:
-                    del self.df[model_hash]
-                    del self.df[embedding_hash]
-                else:
-                    models_to_run.append((model_name, prompt_id))
-            else:
+            if self.df[model_hash].isna().any() and run_additional_inference:
+                models_to_run.append(req)
+            elif not self.df[model_hash].isna().all():
                 self.df[model_hash] = self.df[model_hash].convert_dtypes()
                 model_column.metadata_type = get_metadata_type(self.df[model_hash])
                 if model_column not in self.complete_columns:
@@ -415,7 +413,8 @@ class ZenoBackend(object):
                     )
             else:
                 inference_outputs = []
-                for i, (model_name, prompt_id) in enumerate(models_to_run):
+                for i, req in enumerate(models_to_run):
+                    (model_name, prompt_id, tag_ids) = (req.model, req.prompt_id, req.filter_ids)
                     inference_outputs.append(
                         run_inference(
                             self.predict_function,
@@ -426,6 +425,7 @@ class ZenoBackend(object):
                             self.df,
                             self.batch_size,
                             i,
+                            tag_ids,
                         )
                     )
             self.__set_data_processing_returns(inference_outputs)
@@ -493,18 +493,19 @@ class ZenoBackend(object):
             self.__set_data_processing_returns(post_outputs)
 
     
-    def __run_evaluation(self, model_prompt_req_triplets: List[Tuple[str, str, str]]=[], run_additional_inference=True) -> None:
+    def __run_evaluation(self, requests: List[InferenceRequest]=[], run_additional_inference=True) -> None:
         
         evaluations_to_run = []
-        if len(model_prompt_req_triplets) == 0:
-            model_prompt_req_triplets = [
-                (model_name, prompt_id, requirement_id) 
+        if len(requests) == 0:
+            requests = [
+                InferenceRequest(model=model_name, prompt_id=prompt_id, filter_ids=None, requirement_id=requirement_id)
                 for model_name in self.model_names
                 for prompt_id in self.prompts.keys() 
                 for requirement_id in self.prompts[prompt_id].requirements.keys()
             ]
         
-        for (model_name, prompt_id, requirement_id) in model_prompt_req_triplets:
+        for req in requests:
+            (model_name, prompt_id, requirement_id, tag_ids) = (req.model, req.prompt_id, req.requirement_id, req.filter_ids)
 
             print(f"Running evaluation for model {model_name} on prompt {prompt_id} and requirement {requirement_id}")
             
@@ -520,13 +521,9 @@ class ZenoBackend(object):
             load_series(self.df, score_col, Path(self.cache_path, score_hash + ".pickle"))
             load_series(self.df, rationale_col, Path(self.cache_path, rationale_hash + ".pickle"))
 
-            if self.df[score_hash].isna().any() or self.df[rationale_hash].isna().any():
-                if not run_additional_inference:
-                    del self.df[score_hash]
-                    del self.df[rationale_hash]
-                else:
-                    evaluations_to_run.append((model_name, prompt_id, requirement_id))
-            else:
+            if (self.df[score_hash].isna().any() or self.df[rationale_hash].isna().any()) and run_additional_inference:
+                evaluations_to_run.append(req)
+            elif not self.df[score_hash].isna().all():
                 self.df[score_hash] = self.df[score_hash].convert_dtypes()
                 score_col.metadata_type = get_metadata_type(self.df[score_hash])
                 if score_col not in self.complete_columns:
@@ -539,26 +536,13 @@ class ZenoBackend(object):
 
         if len(evaluations_to_run) > 0:
             inference_outputs = []
-            for i, (model_name, prompt_id, requirement_id) in enumerate(evaluations_to_run):
+            for i, req in enumerate(evaluations_to_run):
+                (model_name, prompt_id, requirement_id, tag_ids) = (req.model, req.prompt_id, req.requirement_id, req.filter_ids)
 
-                score_col = ZenoColumn(
-                    column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}", model=model_name, prompt_id=prompt_id
+                inference_outputs.append(
+                    self.evaluate_requirement(model_name, prompt_id, requirement_id, tag_ids)
                 )
-                rationale_col = ZenoColumn(
-                    column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}Rationale", model=model_name, prompt_id=prompt_id
-                )
-                score_hash = str(score_col)
-                rationale_hash = str(rationale_col)
-                    
-                scores, rationales = self.evaluate_requirement(prompt_id, requirement_id)
 
-                scores.to_pickle(os.path.join(self.cache_path, score_hash + ".pickle"))
-                rationales.to_pickle(os.path.join(self.cache_path, rationale_hash + ".pickle"))
-                                
-                inference_outputs.append([
-                    DataProcessingReturn(column=score_col, output=scores),
-                    DataProcessingReturn(column=rationale_col, output=rationales)
-                ])
             self.__set_data_processing_returns(inference_outputs)
 
     def get_metrics_for_slices(
@@ -717,9 +701,14 @@ class ZenoBackend(object):
             pickle.dump(self.prompts, f)
         return self.prompts[new_version]
 
-    def run_prompt(self, prompt_version):
-        self.__inference([(model, prompt_version) for model in self.model_names])
-        self.__run_evaluation([(model, prompt_version, req_id) for req_id in self.prompts[prompt_version].requirements.keys() for model in self.model_names])
+    def run_prompt(self, req: InferenceRequest):
+        self.__inference([req])
+        requests_with_requirement = []
+        for requirement_id in self.prompts[req.prompt_id].requirements.keys():
+            innerdict = req.dict()
+            innerdict.update({"requirement_id": requirement_id})
+            requests_with_requirement.append(InferenceRequest(**innerdict))
+        self.__run_evaluation(requests_with_requirement)
     
     def find_best_match(self, prompt, snippet):
         normalized_snippet = " ".join(snippet.split())
@@ -936,10 +925,10 @@ class ZenoBackend(object):
         self.prompts[prompt_id].text = prompt
 
 
-    def evaluate_requirement(self, prompt_id, requirement_id):
+    def evaluate_requirement(self, model_name, prompt_id, requirement_id, to_predict_indices: Optional[FilterIds] = None,):
         ''' [TODO] Use LLM to evaluate prompt outputs based on requirements
 
-        Input: prompt_id, requirement_id
+        Input: model_name, prompt_id, requirement_id, to_predict_indices
         Output: 
         - A pd.Series of 0/1 evaluation scores to indicate whether the requirement is met
         - A pd.Series of rationale for the evaluation
@@ -947,8 +936,39 @@ class ZenoBackend(object):
         print(f"Evaluating requirement {requirement_id} for prompt {prompt_id}")
         # requirement = self.prompts[prompt_id].requirements[requirement_id]
 
+        # evaluate prompt outputs based on requirements, on to_predict_indices only
+        # refer to data_proceesing.py/run_inference to see how to select indices for prediction
+
+
+        score_col_obj = ZenoColumn(
+            column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}", model=model_name, prompt_id=prompt_id
+        )
+        rationale_col_obj = ZenoColumn(
+            column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}Rationale", model=model_name, prompt_id=prompt_id
+        )
+        score_hash = str(score_col_obj)
+        rationale_hash = str(rationale_col_obj)
+        score_col = self.df[score_hash].copy()
+        rationale_col = self.df[rationale_hash].copy()
+
+        if to_predict_indices is None:
+            to_predict_indices = score_col.loc[pd.isna(score_col)].index
+        else:
+            to_predict_indices = pd.Index(to_predict_indices.ids)
+
+        ## MOCK UP CODE START
         from random import uniform
-        return self.df[str(self.data_column)].map(lambda x: uniform(0, 1) > 0.5), self.df[str(self.data_column)].map(lambda x: "Random rationale")
+        score_col.loc[to_predict_indices] = [uniform(0, 1) > 0.5 for _ in range(len(to_predict_indices))]
+        rationale_col.loc[to_predict_indices] = ["Random rationale" for _ in range(len(to_predict_indices))]
+        ## MOCK UP CODE END
+
+        score_col.to_pickle(os.path.join(self.cache_path, score_hash + ".pickle"))
+        rationale_col.to_pickle(os.path.join(self.cache_path, rationale_hash + ".pickle"))
+                        
+        return [
+            DataProcessingReturn(column=score_col_obj, output=score_col),
+            DataProcessingReturn(column=rationale_col_obj, output=rationale_col)
+        ]
 
 
     def create_new_tag(self, req: Tag):
