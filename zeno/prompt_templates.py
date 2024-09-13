@@ -72,19 +72,42 @@ Requirements: {requirements}
 """
 
 
-REQUIREMENT_EXTRACTOR_PROMPT = """Given the following prompt, extract a series of success criteria used for evaluating the model outputs from the prompt. 
+REQUIREMENT_EXTRACTOR_PROMPT = """Given the following prompt, extract a series of success criteria used for evaluating the model outputs. The success criteria should be clear, concise, and usable for automatic evaluation by a GPT model. 
+
 Requirements:
-1. List requirements one by one in the format: 
+1. List the requirements one by one in the format: 
     {{ 
         "name": name, 
         "description": description,
-        "evaluation_method": evaluation_method,
+        "evaluation_method": evaluation_method (i.e., how GPT should verify if the requirement is fulfilled, step-by-step),
         "prompt_snippet": prompt_snippet
     }}
-2. Use the exact wording from the prompt for the Prompt Snippet.
-3. Only include unique criteria mentioned in the original prompt. Merge the ones that are similar. 
-4. Try to make the evaluation method as clear and objective as possible and give specific steps. 
-5. Be concise.
+    
+2. The evaluation method must be actionable, clearly stating how the model output should be evaluated, and use yes/no questions where possible. For example, "Check if X is present in the output. If yes, return 'Yes'. If no, return 'No'."
+
+3. Make sure the evaluation method uses simple language that GPT can follow directly.
+
+4. Use the exact wording from the prompt for the Prompt Snippet. 
+
+5. Only include unique criteria from the original prompt. Combine similar ones.
+
+6. Ensure each evaluation method is objective and based on measurable aspects of the output (e.g., "The answer includes the word 'X'", "The response correctly explains Y concept").
+
+7. Be concise in writing the criteria and methods.
+
 Prompt: '''{prompt}'''
+
 Requirements:
+"""
+
+REQUIREMENT_EVALUATION_PROMPT = """"
+Answer 1 for yes and 0 for no. 
+Given the prompt '''${prompt}''' and requirement '''${requirement}''', follow the evaluation method to determine if the model output fulfills the requirement: '''${evaluation_method}'''? Give a rationale to explain your answer.
+Model Output: '''${modelOutput} '''
+The output format should be:
+    {{ 
+        "modelOutput": evaluated_model_output, 
+        "pass/fail": 0 or 1
+        "rationale":
+    }}
 """

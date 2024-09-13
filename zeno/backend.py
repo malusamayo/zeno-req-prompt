@@ -48,7 +48,7 @@ from zeno.util import (
     read_pickle,
     requirements_to_str,
 )
-from zeno.prompt_templates import REQUIREMENT_CREATOR_PROMPT, REQUIREMENT_OPTIMIZER_PROMPT, PROMPT_COMPILER_PROMPT, REQUIREMENT_EXTRACTOR_PROMPT
+from zeno.prompt_templates import REQUIREMENT_CREATOR_PROMPT, REQUIREMENT_OPTIMIZER_PROMPT, PROMPT_COMPILER_PROMPT, REQUIREMENT_EXTRACTOR_PROMPT, REQUIREMENT_EVALUATION_PROMPT
 
 
 class ZenoBackend(object):
@@ -934,7 +934,8 @@ class ZenoBackend(object):
         - A pd.Series of rationale for the evaluation
         '''
         print(f"Evaluating requirement {requirement_id} for prompt {prompt_id}")
-        # requirement = self.prompts[prompt_id].requirements[requirement_id]
+    
+
 
         # evaluate prompt outputs based on requirements, on to_predict_indices only
         # refer to data_proceesing.py/run_inference to see how to select indices for prediction
@@ -956,12 +957,54 @@ class ZenoBackend(object):
         else:
             to_predict_indices = pd.Index(to_predict_indices.ids)
 
-        ## MOCK UP CODE START
-        from random import uniform
-        score_col.loc[to_predict_indices] = [uniform(0, 1) > 0.5 for _ in range(len(to_predict_indices))]
-        rationale_col.loc[to_predict_indices] = ["Random rationale" for _ in range(len(to_predict_indices))]
-        ## MOCK UP CODE END
+        requirement = self.prompts[prompt_id].requirements[requirement_id]
 
+        model_col_obj = ZenoColumn(
+        column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt_id
+        )
+        model_hash = str(model_col_obj)
+        model_col = self.df[model_hash].copy()
+
+        client = OpenAIMultiClient(endpoint="chats", data_template={"model": model_name})
+
+        def chat_completion(indices):
+            for i in indices:
+                model_ouput = model_col[i]
+                api_prompt = REQUIREMENT_EVALUATION_PROMPT.format(prompt=self.prompts[prompt_id].text, requirement = requirement.description,evaluation_method=requirement.evaluation_method, modelOutput=model_ouput)
+                client.request(
+                    data={
+                        "messages": [
+                            {"role": "system", "content": 'You are a helpful assistant. Please return the response as valid JSON.'},
+                            {"role": "user", "content": api_prompt}
+                        ],
+                        'response_format': {"type": "json_object"}  
+                    }, metadata={'num': i}, endpoint = "chat.completions"
+                )
+
+        client.run_request_function(chat_completion,to_predict_indices)
+        count = 0
+        for result in client:
+            num = result.metadata['num']
+            response = result.response.choices[0].message.content
+
+            evaluation_res = json.loads(response)
+
+            str_score = int(evaluation_res.get('pass/fail', '0'))
+            if str_score == 1:
+                score_col[num] = True
+            else:
+                score_col[num] = False
+
+            rationale_col[num] = evaluation_res.get('rationale', '')
+            count += 1
+            if count == len(to_predict_indices):
+                break
+
+        ## MOCK UP CODE START
+        # from random import uniform
+        # score_col.loc[to_predict_indices] = [uniform(0, 1) > 0.5 for _ in range(len(to_predict_indices))]
+        # rationale_col.loc[to_predict_indices] = ["Random rationale" for _ in range(len(to_predict_indices))]
+        ## MOCK UP CODE END
         score_col.to_pickle(os.path.join(self.cache_path, score_hash + ".pickle"))
         rationale_col.to_pickle(os.path.join(self.cache_path, rationale_hash + ".pickle"))
                         

@@ -17,6 +17,8 @@
 		type Requirement,
 		type Slice,
 	} from "../../zenoservice";
+	import { VegaLite } from "svelte-vega";
+	import {generateStackedBarChartSpec} from "../../report/bar-chart/vegaSpec-bar";
 
 	export let compare;
 	export let requirement: Requirement;
@@ -77,6 +79,13 @@
 			selectModelDependSliceCell(modelDependSliceName);
 		}
 	}
+
+	function prepareBarChartData(passed, failed) {
+		return [
+			{ category: 'Pass', value: passed },
+			{ category: 'Fail', value: failed }
+		];
+	}
 </script>
 
 {#if result}
@@ -86,13 +95,15 @@
 			on:keydown={() => ({})}
 			on:click={selectFilter}>
 			<span>
-				{res[0].metric !== undefined && res[0].metric !== null
+				<!-- {res[0].metric !== undefined && res[0].metric !== null
 					? res[0].metric.toFixed(2)
-					: ""}
+					: ""} -->
+				<VegaLite spec={generateStackedBarChartSpec(prepareBarChartData(res[0].metric, 1 - res[0].metric))} 
+				options={{ actions: false }} />
 			</span>
-			<span id="size">
+			<!-- <span id="size">
 				({res[0].size.toLocaleString()})
-			</span>
+			</span> -->
 		</div>
 	{/await}
 {/if}
@@ -115,7 +126,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		margin-right: 10px;
+		margin-right: 30px;
 		padding: 1px;
 	}
 	.compare-btn {

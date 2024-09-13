@@ -3,7 +3,7 @@
 	import { getMetricsForSlices } from "../../api/slice";
 	import { report, reports, slices } from "../../stores";
 	import type { MetricKey } from "../../zenoservice";
-	import generateSpec from "./vegaSpec-bar";
+	import {generateSpec} from "./vegaSpec-bar";
 
 	$: currentReport = $reports[$report];
 	$: selectMetrics = currentReport.metrics[0];

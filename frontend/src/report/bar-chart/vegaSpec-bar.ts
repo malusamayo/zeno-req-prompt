@@ -1,6 +1,6 @@
 import type { VegaLiteSpec } from "svelte-vega";
 
-export default function generateSpec(parameters, selectMetrics): VegaLiteSpec {
+export function generateSpec(parameters, selectMetrics): VegaLiteSpec {
 	const x_encode = parameters.xEncoding;
 	const y_encode = parameters.yEncoding;
 	const z_encode = parameters.zEncoding;
@@ -110,4 +110,43 @@ export default function generateSpec(parameters, selectMetrics): VegaLiteSpec {
 	};
 
 	return spec as VegaLiteSpec;
+}
+
+export function generateStackedBarChartSpec(data): VegaLiteSpec {
+    const spec = {
+        width: 70,
+        height: 15,
+        mark: { type: 'bar', orient: 'horizontal' },  // Use 'horizontal' for a horizontal stacked bar
+        encoding: {
+            x: {
+                field: 'value',          // The quantitative field to be stacked
+                type: 'quantitative',
+                stack: true              // Enable stacking
+            },
+            color: {
+                field: 'category',        // The categorical field to distinguish the stack segments
+                type: 'nominal',
+                scale: {                  // Define custom colors for categories
+                    domain: ['Pass', 'Fail'],
+                    range: ['green', 'red']
+                },
+                legend: null              // Disable the legend for the category field
+            },
+            tooltip: [                    // Tooltip shows the category and value
+                { field: 'category', type: 'nominal' },
+                { field: 'value', type: 'quantitative' }
+            ]
+        },
+        data: { values: data },            // Input data for the chart
+        selection: {                       // Add interactivity with selection
+            barSelect: {
+                type: "single",
+                on: "click",
+                fields: ["category"],
+                empty: "none"
+            }
+        }
+    };
+
+    return spec as VegaLiteSpec;
 }
