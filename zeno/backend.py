@@ -376,7 +376,7 @@ class ZenoBackend(object):
             elif not self.df[model_hash].isna().all():
                 self.df[model_hash] = self.df[model_hash].convert_dtypes()
                 model_column.metadata_type = get_metadata_type(self.df[model_hash])
-                if model_column not in self.complete_columns:
+                if model_hash not in [str(col) for col in self.complete_columns]:
                     self.complete_columns.append(model_column)
 
                 # Check if there were saved postdistill columns:
@@ -395,7 +395,8 @@ class ZenoBackend(object):
                     self.df.loc[:, str(col)] = series
                     self.df[str(col)] = self.df[str(col)].convert_dtypes()
                     col.metadata_type = get_metadata_type(self.df[str(col)])
-                    self.complete_columns.append(col)
+                    if col not in self.complete_columns:
+                        self.complete_columns.append(col)
         
         if len(models_to_run) > 0 and self.predict_function is not None:
             if self.multiprocessing:
