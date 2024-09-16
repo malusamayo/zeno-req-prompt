@@ -81,6 +81,7 @@
 				prompts.update((pts) => {
 					return pts.set(createdPrompts[0].version, createdPrompts[0]);
 				});
+				requirements.set(createdPrompts[0].requirements);
 				promptUpdating.set(false);
 				allowUpdates = false;
 			});
