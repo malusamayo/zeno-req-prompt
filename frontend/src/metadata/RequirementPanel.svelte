@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mdiCogs, mdiMagicStaff, mdiPlus } from "@mdi/js";
+	import { mdiCogs, mdiUpdate, mdiPlus } from "@mdi/js";
 	import Button from "@smui/button";
 	import CircularProgress from "@smui/circular-progress";
 	import { Svg } from "@smui/common";
@@ -14,20 +14,59 @@
 		showSliceFinder,
 		tab,
 		promptUpdating,
+		requirementUpdating,
 		prompts,
 		currentPromptId,
 		showNewRequirement,
 		requirementToEdit,
 		requirements,
 		promptToUpdate,
+		suggestedRequirements,
 	} from "../stores";
-	import { ZenoService } from "../zenoservice";
+	import { ZenoService, type Requirement } from "../zenoservice";
+	import { areRequirementsEqual } from "../zenoservice/models/prompt";
 	import RequirementCell from "./cells/RequirementCell.svelte";
 
 	let newRequirementInput = "";
-	let requirementAdding = false;
+	let displayedRequirements: { [key: string]: Requirement };
 
-	$: allowUpdates = newRequirementInput === "";
+	$: inputChanged = newRequirementInput === "";
+
+	$: {
+		$requirements;
+		displayedRequirements = JSON.parse(JSON.stringify($requirements));
+		Object.entries(displayedRequirements).forEach(([req_id, req]) => {
+			req.mode = "";
+		});
+	}
+
+	$: {
+		$suggestedRequirements;
+		displayedRequirements = JSON.parse(JSON.stringify($requirements));
+		Object.entries(displayedRequirements).forEach(([req_id, req]) => {
+			req.mode = "";
+		});
+		if (Object.keys($suggestedRequirements).length > 0) {
+			Object.entries($suggestedRequirements).forEach(([req_id, req]) => {
+				if (!(req_id in displayedRequirements)) {
+					displayedRequirements[req_id] = { ...req, mode: "new" };
+				} else if (
+					areRequirementsEqual(
+						$suggestedRequirements[req_id],
+						displayedRequirements[req_id]
+					)
+				) {
+					displayedRequirements[req_id] = { ...req, mode: "edited" };
+				}
+			});
+			Object.entries($requirements).forEach(([req_id, req]) => {
+				if (!(req_id in $suggestedRequirements)) {
+					displayedRequirements[req_id] = { ...req, mode: "deleted" };
+				}
+			});
+		}
+		console.log(displayedRequirements);
+	}
 
 	function get_max_requirement_id() {
 		return Math.max(
@@ -45,7 +84,7 @@
 			evaluationMethod: "",
 		};
 
-		requirementAdding = true;
+		requirementUpdating.set(true);
 		ZenoService.optimizeRequirement([requirement]).then(
 			(optimizedRequirement) => {
 				requirement = optimizedRequirement;
@@ -53,19 +92,20 @@
 					$reqs[requirement.id] = requirement;
 					return $reqs;
 				});
-				promptToUpdate.set(true);
+				// promptToUpdate.set(true);
 				newRequirementInput = "";
-				requirementAdding = false;
+				requirementUpdating.set(false);
 			}
 		);
 	}
 
 	function compile_to_prompt() {
 		promptUpdating.set(true);
+		suggestedRequirements.set({});
 		ZenoService.createNewPrompt({
 			text: "",
 			version: "",
-			requirements: $requirements,
+			requirements: displayedRequirements,
 		}).then((createdPrompts) => {
 			prompts.update((pts) => {
 				return pts.set(createdPrompts[0].version, createdPrompts[0]);
@@ -94,7 +134,7 @@
 <div id="requirement-header" class="inline">
 	<div class="inline">
 		<h4>Requirements</h4>
-		{#if requirementAdding}
+		{#if $requirementUpdating}
 			<CircularProgress
 				style="height: 15px; width: 15px; margin-left: 10px;"
 				indeterminate />
@@ -108,20 +148,19 @@
 				position: "left",
 				theme: "zeno-tooltip",
 			}}>
-			<IconButton on:click={compile_to_prompt}>
+			<IconButton
+				on:click={() => {
+					promptToUpdate.set(true);
+				}}>
 				<Icon component={Svg} viewBox="0 0 24 24">
-					{#if $selectionPredicates.predicates.length > 0}
-						<path fill="#6a1a9a" d={mdiCogs} />
-					{:else}
-						<path fill="var(--G1)" d={mdiCogs} />
-					{/if}
+					<path fill="var(--G1)" d={mdiCogs} />
 				</Icon>
 			</IconButton>
 		</div>
 	</div>
 </div>
 
-{#each Object.entries($requirements) as [id, req]}
+{#each Object.entries(displayedRequirements) as [id, req]}
 	<RequirementCell requirement={req} compare={$tab === "comparison"} />
 {/each}
 
@@ -133,13 +172,13 @@
 	<span>
 		<IconButton
 			on:click={() => {
-				if (allowUpdates) {
+				if (inputChanged) {
 					add_requirement();
 				}
 			}}
-			style={allowUpdates ? "cursor:pointer" : "cursor:default"}>
+			style={inputChanged ? "cursor:pointer" : "cursor:default"}>
 			<Icon component={Svg} viewBox="0 0 24 24">
-				{#if allowUpdates}
+				{#if inputChanged}
 					<path fill="var(--G4)" d={mdiPlus} />
 				{:else}
 					<path fill="var(--G1)" d={mdiPlus} />

@@ -23,11 +23,13 @@
 		requirementToEdit,
 		requirements,
 		promptToUpdate,
+		suggestedRequirements,
 	} from "../../stores";
 	import { clickOutside } from "../../util/clickOutside";
 	import { ZenoService, type Slice, type Requirement } from "../../zenoservice";
 	import RequirementCellResult from "./RequirementCellResult.svelte";
 	import RequirementChip from "../chips/RequirementChip.svelte";
+	import { TrailingIcon } from "@smui/chips";
 
 	export let requirement: Requirement;
 	export let compare;
@@ -122,6 +124,35 @@
 			<div class="inline">
 				<div class="hori-group" style:color="var(--G1)">
 					<RequirementChip name={requirement.name} id={requirement.id} />
+					{#if requirement.mode && requirement.mode !== ""}
+						<img
+							class="tag"
+							draggable="false"
+							src="https://img.shields.io/badge/{requirement.mode === 'new'
+								? 'new-green'
+								: requirement.mode === 'deleted'
+								? 'deleted-red'
+								: 'edited-yellow'}"
+							alt=""
+							on:keydown={() => {}} />
+						<TrailingIcon
+							class="material-icons"
+							style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; color: #97ca00;"
+							on:click={() => {}}>
+							check
+						</TrailingIcon>
+						<TrailingIcon
+							class="material-icons"
+							style="margin-bottom: 5px; margin-left: 3px; cursor: pointer; color: #e05d44;"
+							on:click={() => {
+								suggestedRequirements.update(($suggestRequirements) => {
+									delete $suggestRequirements[requirement.id];
+									return $suggestRequirements;
+								});
+							}}>
+							close
+						</TrailingIcon>
+					{/if}
 
 					<div class="description">
 						{requirement.description}
@@ -314,5 +345,11 @@
 	.description {
 		font-size: small;
 		font-weight: lighter;
+	}
+
+	.tag {
+		cursor: default;
+		margin-right: 2px;
+		margin-bottom: -2.5px;
 	}
 </style>
