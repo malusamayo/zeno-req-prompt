@@ -94,7 +94,10 @@ export const currentPromptId: Writable<string> = writable("");
 export const requirements: Writable<{ [key: string]: Requirement }> = writable(
 	{}
 );
+export const suggestedRequirements: Writable<{ [key: string]: Requirement }> =
+	writable({});
 export const promptUpdating: Writable<boolean> = writable(false);
+export const requirementUpdating: Writable<boolean> = writable(false);
 export const promptToUpdate: Writable<boolean> = writable(false);
 
 currentPromptId.subscribe(($currentPromptId) => {
@@ -104,6 +107,7 @@ currentPromptId.subscribe(($currentPromptId) => {
 				JSON.stringify(get(prompts).get($currentPromptId).requirements)
 			)
 		);
+		suggestedRequirements.set({});
 	}
 });
 

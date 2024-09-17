@@ -13,6 +13,7 @@
 	} from "../../stores";
 	import Textfield from "@smui/textfield";
 	import { mdiMagicStaff } from "@mdi/js";
+	import HistoryItemView from "../../instance-views/HistoryItemView.svelte";
 
 	let requirement: Requirement;
 	let isNewRequirement;
@@ -67,44 +68,51 @@
 		paperHeight > window.innerHeight * 0.75
 			? 'overflow-y: scroll'
 			: 'overflow-y: show'}">
-		<Content>
-			<div class="inline">
-				<Textfield
-					label="Requirement Name"
-					bind:value={requirement.name}
-					bind:this={nameInput} />
+		<!-- <Content> -->
+		<div class="inline">
+			<Textfield
+				label="Requirement Name"
+				bind:value={requirement.name}
+				bind:this={nameInput} />
 
-				<IconButton on:click={optimizeRequirement}>
-					<Icon component={Svg} viewBox="0 0 24 24">
-						<path fill="var(--G1)" d={mdiMagicStaff} />
-					</Icon>
-				</IconButton>
-			</div>
-			<label>Description</label>
-			<textarea bind:value={requirement.description} />
-			<label>Evaluation Method</label>
-			<textarea
-				bind:value={requirement.evaluationMethod}
-				style="min-height: 120px;" />
-			<label>Prompt Implementation</label>
-			<textarea bind:value={requirement.promptSnippet} />
-			<div id="submit">
-				<Button variant="outlined" on:click={createRequirement}>
-					{isNewRequirement ? "Create" : "Update"}
-				</Button>
-				<Button
-					style="margin-right: 10px"
-					variant="outlined"
-					on:click={() => showNewRequirement.set(false)}>
-					cancel
-				</Button>
-				<!-- {#if (!$sliceToEdit && $slices.has(sliceName)) || ($sliceToEdit && originalName !== sliceName && $slices.has(sliceName))}
+			<IconButton on:click={optimizeRequirement}>
+				<Icon component={Svg} viewBox="0 0 24 24">
+					<path fill="var(--G1)" d={mdiMagicStaff} />
+				</Icon>
+			</IconButton>
+		</div>
+		<label>Description</label>
+		<textarea bind:value={requirement.description} />
+		<label>Evaluation Method</label>
+		<textarea
+			bind:value={requirement.evaluationMethod}
+			style="min-height: 120px;" />
+		<label>Prompt Implementation</label>
+		<textarea bind:value={requirement.promptSnippet} />
+		{#if requirement.examples && requirement.examples.length > 0}
+			<label>Examples</label>
+			{#each requirement.examples as example}
+				<HistoryItemView {example} />
+			{/each}
+		{/if}
+
+		<div id="submit">
+			<Button variant="outlined" on:click={createRequirement}>
+				{isNewRequirement ? "Create" : "Update"}
+			</Button>
+			<Button
+				style="margin-right: 10px"
+				variant="outlined"
+				on:click={() => showNewRequirement.set(false)}>
+				cancel
+			</Button>
+			<!-- {#if (!$sliceToEdit && $slices.has(sliceName)) || ($sliceToEdit && originalName !== sliceName && $slices.has(sliceName))}
 					<p style:margin-right="10px" style:color="red">
 						slice already exists
 					</p>
 				{/if} -->
-			</div>
-		</Content>
+		</div>
+		<!-- </Content> -->
 	</Paper>
 </div>
 
@@ -127,10 +135,21 @@
 		margin-top: 10px;
 	}
 
-	input,
 	textarea {
 		width: calc(100% - 20px); /* Adjust width to account for padding */
 		padding: 8px;
+		position: relative;
+		overflow: visible;
+		border: 0.5px solid var(--G4);
+		border-radius: 4px;
+		margin-top: 5px;
+		display: flex;
+		padding-left: 5px;
+		padding-right: 10px;
+		min-height: 36px;
+		min-width: 200px;
+		font-size: small;
+		font-weight: lighter;
 		resize: none;
 	}
 
