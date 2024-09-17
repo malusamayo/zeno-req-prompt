@@ -27,6 +27,8 @@
 	let newRequirementInput = "";
 	let requirementAdding = false;
 
+	$: allowUpdates = newRequirementInput === "";
+
 	function get_max_requirement_id() {
 		return Math.max(
 			Math.max(...Object.keys($requirements).map((id) => Number(id))),
@@ -71,6 +73,13 @@
 			currentPromptId.set(createdPrompts[0].version);
 			promptUpdating.set(false);
 		});
+	}
+
+	function submit(e) {
+		if (e.metaKey && e.key === "Enter") {
+			e.preventDefault();
+			add_requirement();
+		}
 	}
 
 	$: {
@@ -118,12 +127,23 @@
 
 <div class="inline">
 	<input
-		placeholder="Write a new requirement here."
-		bind:value={newRequirementInput} />
+		placeholder="Write a new requirement here. ⌘ + Enter to submit."
+		bind:value={newRequirementInput}
+		on:keydown={submit} />
 	<span>
-		<IconButton on:click={add_requirement}>
+		<IconButton
+			on:click={() => {
+				if (allowUpdates) {
+					add_requirement();
+				}
+			}}
+			style={allowUpdates ? "cursor:pointer" : "cursor:default"}>
 			<Icon component={Svg} viewBox="0 0 24 24">
-				<path fill="var(--G1)" d={mdiPlus} />
+				{#if allowUpdates}
+					<path fill="var(--G4)" d={mdiPlus} />
+				{:else}
+					<path fill="var(--G1)" d={mdiPlus} />
+				{/if}
 			</Icon>
 		</IconButton>
 	</span>
