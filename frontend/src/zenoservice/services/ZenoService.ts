@@ -22,7 +22,12 @@ import type { TagMetricKey } from "../models/TagMetricKey";
 import type { ZenoColumn } from "../models/ZenoColumn";
 import type { ZenoSettings } from "../models/ZenoSettings";
 import type { ZenoVariables } from "../models/ZenoVariables";
-import type { InferenceRequest, Prompt, Requirement } from "..";
+import type {
+	FeedbackRequest,
+	InferenceRequest,
+	Prompt,
+	Requirement,
+} from "..";
 
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
@@ -178,6 +183,26 @@ export class ZenoService {
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/optimize-requirement",
+			body: requestBody,
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Suggest requirement updates
+	 * @param requestBody
+	 * @returns any Successful Response
+	 * @throws ApiError
+	 */
+	public static suggestRequirementUpdates(
+		requestBody: FeedbackRequest
+	): CancelablePromise<Record<string, Requirement>> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/suggest-requirement-updates",
 			body: requestBody,
 			mediaType: "application/json",
 			errors: {

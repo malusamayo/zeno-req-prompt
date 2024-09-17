@@ -18,6 +18,7 @@ from zeno.classes.classes import (
     EmbedProject2DRequest,
     EntryRequest,
     InferenceRequest,
+    FeedbackRequest,
     MetricRequest,
     PlotRequest,
     StatusResponse,
@@ -143,6 +144,11 @@ def get_server(zeno: ZenoBackend):
     def optimize_requirement(req: List[Requirement]):
         req = zeno.optimize_requirement(req[0])
         return req
+
+    @api_app.post("/suggest-requirement-updates", response_model=Dict[str, Requirement], tags=["zeno"])
+    def suggest_requirement_updates(req: FeedbackRequest):
+        requirements = zeno.suggest_requirement_updates(req)
+        return requirements
 
     @api_app.post("/folders", tags=["zeno"])
     def set_folders(folders: List[str]):

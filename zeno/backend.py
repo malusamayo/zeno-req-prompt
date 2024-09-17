@@ -9,6 +9,7 @@ import sys
 import json
 import re
 import threading
+import copy
 from inspect import getsource
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -29,7 +30,7 @@ from zeno.api import (
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
 from zeno.openai_client import OpenAIMultiClient
-from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, TableRequest, ZenoColumn, Prompt, Requirement
+from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
 from zeno.classes.tag import Tag, TagMetricKey
@@ -508,7 +509,7 @@ class ZenoBackend(object):
         for req in requests:
             (model_name, prompt_id, requirement_id, tag_ids) = (req.model, req.prompt_id, req.requirement_id, req.filter_ids)
 
-            print(f"Running evaluation for model {model_name} on prompt {prompt_id} and requirement {requirement_id}")
+            # print(f"Running evaluation for model {model_name} on prompt {prompt_id} and requirement {requirement_id}")
             
             score_col = ZenoColumn(
                 column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}", model=model_name, prompt_id=prompt_id
@@ -927,14 +928,14 @@ class ZenoBackend(object):
 
 
     def evaluate_requirement(self, model_name, prompt_id, requirement_id, to_predict_indices: Optional[FilterIds] = None,):
-        ''' [TODO] Use LLM to evaluate prompt outputs based on requirements
+        ''' Use LLM to evaluate prompt outputs based on requirements
 
         Input: model_name, prompt_id, requirement_id, to_predict_indices
         Output: 
         - A pd.Series of 0/1 evaluation scores to indicate whether the requirement is met
         - A pd.Series of rationale for the evaluation
         '''
-        print(f"Evaluating requirement {requirement_id} for prompt {prompt_id}")
+        # print(f"Evaluating requirement {requirement_id} for prompt {prompt_id}")
     
 
 
@@ -1001,11 +1002,6 @@ class ZenoBackend(object):
             if count == len(to_predict_indices):
                 break
 
-        ## MOCK UP CODE START
-        # from random import uniform
-        # score_col.loc[to_predict_indices] = [uniform(0, 1) > 0.5 for _ in range(len(to_predict_indices))]
-        # rationale_col.loc[to_predict_indices] = ["Random rationale" for _ in range(len(to_predict_indices))]
-        ## MOCK UP CODE END
         score_col.to_pickle(os.path.join(self.cache_path, score_hash + ".pickle"))
         rationale_col.to_pickle(os.path.join(self.cache_path, rationale_hash + ".pickle"))
                         
@@ -1014,6 +1010,47 @@ class ZenoBackend(object):
             DataProcessingReturn(column=rationale_col_obj, output=rationale_col)
         ]
 
+
+    def suggest_requirement_updates(self, req: FeedbackRequest) -> Dict[str, Requirement]:
+        ''' Use LLM to update requirements based on user-provided feedback
+        - If there is a closely related requirement -- update requirement description & implementation
+        - If there is a conflicting requirement -- delete the requirement
+        - If there is no related requirements -- add a new one
+
+
+        Input: 
+        - self.prompts[req.prompt_id].requirements
+        - req.is_positive, req.feedback
+        - data_col.at[req.example_id], model_col.at[req.example_id] # example inputs/outputs
+        Output: 
+        - new requirements: Dict[str, Requirement], the original requirements can be deleted, updated, or appended
+        '''
+        ## MOCKUP CODE
+        print(f"suggesting new requirements for positive={req.is_positive} example_id={req.example_id} with feedback {req.feedback}")
+
+        data_col = self.df[str(self.data_column)]
+        model_col_obj = ZenoColumn(
+            column_type=ZenoColumnType.OUTPUT, name="output", model=req.model, prompt_id=req.prompt_id
+        )
+        model_col = self.df[str(model_col_obj)]
+
+        new_requirements = copy.copy(self.prompts[req.prompt_id].requirements)
+        new_req_id = str(max([int(x) for x in new_requirements.keys()]) + 1)
+        new_requirements[new_req_id] = Requirement(
+            id = new_req_id,
+            name = "new-requirement",
+            description = "This is a new requirement",
+            prompt_snippet = "",
+            evaluation_method = "",
+            examples = [Example(
+                id = req.example_id,
+                input = data_col.at[int(req.example_id)],
+                output = model_col.at[int(req.example_id)],
+                is_positive = req.is_positive, 
+                feedback = req.feedback,
+            )], 
+        )
+        return new_requirements
 
     def create_new_tag(self, req: Tag):
         if not self.editable:

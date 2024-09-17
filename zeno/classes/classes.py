@@ -50,6 +50,13 @@ class InferenceRequest(CamelModel):
     filter_ids: Optional[FilterIds] = None
     requirement_id: Optional[str] = None
 
+class FeedbackRequest(CamelModel):
+    model: str
+    prompt_id: str
+    example_id: str
+    is_positive: bool
+    feedback: str = ""
+
 class TableRequest(CamelModel):
     columns: List[ZenoColumn]
     diff_column_1: Optional[ZenoColumn] = None
@@ -81,12 +88,20 @@ class EntryRequest(BaseModel):
     columns: List[ZenoColumn] = []
 
 
+class Example(CamelModel):
+    id: Union[int, str]
+    input: str
+    output: str
+    is_positive: bool
+    feedback: Optional[str] = ""
+
 class Requirement(CamelModel):
     id: str
     name: str
     description: str
     prompt_snippet: str
     evaluation_method: str
+    examples: List[Example] = []
 
 class Prompt(CamelModel):
     text: str
