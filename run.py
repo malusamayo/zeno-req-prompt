@@ -33,7 +33,7 @@ def openai_inference(model_name, prompt):
     return pred
 
 if __name__ == '__main__':
-    data = pd.read_csv('data/test.csv').sample(10, random_state=42).reset_index(drop=True)
+    data = pd.read_csv('data/travel_data.csv').sample(10, random_state=42).reset_index(drop=True)
     data["label"] = ""
     prompt = "<prompt></prompt>"
     
@@ -76,9 +76,9 @@ if __name__ == '__main__':
         models=['gpt-4o-mini'],
         prompts={'v1': Prompt(text=prompt, version='v1', requirements=[])},
         view='text-classification',
-        data_column="Email Template",
+        data_column="query",
         label_column="label",
-        cache_path='.zeno_cache_0910',
+        cache_path='.zeno_cache_0918',
         multiprocessing=False,
     )
     zeno(params)

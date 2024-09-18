@@ -4,7 +4,9 @@ REQUIREMENT_OPTIMIZER_PROMPT = """You are given a requirement with the following
 2. For fields that already have a value (i.e., they are not an empty string), DO NOT MODIFY them. Keep their content exactly as it is.
 3. For the 'name' field, if it is an empty string, generate a name based on the 'description' that is concise and descriptive of the requirement. The name should be in lowercase and contain hyphens (-) instead of spaces.
 4. For the 'evaluation_method', if it is an empty string, generate a clear, step-by-step method based on the 'description' that explains how to evaluate whether the requirement is met. The evaluation method should include specific, measurable steps.
-
+5. The evaluation method must be actionable, clearly stating how the model output should be evaluated, and use yes/no questions where possible. For example, "Check if X is present in the output. If yes, return 'Yes'. If no, return 'No'."
+6. Make sure the evaluation method uses simple language that GPT can follow directly.
+7.Ensure each evaluation method is objective and based on measurable aspects of the output (e.g., "The answer includes the word 'X'", "The response correctly explains Y concept").
 ### Examples:
 {{ 
     "name": "answer-length", 
@@ -31,8 +33,9 @@ REQUIREMENT_CREATOR_PROMPT = """You are given a user-written requirement. Based 
 
 1. For the 'name' field, generate a name based on the user input that is concise and descriptive of the requirement. The name should be in lowercase and contain hyphens (-) instead of spaces.
 2. For the 'description' field, generate a description based on the 'name' that clearly explains the requirement in detail.
-3. For the 'evaluation_method' field, generate a clear, step-by-step method based on the 'description' that explains how to evaluate whether the requirement is met. The evaluation method should include specific, measurable steps.
-
+3. For the 'evaluation_method' field, generate a clear, step-by-step method based on the 'description' that explains how to evaluate whether the requirement is met. The evaluation method should include specific, measurable steps. (i.e., how GPT should verify if the requirement is fulfilled, step-by-step)
+4. Make sure the evaluation method uses simple language that GPT can follow directly and evaluation method does not mention steps GPT cannot execute.
+5. Ensure each evaluation method is objective and based on measurable aspects of the output (e.g., "The answer includes the word 'X'", "The response correctly explains Y concept").
 ### Examples:
 Input: answer should be concise
 Output: {{ 
