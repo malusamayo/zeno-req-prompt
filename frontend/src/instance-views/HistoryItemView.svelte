@@ -57,6 +57,7 @@
 	}
 	.value.svelte-ohpquu {
 		font-size: 12px;
+		white-space: pre-wrap;
 	}
 	.box.svelte-ohpquu {
 		padding: 10px;
