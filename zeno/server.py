@@ -27,6 +27,7 @@ from zeno.classes.classes import (
     ZenoVariables,
     Prompt,
     Requirement,
+    EvaluatorFeedback
 )
 from zeno.classes.metadata import HistogramBucket, HistogramRequest, StringFilterRequest
 from zeno.classes.projection import Points2D, PointsColors
@@ -148,7 +149,11 @@ def get_server(zeno: ZenoBackend):
     @api_app.post("/suggest-requirement-updates", response_model=Dict[str, Requirement], tags=["zeno"])
     def suggest_requirement_updates(req: FeedbackRequest):
         requirements = zeno.suggest_requirement_updates(req)
-        return requirements
+        return requirements 
+    
+    @api_app.post("/evaluator-updates", tags=["zeno"])
+    def update_evaluator(eval_feedback: EvaluatorFeedback):
+        zeno.update_evaluator(eval_feedback)
 
     @api_app.post("/folders", tags=["zeno"])
     def set_folders(folders: List[str]):

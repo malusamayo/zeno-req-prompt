@@ -30,7 +30,7 @@ from zeno.api import (
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
 from zeno.openai_client import OpenAIMultiClient
-from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example
+from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
 from zeno.classes.tag import Tag, TagMetricKey
@@ -71,6 +71,7 @@ class ZenoBackend(object):
         self.view = self.params.view
         self.calculate_histogram_metrics = self.params.calculate_histogram_metrics
         self.model_names = self.params.models
+        self.REQUIREMENT_EVALUATION_PROMPT = REQUIREMENT_EVALUATION_PROMPT
 
         self.df = read_metadata(self.metadata)
         self.tests = read_functions(self.functions)
@@ -972,7 +973,7 @@ class ZenoBackend(object):
         def chat_completion(indices):
             for i in indices:
                 model_ouput = model_col[i]
-                api_prompt = REQUIREMENT_EVALUATION_PROMPT.format(prompt=self.prompts[prompt_id].text, requirement = requirement.description,evaluation_method=requirement.evaluation_method, modelOutput=model_ouput)
+                api_prompt = self.REQUIREMENT_EVALUATION_PROMPT.format(prompt=self.prompts[prompt_id].text, requirement = requirement.description,evaluation_method=requirement.evaluation_method, modelOutput=model_ouput)
                 client.request(
                     data={
                         "messages": [
@@ -1010,7 +1011,36 @@ class ZenoBackend(object):
             DataProcessingReturn(column=rationale_col_obj, output=rationale_col)
         ]
 
+    def update_evaluator(self, feedback: EvaluatorFeedback):
+        # Your logic to modify the custom prompt
+        data_col = self.df[str(self.data_column)]
+        model_col_obj = ZenoColumn(
+            column_type=ZenoColumnType.OUTPUT, name="output", model=feedback.model, prompt_id=feedback.prompt_id
+        )
+        model_col = self.df[str(model_col_obj)]
+        model_output = model_col.at[int(feedback.example_id)]
+        input_data = data_col.at[int(feedback.example_id)]
+        requirement = self.prompts[feedback.prompt_id].requirements[feedback.requirement_id]
+        corrected_eval = feedback.corrected_eval
 
+        updated_prompt = f'''
+        Adding Evaluation Example:
+
+        Example input:
+        {input_data}
+
+        Model output:
+        {model_output}
+
+        When evaluating the requirement: ''{requirement.description}'', the evaluation result should be ''{corrected_eval}''.\n
+        '''
+        
+        self.REQUIREMENT_EVALUATION_PROMPT += updated_prompt
+        print(f"updated REQUIREMENT_EVALUATION_PROMPT: {self.REQUIREMENT_EVALUATION_PROMPT}")
+        
+        return
+
+    
     def suggest_requirement_updates(self, req: FeedbackRequest) -> Dict[str, Requirement]:
         ''' Use LLM to update requirements based on user-provided feedback
         - If there is a closely related requirement -- update requirement description & implementation
@@ -1034,22 +1064,137 @@ class ZenoBackend(object):
         )
         model_col = self.df[str(model_col_obj)]
 
+        # Prepare the prompt to send to the OpenAI API for suggestions
+        # current_requirements = "\n".join(
+        #     [f"{req_id}: {requirement.description}" for req_id, requirement in self.prompts[req.prompt_id].requirements.items()]
+        # )
+        current_requirements = {
+            req_id: {  # Here req_id is the key
+                "id": req_id,  # Including the req_id explicitly as part of the values
+                "name": requirement.name,
+                "description": requirement.description,
+                "evaluation_method": requirement.evaluation_method,
+                "prompt_snippet": requirement.prompt_snippet
+            }
+            for req_id, requirement in self.prompts[req.prompt_id].requirements.items()
+        }
+
+        model_output = model_col.at[int(req.example_id)]
+        input_data = data_col.at[int(req.example_id)]
+        print(current_requirements,'\n')
+        print("_______________________",'\n')
+        api_prompt = f"""
+        Based on the following feedback from the user:
+        - Feedback: "{req.feedback}"
+        - Is the feedback positive?: {req.is_positive}
+
+        Here are the current requirements for the prompt:
+        {current_requirements}
+
+        Example input:
+        {input_data}
+
+        Model output:
+        {model_output}
+
+        Please evaluate the feedback and decide:
+        - If any existing requirements should be updated. If yes, specify which requirement and provide the updated description.
+        - If any existing requirements should be deleted due to conflicting feedback. If yes, specify which requirement.
+        - If a new requirement should be added, provide a description of the new requirement.
+
+        Your response should be in the following JSON format:
+        {{
+            "actions": [
+                {{"action": "update", "requirement_id": "existing_req_id", "updated_description": "new description", "updated_evaluation_method": "evaluation_method", "updated_prompt_snippet": "prompt_snippet"}},
+                {{"action": "delete", "requirement_id": "existing_req_id"}},
+                {{"action": "add", "new_requirement": {{"name": "new requirement name", "description": "new requirement description", "evaluation_method": "evaluation method of the new requirement which will be executed by GPT", "prompt_snippet" : "prompt implementation of the new requirement"}}}}
+            ]
+        }}.
+        """
+
+        # Send the API request to OpenAI
+        client = OpenAIMultiClient(endpoint="chats", data_template={"model": req.model})
+
+        def chat_completion():
+            client.request(
+                data={
+                    "messages": [
+                        {"role": "system", "content": "You are an assistant for evaluating and updating requirements."},
+                        {"role": "user", "content": api_prompt}
+                    ],
+                    'response_format': {"type": "json_object"}
+                }
+            )
+
+        client.run_request_function(chat_completion)
+
         new_requirements = copy.copy(self.prompts[req.prompt_id].requirements)
-        new_req_id = str(max([int(x) for x in new_requirements.keys()]) + 1)
-        new_requirements[new_req_id] = Requirement(
-            id = new_req_id,
-            name = "new-requirement",
-            description = "This is a new requirement",
-            prompt_snippet = "",
-            evaluation_method = "",
-            examples = [Example(
-                id = req.example_id,
-                input = data_col.at[int(req.example_id)],
-                output = model_col.at[int(req.example_id)],
-                is_positive = req.is_positive, 
-                feedback = req.feedback,
-            )], 
-        )
+
+        for result in client:
+            response = result.response.choices[0].message.content
+            actions = json.loads(response).get("actions", [])
+
+            # Handle actions: update, delete, add
+            for action in actions:
+                print(action)
+                print(new_requirements)
+                if action["action"] == "update":
+                    req_id = action["requirement_id"]
+                    print(req_id)
+                    if req_id in new_requirements:
+                        print("updated!")
+                        new_requirements[req_id].description = action["updated_description"]
+                        new_requirements[req_id].evaluation_method = action["updated_evaluation_method"]
+                        new_requirements[req_id].prompt_snippet = action["updated_prompt_snippet"]
+                        new_requirements[req_id].examples=[Example(
+                            id=req.example_id,
+                            input=data_col.at[int(req.example_id)],
+                            output=model_col.at[int(req.example_id)],
+                            is_positive=req.is_positive,
+                            feedback=req.feedback,
+                        )]
+
+                elif action["action"] == "delete":
+                    req_id = action["requirement_id"]
+                    if req_id in new_requirements:
+                        del new_requirements[req_id]
+
+                elif action["action"] == "add":
+                    new_req = action["new_requirement"]
+                    new_req_id = str(max([int(x) for x in new_requirements.keys()]) + 1)
+                    new_requirements[new_req_id] = Requirement(
+                        id=new_req_id,
+                        name=new_req["name"],
+                        description=new_req["description"],
+                        prompt_snippet=new_req["prompt_snippet"],
+                        evaluation_method=new_req["evaluation_method"],
+                        examples=[Example(
+                            id=req.example_id,
+                            input=data_col.at[int(req.example_id)],
+                            output=model_col.at[int(req.example_id)],
+                            is_positive=req.is_positive,
+                            feedback=req.feedback,
+                        )]
+                    )
+            break
+        print(new_requirements)
+
+
+        # new_req_id = str(max([int(x) for x in new_requirements.keys()]) + 1)
+        # new_requirements[new_req_id] = Requirement(
+        #     id = new_req_id,
+        #     name = "new-requirement",
+        #     description = "This is a new requirement",
+        #     prompt_snippet = "",
+        #     evaluation_method = "",
+        #     examples = [Example(
+        #         id = req.example_id,
+        #         input = data_col.at[int(req.example_id)],
+        #         output = model_col.at[int(req.example_id)],
+        #         is_positive = req.is_positive, 
+        #         feedback = req.feedback,
+        #     )], 
+        # )
         return new_requirements
 
     def create_new_tag(self, req: Tag):

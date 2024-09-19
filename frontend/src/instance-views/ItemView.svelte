@@ -109,6 +109,16 @@
 		});
 	}
 
+	function feedbackToEvaluators(eval_res, reqId) {
+		ZenoService.evaluatorUpdates({
+			model: $model,
+			promptId: $currentPromptId,
+			exampleId: item[columnHash($settings.idColumn)],
+			corrected_eval:!eval_res,
+			requirementId: reqId,
+		});
+	}
+
 	function submit(e) {
 		if (e.metaKey && e.key === "Enter") {
 			e.preventDefault();
@@ -179,13 +189,23 @@
 	{#if Object.keys(evalColumns).length > 0}
 		<br />
 		{#each requirementIds as reqId}
-			{#if evalColumns[reqId] !== "" && item[evalColumns[reqId]] !== null}
-				<RequirementEvalChip
-					id={reqId}
-					isPass={item[evalColumns[reqId]] === true}
-					rationale={item[rationaleColumns[reqId]]} />
-			{/if}
-		{/each}
+		{#if evalColumns[reqId] !== "" && item[evalColumns[reqId]] !== null}
+			<RequirementEvalChip
+				id={reqId}
+				isPass={item[evalColumns[reqId]] === true}
+				rationale={item[rationaleColumns[reqId]]} />
+			<TrailingIcon
+				class="material-icons"
+				style="margin-left: 0px; margin-right: 3px; cursor: pointer; color: #e05d44;"
+				on:click={() => {
+					feedbackToEvaluators(item[evalColumns[reqId]], reqId);
+				}}>
+				thumb_down
+			</TrailingIcon>
+			
+		{/if}
+	{/each}
+	
 	{/if}
 </div>
 

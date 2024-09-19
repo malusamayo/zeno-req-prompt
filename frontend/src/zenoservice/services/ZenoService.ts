@@ -27,6 +27,7 @@ import type {
 	InferenceRequest,
 	Prompt,
 	Requirement,
+	EvaluatorFeedbackRequest,
 } from "..";
 
 import type { CancelablePromise } from "../core/CancelablePromise";
@@ -192,6 +193,27 @@ export class ZenoService {
 	}
 
 	/**
+	 * update evaluator
+	 * @param requestBody
+	 * @returns any Successful Response
+	 * @throws ApiError
+	 */
+		public static evaluatorUpdates(
+			requestBody: EvaluatorFeedbackRequest
+		): CancelablePromise<void> {
+			return __request(OpenAPI, {
+				method: "POST",
+				url: "/evaluator-updates",
+				body: requestBody,
+				mediaType: "application/json",
+				errors: {
+					422: `Validation Error`,
+				},
+			});
+		} 
+
+	
+	/**
 	 * Suggest requirement updates
 	 * @param requestBody
 	 * @returns any Successful Response
@@ -209,7 +231,7 @@ export class ZenoService {
 				422: `Validation Error`,
 			},
 		});
-	}
+	} 
 
 	/**
 	 * Update Reports
