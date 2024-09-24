@@ -138,7 +138,12 @@
 						<TrailingIcon
 							class="material-icons"
 							style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; color: #97ca00;"
-							on:click={() => {}}>
+							on:click={() => {
+								requirements.update((reqs) => {
+									reqs[requirement.id] = requirement;
+									return reqs;
+								});
+							}}>
 							check
 						</TrailingIcon>
 						<TrailingIcon
@@ -234,7 +239,7 @@
 	</div>
 </div>
 
-<Dialog
+<!-- <Dialog
 	bind:open={confirmDelete}
 	scrimClickAction=""
 	escapeKeyAction=""
@@ -257,7 +262,7 @@
 			<Label>Yes</Label>
 		</Button>
 	</Actions>
-</Dialog>
+</Dialog> -->
 
 <style>
 	.tooltip-container {

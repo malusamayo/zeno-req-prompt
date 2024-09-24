@@ -51,7 +51,7 @@
 				if (!(req_id in displayedRequirements)) {
 					displayedRequirements[req_id] = { ...req, mode: "new" };
 				} else if (
-					areRequirementsEqual(
+					!areRequirementsEqual(
 						$suggestedRequirements[req_id],
 						displayedRequirements[req_id]
 					)

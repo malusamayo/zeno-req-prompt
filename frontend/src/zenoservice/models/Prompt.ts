@@ -31,8 +31,6 @@ function areExamplesEqual(
 	examples1?: Array<Example>,
 	examples2?: Array<Example>
 ): boolean {
-	if (!examples1 && !examples2) return true;
-	if (!examples1 || !examples2) return false;
 	if (examples1.length !== examples2.length) return false;
 
 	// Compare each element in the array
@@ -50,7 +48,6 @@ function areExamplesEqual(
 		}
 	}
 	return true;
-	[];
 }
 
 // Function to compare two Requirement objects for equality
@@ -64,7 +61,6 @@ export function areRequirementsEqual(
 		req1.description === req2.description &&
 		req1.promptSnippet === req2.promptSnippet &&
 		req1.evaluationMethod === req2.evaluationMethod &&
-		req1.mode === req2.mode &&
 		areExamplesEqual(req1.examples, req2.examples)
 	);
 }
