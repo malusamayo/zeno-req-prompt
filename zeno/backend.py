@@ -49,7 +49,14 @@ from zeno.util import (
     read_pickle,
     requirements_to_str,
 )
-from zeno.prompt_templates import REQUIREMENT_CREATOR_PROMPT, REQUIREMENT_OPTIMIZER_PROMPT, PROMPT_COMPILER_PROMPT, REQUIREMENT_EXTRACTOR_PROMPT, REQUIREMENT_EVALUATION_PROMPT
+from zeno.prompt_templates import (
+    REQUIREMENT_CREATOR_PROMPT, 
+    REQUIREMENT_OPTIMIZER_PROMPT, 
+    PROMPT_COMPILER_PROMPT, 
+    REQUIREMENT_EXTRACTOR_PROMPT, 
+    REQUIREMENT_EVALUATION_PROMPT,
+    REQUIREMENT_UPDATE_PROMPT
+)
 
 
 class ZenoBackend(object):
@@ -1084,36 +1091,12 @@ class ZenoBackend(object):
             for req_id, requirement in self.prompts[req.prompt_id].requirements.items()
         }
 
-        model_output = model_col.at[int(req.example_id)]
-        input_data = data_col.at[int(req.example_id)]
-        api_prompt = f"""
-        Based on the following feedback from the user:
-        - Feedback: "{req.feedback}"
-        - Is the feedback positive?: {req.is_positive}
-
-        Here are the current requirements for the prompt:
-        {current_requirements}
-
-        Example input:
-        {input_data}
-
-        Model output:
-        {model_output}
-
-        Please evaluate the feedback and decide:
-        - If any existing requirements should be updated. If yes, specify which requirement and provide the updated description.
-        - If any existing requirements should be deleted due to conflicting feedback. If yes, specify which requirement.
-        - If a new requirement should be added, provide a description of the new requirement.
-
-        Your response should be in the following JSON format:
-        {{
-            "actions": [
-                {{"action": "update", "requirement_id": "existing_req_id", "updated_description": "new description", "updated_evaluation_method": "evaluation_method", "updated_prompt_snippet": "prompt_snippet"}},
-                {{"action": "delete", "requirement_id": "existing_req_id"}},
-                {{"action": "add", "new_requirement": {{"name": "new requirement name", "description": "new requirement description", "evaluation_method": "evaluation method of the new requirement which will be executed by GPT", "prompt_snippet" : "prompt implementation of the new requirement"}}}}
-            ]
-        }}.
-        """
+        api_prompt = REQUIREMENT_UPDATE_PROMPT.format(
+            current_requirements=current_requirements,
+            input_data=data_col.at[int(req.example_id)],
+            model_output=model_col.at[int(req.example_id)],
+            feedback=req.feedback
+        )
 
         # Send the API request to OpenAI
         client = OpenAIMultiClient(endpoint="chats", data_template={"model": req.model})
@@ -1122,7 +1105,7 @@ class ZenoBackend(object):
             client.request(
                 data={
                     "messages": [
-                        {"role": "system", "content": "You are an assistant for evaluating and updating requirements."},
+                        {"role": "system", "content": "You are an experienced requirement engineer for an LLM application. Given user feedback on an example, update the requirements."},
                         {"role": "user", "content": api_prompt}
                     ],
                     'response_format': {"type": "json_object"}

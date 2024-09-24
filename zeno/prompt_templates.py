@@ -53,6 +53,8 @@ Output: {{
 
 Your task is to fill in **any** missing fields with appropriate content. If all fields have content, return them as is. If any field is an empty string (""), generate its value based on the requirement's description or context.
 
+When you create the requirement, make sure the requirement is atomic, i.e., we can not be further break it down to multiple smaller requirements.
+
 The user input requirement is: {user_input}
 """
 
@@ -103,7 +105,7 @@ Prompt: '''{prompt}'''
 Requirements:
 """
 
-REQUIREMENT_EVALUATION_PROMPT = """"
+REQUIREMENT_EVALUATION_PROMPT = """
 Answer 1 for yes and 0 for no. 
 Given the prompt '''${prompt}''' and requirement '''${requirement}''', follow the evaluation method to determine if the model output fulfills the requirement: '''${evaluation_method}'''? Give a rationale to explain your answer.
 Model Output: '''${modelOutput} '''
@@ -113,4 +115,39 @@ The output format should be:
         "pass/fail": 0 or 1
         "rationale":
     }}
+"""
+
+REQUIREMENT_UPDATE_PROMPT = """You are an experienced requirement engineer for an LLM application. Given user feedback on an example, update the requirements.
+
+---
+Current requirements:
+{current_requirements}
+
+---
+Example input:
+{input_data}
+
+Model output:
+{model_output}
+
+User feedback:
+{feedback}
+
+---
+
+Given the user feedback, update the requirements:
+- If a new requirement should be added, provide a description of the new requirement.
+- If any existing requirements should be updated, specify which requirement and provide the updated description. 
+- If any existing requirements should be deleted due to conflicting feedback, specify which requirement.
+
+When you update the requirements, you should split requirements into atomic units, e.g., conciseness and format should be separated requirements.
+
+Your response should be in the following JSON format:
+{
+    "actions": [
+        {"action": "update", "requirement_id": "existing_req_id", "updated_description": "new description", "updated_evaluation_method": "evaluation_method", "updated_prompt_snippet": "prompt_snippet"},
+        {"action": "delete", "requirement_id": "existing_req_id"},
+        {"action": "add", "new_requirement": {"name": "new requirement name", "description": "new requirement description", "evaluation_method": "evaluation method of the new requirement which will be executed by GPT", "prompt_snippet" : "prompt implementation of the new requirement"}}
+    ]
+}.  
 """
