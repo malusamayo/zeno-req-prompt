@@ -1086,8 +1086,6 @@ class ZenoBackend(object):
 
         model_output = model_col.at[int(req.example_id)]
         input_data = data_col.at[int(req.example_id)]
-        print(current_requirements,'\n')
-        print("_______________________",'\n')
         api_prompt = f"""
         Based on the following feedback from the user:
         - Feedback: "{req.feedback}"
@@ -1141,13 +1139,9 @@ class ZenoBackend(object):
 
             # Handle actions: update, delete, add
             for action in actions:
-                print(action)
-                print(new_requirements)
                 if action["action"] == "update":
                     req_id = action["requirement_id"]
-                    print(req_id)
                     if req_id in new_requirements:
-                        print("updated!")
                         new_requirements[req_id].description = action["updated_description"]
                         new_requirements[req_id].evaluation_method = action["updated_evaluation_method"]
                         new_requirements[req_id].prompt_snippet = action["updated_prompt_snippet"]
@@ -1182,7 +1176,6 @@ class ZenoBackend(object):
                         )]
                     )
             break
-        print(new_requirements)
 
 
         # new_req_id = str(max([int(x) for x in new_requirements.keys()]) + 1)
