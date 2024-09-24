@@ -802,7 +802,7 @@ class ZenoBackend(object):
                     prompt_snippet=req.get('prompt_snippet', ''),
                     evaluation_method=req.get('evaluation_method', '')
                 )
-                self.prompts[prompt_id].requirements[idx] = requirement
+                self.prompts[prompt_id].requirements[str(idx)] = requirement
 
             break
         self.prompts[prompt_id].text = prompt
@@ -1193,6 +1193,7 @@ class ZenoBackend(object):
         #         feedback = req.feedback,
         #     )], 
         # )
+        print(new_requirements)
         return new_requirements
 
     def create_new_tag(self, req: Tag):
