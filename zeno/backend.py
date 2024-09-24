@@ -1024,17 +1024,22 @@ class ZenoBackend(object):
         corrected_eval = feedback.corrected_eval
 
         updated_prompt = f'''
-        Adding Evaluation Example:
+            Evaluation Feedback Example:
 
-        Example input:
-        {input_data}
+            - **Example Input**:
+            {input_data}
 
-        Model output:
-        {model_output}
+            - **Model Output**:
+            {model_output}
 
-        When evaluating the requirement: ''{requirement.description}'', the evaluation result should be ''{corrected_eval}''.\n
-        '''
-        
+            - **Requirement Being Evaluated**:
+            "{requirement.description}"
+
+            - **Expected Evaluation Result**:
+            The evaluation should return "{corrected_eval}" based on the requirement.
+
+            Please ensure that the evaluation reflects this correction and provide a rationale if needed.
+            '''
         self.REQUIREMENT_EVALUATION_PROMPT += updated_prompt
         print(f"updated REQUIREMENT_EVALUATION_PROMPT: {self.REQUIREMENT_EVALUATION_PROMPT}")
         
