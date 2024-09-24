@@ -114,7 +114,7 @@
 			model: $model,
 			promptId: $currentPromptId,
 			exampleId: item[columnHash($settings.idColumn)],
-			corrected_eval:!eval_res,
+			corrected_eval: !eval_res,
 			requirementId: reqId,
 		});
 	}
@@ -189,23 +189,21 @@
 	{#if Object.keys(evalColumns).length > 0}
 		<br />
 		{#each requirementIds as reqId}
-		{#if evalColumns[reqId] !== "" && item[evalColumns[reqId]] !== null}
-			<RequirementEvalChip
-				id={reqId}
-				isPass={item[evalColumns[reqId]] === true}
-				rationale={item[rationaleColumns[reqId]]} />
-			<TrailingIcon
-				class="material-icons"
-				style="margin-left: 0px; margin-right: 3px; cursor: pointer; color: #e05d44;"
-				on:click={() => {
-					feedbackToEvaluators(item[evalColumns[reqId]], reqId);
-				}}>
-				thumb_down
-			</TrailingIcon>
-			
-		{/if}
-	{/each}
-	
+			{#if evalColumns[reqId] !== "" && item[evalColumns[reqId]] !== null}
+				<RequirementEvalChip
+					id={reqId}
+					isPass={item[evalColumns[reqId]] === true}
+					rationale={item[rationaleColumns[reqId]]} />
+				<TrailingIcon
+					class="material-icons"
+					style="margin-bottom: 10px; margin-left: 0px;  cursor: pointer; color: #e05d44;"
+					on:click={() => {
+						feedbackToEvaluators(item[evalColumns[reqId]], reqId);
+					}}>
+					thumb_down
+				</TrailingIcon>
+			{/if}
+		{/each}
 	{/if}
 </div>
 
