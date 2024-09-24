@@ -92,7 +92,7 @@
 					$reqs[requirement.id] = requirement;
 					return $reqs;
 				});
-				// promptToUpdate.set(true);
+				promptToUpdate.set(true);
 				newRequirementInput = "";
 				requirementUpdating.set(false);
 			}

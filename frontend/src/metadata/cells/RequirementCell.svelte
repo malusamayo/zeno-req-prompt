@@ -143,6 +143,7 @@
 									reqs[requirement.id] = requirement;
 									return reqs;
 								});
+								promptToUpdate.set(true);
 							}}>
 							check
 						</TrailingIcon>
