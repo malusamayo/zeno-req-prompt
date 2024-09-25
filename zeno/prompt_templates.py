@@ -29,7 +29,7 @@ The current requirement is:
 }}
 """
 
-REQUIREMENT_CREATOR_PROMPT = """You are given a user-written requirement. Based on the user's input, you need to generate a requirement with the following fields: 'name', 'description', and 'evaluation_method'.
+REQUIREMENT_CREATOR_PROMPT = """You are given a user-written requirement. Based on the user's input, you need to generate a requirement with the following fields: 'name' and 'evaluation_method'.
 
 1. For the 'name' field, generate a name based on the user input that is concise and descriptive of the requirement. The name should be in lowercase and contain hyphens (-) instead of spaces.
 2. For the 'description' field, generate a description based on the 'name' that clearly explains the requirement in detail.
@@ -37,18 +37,16 @@ REQUIREMENT_CREATOR_PROMPT = """You are given a user-written requirement. Based 
 4. Make sure the evaluation method uses simple language that GPT can follow directly and evaluation method does not mention steps GPT cannot execute.
 5. Ensure each evaluation method is objective and based on measurable aspects of the output (e.g., "The answer includes the word 'X'", "The response correctly explains Y concept").
 ### Examples:
-Input: answer should be concise
+Input: Answer should be concise
 Output: {{ 
     "name": "answer-length", 
-    "description": "All answers must be concise, not exceeding 50 words.",
-    "evaluation_method": "1.Review the answers and ensure none exceed 50 words.\n2. Flag any answers exceeding the word limit for revision.\n3. Verify that all flagged answers are revised to meet the word count requirement."
+    "evaluation_method": "Review the answers and ensure none exceed 50 words."
 }}
 
-Input: responses should be factually accurate
+Input: Responses should be factually accurate
 Output: {{
     "name": "factuality-check",
-    "description": "Ensure all responses are factually accurate and based on reliable sources.",
-    "evaluation_method": "1. Review answers for factual correctness.\n2. Flag any responses with inaccuracies or unsupported claims for revision.\n3. Verify that flagged responses have been corrected with accurate and well-supported information."
+    "evaluation_method": "Review answers and Flag any responses with inaccuracies or unsupported claims for revision."
 }}
 
 Your task is to fill in **any** missing fields with appropriate content. If all fields have content, return them as is. If any field is an empty string (""), generate its value based on the requirement's description or context.

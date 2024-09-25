@@ -867,7 +867,7 @@ class ZenoBackend(object):
                 evaluation_method = "\n".join(evaluation_method)  # Join list elements into a single string
 
             requirement.name = name
-            requirement.description = description
+            # requirement.description = description
             requirement.evaluation_method = evaluation_method
             break
         
@@ -970,7 +970,7 @@ class ZenoBackend(object):
         requirement = self.prompts[prompt_id].requirements[requirement_id]
 
         model_col_obj = ZenoColumn(
-        column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt_id
+            column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt_id
         )
         model_hash = str(model_col_obj)
         model_col = self.df[model_hash].copy()
