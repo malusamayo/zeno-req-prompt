@@ -196,7 +196,7 @@
 					rationale={item[rationaleColumns[reqId]]} />
 				<TrailingIcon
 					class="material-icons"
-					style="margin-bottom: 10px; margin-left: 0px;  cursor: pointer; color: #e05d44;"
+					style="margin-bottom: 10px; margin-left:0px; margin-right: 5px;  cursor: pointer; color: #e05d44;"
 					on:click={() => {
 						feedbackToEvaluators(item[evalColumns[reqId]], reqId);
 					}}>
