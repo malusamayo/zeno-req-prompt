@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mdiCogs, mdiUpdate, mdiPlus } from "@mdi/js";
+	import { mdiArrowDownBold, mdiUpdate, mdiPlus } from "@mdi/js";
 	import Button from "@smui/button";
 	import CircularProgress from "@smui/circular-progress";
 	import { Svg } from "@smui/common";
@@ -30,7 +30,7 @@
 	let newRequirementInput = "";
 	let displayedRequirements: { [key: string]: Requirement };
 
-	$: inputChanged = newRequirementInput === "";
+	$: inputChanged = newRequirementInput !== "";
 
 	$: {
 		$requirements;
@@ -112,6 +112,7 @@
 			});
 			currentPromptId.set(createdPrompts[0].version);
 			promptUpdating.set(false);
+			promptToUpdate.set(false);
 		});
 	}
 
@@ -122,13 +123,13 @@
 		}
 	}
 
-	$: {
-		$promptToUpdate;
-		if ($promptToUpdate) {
-			compile_to_prompt();
-			promptToUpdate.set(false);
-		}
-	}
+	// $: {
+	// 	$promptToUpdate;
+	// 	if ($promptToUpdate) {
+	// 		compile_to_prompt();
+	// 		promptToUpdate.set(false);
+	// 	}
+	// }
 </script>
 
 <div id="requirement-header" class="inline">
@@ -150,10 +151,15 @@
 			}}>
 			<IconButton
 				on:click={() => {
-					promptToUpdate.set(true);
-				}}>
+					compile_to_prompt();
+				}}
+				style="cursor:pointer">
 				<Icon component={Svg} viewBox="0 0 24 24">
-					<path fill="var(--G1)" d={mdiCogs} />
+					{#if $promptToUpdate}
+						<path fill="var(--G1)" d={mdiArrowDownBold} />
+					{:else}
+						<path fill="var(--G4)" d={mdiArrowDownBold} />
+					{/if}
 				</Icon>
 			</IconButton>
 		</div>
@@ -179,9 +185,9 @@
 			style={inputChanged ? "cursor:pointer" : "cursor:default"}>
 			<Icon component={Svg} viewBox="0 0 24 24">
 				{#if inputChanged}
-					<path fill="var(--G4)" d={mdiPlus} />
-				{:else}
 					<path fill="var(--G1)" d={mdiPlus} />
+				{:else}
+					<path fill="var(--G4)" d={mdiPlus} />
 				{/if}
 			</Icon>
 		</IconButton>

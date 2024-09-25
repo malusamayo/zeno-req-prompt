@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mdiCogs, mdiPlayOutline, mdiUpdate } from "@mdi/js";
+	import { mdiArrowUpBold, mdiPlayOutline, mdiUpdate } from "@mdi/js";
 	import IconButton, { Icon } from "@smui/icon-button";
 	import { Svg } from "@smui/common";
 	import { tooltip } from "@svelte-plugins/tooltips";
@@ -15,14 +15,10 @@
 	import CircularProgress from "@smui/circular-progress";
 	import RequirementChip from "./chips/RequirementChip.svelte";
 	import RequirementSpan from "./chips/RequirementSpan.svelte";
-	import Dialog, { Actions, Content, InitialFocus, Title } from "@smui/dialog";
-	import Button, { Label } from "@smui/button";
-
 	const parser = new DOMParser();
 	let prompt: string = $prompts.get($currentPromptId).text;
 	let allowUpdates = false;
 	let contentEditableDiv: HTMLDivElement;
-	let confirmRunPrompt = false;
 
 	$: {
 		$currentPromptId;
@@ -87,24 +83,6 @@
 			});
 			// });
 		});
-	}
-
-	function runPrompt() {
-		status.update((s) => {
-			s.status = "Running inference";
-			return s;
-		});
-		ZenoService.runPrompt({ model: $model, promptId: $currentPromptId }).then(
-			() => {
-				ZenoService.getCompleteColumns().then((cols) => {
-					status.update((s) => {
-						s.status = "Done processing";
-						s.completeColumns = cols;
-						return s;
-					});
-				});
-			}
-		);
 	}
 
 	function updateContent() {
@@ -233,7 +211,7 @@
 	<div class="inline">
 		<div
 			use:tooltip={{
-				content: "Save changes",
+				content: "Update requirements.",
 				position: "left",
 				theme: "zeno-tooltip",
 			}}>
@@ -246,26 +224,10 @@
 				style={allowUpdates ? "cursor:pointer" : "cursor:default"}>
 				<Icon component={Svg} viewBox="0 0 24 24">
 					{#if allowUpdates}
-						<path fill="var(--G1)" d={mdiUpdate} />
+						<path fill="var(--G1)" d={mdiArrowUpBold} />
 					{:else}
-						<path fill="var(--G4)" d={mdiUpdate} />
+						<path fill="var(--G4)" d={mdiArrowUpBold} />
 					{/if}
-				</Icon>
-			</IconButton>
-		</div>
-		<div
-			use:tooltip={{
-				content: "Start inference",
-				position: "left",
-				theme: "zeno-tooltip",
-			}}>
-			<IconButton
-				on:click={() => {
-					confirmRunPrompt = true;
-				}}
-				style="cursor:pointer">
-				<Icon component={Svg} viewBox="0 0 24 24">
-					<path fill="var(--G1)" d={mdiPlayOutline} />
 				</Icon>
 			</IconButton>
 		</div>
@@ -278,27 +240,6 @@
 	on:input={handleInput}
 	on:keydown={handleKeydown}
 	on:paste={handlePaste} />
-
-<Dialog
-	bind:open={confirmRunPrompt}
-	scrimClickAction=""
-	escapeKeyAction=""
-	aria-labelledby="delete-slice"
-	aria-describedby="delete-slice">
-	<Title id="simple-title">Run prompt</Title>
-	<Content id="simple-content">Run prompt on all examples. Continue?</Content>
-	<Actions>
-		<Button
-			on:click={() => {
-				confirmRunPrompt = false;
-			}}>
-			<Label>No</Label>
-		</Button>
-		<Button use={[InitialFocus]} on:click={() => runPrompt()}>
-			<Label>Yes</Label>
-		</Button>
-	</Actions>
-</Dialog>
 
 <style>
 	.inline {
