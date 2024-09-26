@@ -78,7 +78,6 @@ class ZenoBackend(object):
         self.view = self.params.view
         self.calculate_histogram_metrics = self.params.calculate_histogram_metrics
         self.model_names = self.params.models
-        self.REQUIREMENT_EVALUATION_PROMPT = REQUIREMENT_EVALUATION_PROMPT
 
         self.df = read_metadata(self.metadata)
         self.tests = read_functions(self.functions)
@@ -980,7 +979,7 @@ class ZenoBackend(object):
         def chat_completion(indices):
             for i in indices:
                 model_ouput = model_col[i]
-                api_prompt = self.REQUIREMENT_EVALUATION_PROMPT.format(prompt=self.prompts[prompt_id].text, requirement = requirement.description,evaluation_method=requirement.evaluation_method, modelOutput=model_ouput)
+                api_prompt = REQUIREMENT_EVALUATION_PROMPT.format(prompt=self.prompts[prompt_id].text, requirement = requirement.description,evaluation_method=requirement.evaluation_method, modelOutput=model_ouput)
                 client.request(
                     data={
                         "messages": [
@@ -1019,6 +1018,7 @@ class ZenoBackend(object):
         ]
 
     def update_evaluator(self, feedback: EvaluatorFeedback):
+        print("clicked")
         # Your logic to modify the custom prompt
         data_col = self.df[str(self.data_column)]
         model_col_obj = ZenoColumn(
@@ -1030,25 +1030,33 @@ class ZenoBackend(object):
         requirement = self.prompts[feedback.prompt_id].requirements[feedback.requirement_id]
         corrected_eval = feedback.corrected_eval
 
-        updated_prompt = f'''
-            Evaluation Feedback Example:
+        requirement.examples=[Example(
+                            id=feedback.example_id,
+                            input=data_col.at[int(feedback.example_id)],
+                            output=model_col.at[int(feedback.example_id)],
+                            is_positive=corrected_eval,
+                            feedback=f'''The evaluation should return "{corrected_eval}" based on the requirement.''',
+                        )]
 
-            - **Example Input**:
-            {input_data}
+        # updated_prompt = f'''
+        #     Evaluation Feedback Example:
 
-            - **Model Output**:
-            {model_output}
+        #     - **Example Input**:
+        #     {input_data}
 
-            - **Requirement Being Evaluated**:
-            "{requirement.description}"
+        #     - **Model Output**:
+        #     {model_output}
 
-            - **Expected Evaluation Result**:
-            The evaluation should return "{corrected_eval}" based on the requirement.
+        #     - **Requirement Being Evaluated**:
+        #     "{requirement.description}"
 
-            Please ensure that the evaluation reflects this correction and provide a rationale if needed.
-            '''
-        self.REQUIREMENT_EVALUATION_PROMPT += updated_prompt
-        print(f"updated REQUIREMENT_EVALUATION_PROMPT: {self.REQUIREMENT_EVALUATION_PROMPT}")
+        #     - **Expected Evaluation Result**:
+        #     The evaluation should return "{corrected_eval}" based on the requirement.
+
+        #     Please ensure that the evaluation reflects this correction and provide a rationale if needed.
+        #     '''
+        # self.REQUIREMENT_EVALUATION_PROMPT += updated_prompt
+        # print(f"updated REQUIREMENT_EVALUATION_PROMPT: {self.REQUIREMENT_EVALUATION_PROMPT}")
         
         return
 
