@@ -135,6 +135,7 @@ User feedback:
 
 Given the user feedback, update the requirements:
 - If a new requirement should be added, provide a description of the new requirement.
+- The new requirement should be atomic does not overlap with existing requirements. 
 
 Your response should be in the following JSON format:
 {{
