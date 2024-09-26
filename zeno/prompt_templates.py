@@ -135,16 +135,10 @@ User feedback:
 
 Given the user feedback, update the requirements:
 - If a new requirement should be added, provide a description of the new requirement.
-- If any existing requirements should be updated, specify which requirement and provide the updated description. 
-- If any existing requirements should be deleted due to conflicting feedback, specify which requirement.
-
-When you update the requirements, you should split requirements into atomic units, e.g., conciseness and format should be separated requirements.
 
 Your response should be in the following JSON format:
 {{
     "actions": [
-        {{"action": "update", "requirement_id": "existing_req_id", "updated_description": "new description", "updated_evaluation_method": "evaluation_method", "updated_prompt_snippet": "prompt_snippet"}},
-        {{"action": "delete", "requirement_id": "existing_req_id"}},
         {{"action": "add", "new_requirement": {{"name": "new requirement name", "description": "new requirement description", "evaluation_method": "evaluation method of the new requirement which will be executed by GPT", "prompt_snippet" : "prompt implementation of the new requirement"}}}}
     ]
 }}  
