@@ -64,6 +64,13 @@ class EvaluatorFeedback(CamelModel):
     corrected_eval: bool
     requirement_id: str
 
+class EvaluatorFeedback(CamelModel):
+    model: str
+    prompt_id: str
+    example_id: str
+    corrected_eval: bool
+    requirement_id: str
+
 class TableRequest(CamelModel):
     columns: List[ZenoColumn]
     diff_column_1: Optional[ZenoColumn] = None
@@ -109,6 +116,7 @@ class Requirement(CamelModel):
     prompt_snippet: str
     evaluation_method: str
     examples: List[Example] = []
+    implementationUpdateFlag: Optional[bool] = False
 
 class Prompt(CamelModel):
     text: str

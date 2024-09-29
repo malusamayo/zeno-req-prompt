@@ -110,12 +110,16 @@
 	}
 
 	function feedbackToEvaluators(eval_res, reqId) {
+		requirementUpdating.set(true);
 		ZenoService.evaluatorUpdates({
 			model: $model,
 			promptId: $currentPromptId,
 			exampleId: item[columnHash($settings.idColumn)],
 			corrected_eval: !eval_res,
 			requirementId: reqId,
+		}).then((newRequirements) => {
+			requirements.set(newRequirements);
+			requirementUpdating.set(false);
 		});
 	}
 

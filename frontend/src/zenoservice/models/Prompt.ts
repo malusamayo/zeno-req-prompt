@@ -18,6 +18,7 @@ export type Requirement = {
 	evaluationMethod: string;
 	examples?: Array<Example>;
 	mode?: string;
+	implementationUpdateFlag?: boolean;
 };
 
 export type Prompt = {

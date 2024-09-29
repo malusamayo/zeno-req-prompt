@@ -166,6 +166,7 @@
 				const reqSpan = document.getElementById(id);
 				if (reqSpan) {
 					req.promptSnippet = reqSpan.textContent;
+					req.implementationUpdateFlag = true;
 				}
 			});
 			return reqs;

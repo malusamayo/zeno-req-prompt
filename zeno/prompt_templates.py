@@ -144,3 +144,29 @@ Your response should be in the following JSON format:
     ]
 }}  
 """
+
+REQUIREMENT_UPDATE_REQUEST_PROMPT =  """
+You are an experienced requirements engineer for an LLM application. Your task is to determine whether the name, description, and evaluation method of a given requirement are mismatched with its prompt implementation (prompt snippet).
+
+---
+**Current requirement details:**
+- Name: {requirement_name}
+- Description: {requirement_description}
+- Evaluation method: {requirement_evaluation_method}
+- Prompt implementation (prompt snippet): {requirement_prompt_snippet}
+
+---
+If you find any mismatch, update the name, description, and evaluation method so that they align with the prompt snippet implementation.
+
+Please provide your response in the following JSON format:
+
+{{
+  "need_update": 0 or 1,
+  "updated_requirement": {{
+    "name": "new requirement name", 
+    "description": "new requirement description", 
+    "evaluation_method": "evaluation method of the new requirement, which will be executed by GPT"
+  }}
+}}
+
+"""

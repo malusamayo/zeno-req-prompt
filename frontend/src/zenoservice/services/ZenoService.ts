@@ -200,7 +200,7 @@ export class ZenoService {
 	 */
 		public static evaluatorUpdates(
 			requestBody: EvaluatorFeedbackRequest
-		): CancelablePromise<void> {
+		): CancelablePromise<Record<string, Requirement>> {
 			return __request(OpenAPI, {
 				method: "POST",
 				url: "/evaluator-updates",

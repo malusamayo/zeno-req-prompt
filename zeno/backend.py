@@ -55,7 +55,8 @@ from zeno.prompt_templates import (
     PROMPT_COMPILER_PROMPT, 
     REQUIREMENT_EXTRACTOR_PROMPT, 
     REQUIREMENT_EVALUATION_PROMPT,
-    REQUIREMENT_UPDATE_PROMPT
+    REQUIREMENT_UPDATE_PROMPT,
+    REQUIREMENT_UPDATE_REQUEST_PROMPT
 )
 
 
@@ -701,10 +702,22 @@ class ZenoBackend(object):
         req.version = new_version
         self.prompts[new_version] = req
         self.current_prompt_id = new_version
+        update_req = True
         if req.text == "":
             self.compile_prompt(new_version)
+            update_req = False
         elif len(req.requirements) == 0:
             self.extract_requirements(new_version)
+            update_req = False
+        if update_req:
+            current_requirements = req.requirements
+            for rid in current_requirements:
+                r = current_requirements[rid]
+                if r.implementationUpdateFlag:
+                    res = self.update_req(r)
+                    current_requirements[rid] = res
+                    r.implementationUpdateFlag = False
+
         self.add_tags_to_prompt(new_version)
         with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
             pickle.dump(self.prompts, f)
@@ -812,6 +825,60 @@ class ZenoBackend(object):
 
             break
         self.prompts[prompt_id].text = prompt
+
+    def update_req(self, req : Requirement) -> Requirement:
+
+        api_prompt = REQUIREMENT_UPDATE_REQUEST_PROMPT.format(
+            requirement_name=req.name,
+            requirement_description = req.description,
+            requirement_evaluation_method = req.evaluation_method,
+            requirement_prompt_snippet = req.prompt_snippet
+        )
+
+        payload = {
+            'model': 'gpt-4-turbo',
+            'messages': [
+                {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
+                {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
+            ],
+            'temperature': 0.7,
+            'max_tokens': 2048,
+            'top_p': 1.0,
+            'frequency_penalty': 0.0,
+            'presence_penalty': 0.0,
+            'response_format': {"type": "json_object"}  
+        }
+
+        client = OpenAIMultiClient()
+
+        client.request(
+            data=payload,
+            endpoint="chat.completions"
+        )
+
+        for response in client:
+            if response.failed:
+                print("Error generating response")
+                return
+
+            output_text = response.response.choices[0].message.content
+
+            try:
+            # Parse the JSON response
+                updated_req = json.loads(output_text)
+            except json.JSONDecodeError:
+                print("Failed to parse the response as JSON.")
+                return
+            
+            need_update = updated_req.get('need_update', "")
+            if int(need_update):
+                updated_r = updated_req.get('updated_requirement', "")
+                req.name = updated_r.get('name',"")
+                req.description = updated_r.get('description',"")
+                req.evaluation_method = updated_r.get('evaluation_method',"")
+            break
+
+        return req
 
     def optimize_requirement(self, requirement: Requirement):
         '''Use LLM to optimize local requirements
@@ -1017,48 +1084,26 @@ class ZenoBackend(object):
             DataProcessingReturn(column=rationale_col_obj, output=rationale_col)
         ]
 
-    def update_evaluator(self, feedback: EvaluatorFeedback):
-        print("clicked")
+    def update_evaluator(self, feedback: EvaluatorFeedback)-> Dict[str, Requirement]:
         # Your logic to modify the custom prompt
         data_col = self.df[str(self.data_column)]
         model_col_obj = ZenoColumn(
             column_type=ZenoColumnType.OUTPUT, name="output", model=feedback.model, prompt_id=feedback.prompt_id
         )
         model_col = self.df[str(model_col_obj)]
-        model_output = model_col.at[int(feedback.example_id)]
-        input_data = data_col.at[int(feedback.example_id)]
         requirement = self.prompts[feedback.prompt_id].requirements[feedback.requirement_id]
         corrected_eval = feedback.corrected_eval
 
-        requirement.examples=[Example(
+        requirement.examples += [Example(
                             id=feedback.example_id,
                             input=data_col.at[int(feedback.example_id)],
                             output=model_col.at[int(feedback.example_id)],
                             is_positive=corrected_eval,
                             feedback=f'''The evaluation should return "{corrected_eval}" based on the requirement.''',
                         )]
+        new_requirements = copy.copy(self.prompts[feedback.prompt_id].requirements)
 
-        # updated_prompt = f'''
-        #     Evaluation Feedback Example:
-
-        #     - **Example Input**:
-        #     {input_data}
-
-        #     - **Model Output**:
-        #     {model_output}
-
-        #     - **Requirement Being Evaluated**:
-        #     "{requirement.description}"
-
-        #     - **Expected Evaluation Result**:
-        #     The evaluation should return "{corrected_eval}" based on the requirement.
-
-        #     Please ensure that the evaluation reflects this correction and provide a rationale if needed.
-        #     '''
-        # self.REQUIREMENT_EVALUATION_PROMPT += updated_prompt
-        # print(f"updated REQUIREMENT_EVALUATION_PROMPT: {self.REQUIREMENT_EVALUATION_PROMPT}")
-        
-        return
+        return new_requirements
 
     
     def suggest_requirement_updates(self, req: FeedbackRequest) -> Dict[str, Requirement]:
@@ -1136,7 +1181,7 @@ class ZenoBackend(object):
                         new_requirements[req_id].description = action["updated_description"]
                         new_requirements[req_id].evaluation_method = action["updated_evaluation_method"]
                         new_requirements[req_id].prompt_snippet = action["updated_prompt_snippet"]
-                        new_requirements[req_id].examples=[Example(
+                        new_requirements[req_id].examples +=[Example(
                             id=req.example_id,
                             input=data_col.at[int(req.example_id)],
                             output=model_col.at[int(req.example_id)],
