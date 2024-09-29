@@ -187,13 +187,18 @@ export function generateStackedBarChartSpec(data): VegaLiteSpec {
 		},
 		data: { values: data }, // Input data for the chart
 		selection: {
-            barSelect: {
-                type: "single",
-                on: "click",
-                fields: ["category"],
-                empty: "none"
-            }
-        }
+			barSelect: {
+				type: "single",
+				on: "click",
+				fields: ["category"],
+				empty: "none",
+			},
+		},
+		config: {
+			mark: {
+				cursor: "pointer", // Set the cursor style to pointer
+			},
+		},
 	};
 
 	return spec as VegaLiteSpec;

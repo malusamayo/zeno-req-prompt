@@ -80,8 +80,9 @@
 	{selected ? 'selected' : ''} 
 	{compare ? 'compare-slice-cell' : ''}
 	{compare && compareButton ? '' : 'pointer'}"
+	style="cursor:default"
 	on:click={() => setSelected()}
-	draggable="true"
+	draggable="false"
 	on:mouseover={() => (hovering = true)}
 	on:focus={() => (hovering = true)}
 	on:mouseleave={() => (hovering = false)}
@@ -351,6 +352,7 @@
 	.description {
 		font-size: small;
 		font-weight: lighter;
+		cursor: text;
 	}
 
 	.tag {
