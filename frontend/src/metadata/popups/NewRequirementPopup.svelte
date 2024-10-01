@@ -3,6 +3,7 @@
 	import { Svg } from "@smui/common";
 	import IconButton, { Icon } from "@smui/icon-button";
 	import Paper, { Content } from "@smui/paper";
+	import Svelecte from "svelecte";
 	import { ZenoService, type Requirement } from "../../zenoservice";
 	import { clickOutside } from "../../util/clickOutside";
 	import {
@@ -19,6 +20,9 @@
 	let isNewRequirement;
 	let paperHeight;
 	let nameInput;
+
+	let requirement_strategies;
+	let options = ["few-shot", "repeat", "capitalize"];
 
 	$: if ($showNewRequirement) {
 		updateRequirement();
@@ -87,6 +91,14 @@
 		<textarea
 			bind:value={requirement.evaluationMethod}
 			style="min-height: 120px;" />
+		<label>Prompting Strategy</label>
+		<Svelecte
+			style="margin-top: 5px"
+			multiple
+			bind:value={requirement_strategies}
+			{options}
+			placeholder="Strategies" />
+
 		<label>Prompt Implementation</label>
 		<textarea bind:value={requirement.promptSnippet} />
 		{#if requirement.examples && requirement.examples.length > 0}
