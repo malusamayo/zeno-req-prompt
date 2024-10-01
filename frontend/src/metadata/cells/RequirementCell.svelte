@@ -39,6 +39,7 @@
 
 	let hovering = false;
 	let showOptions = false;
+	let dragOver = false;
 
 	let compareButton = false;
 
@@ -81,35 +82,21 @@
 	{compare ? 'compare-slice-cell' : ''}
 	{compare && compareButton ? '' : 'pointer'}"
 	style="cursor:default"
-	on:click={() => setSelected()}
 	draggable="false"
 	on:mouseover={() => (hovering = true)}
 	on:focus={() => (hovering = true)}
 	on:mouseleave={() => (hovering = false)}
 	on:blur={() => (hovering = false)}
-	on:dragstart={(ev) => {
-		ev.dataTransfer.setData("text/plain", transferData);
-		ev.dataTransfer.dropEffect = "copy";
-	}}
-	on:keydown={() => setSelected()}
-	on:dragend={(ev) => {
-		// If dragged out of a folder, remove from the folder it was in.
-		if (ev.dataTransfer.dropEffect === "none") {
-			const data = transferData.split(",");
-			slices.update((sls) => {
-				let entries = Array.from($slices.entries());
-				data.forEach((d) => {
-					const sli = sls.get(entries[d][0]);
-					sli.folder = "";
-					sls.set(entries[d][0], sli);
-					ZenoService.createNewSlice({
-						sliceName: sli.sliceName,
-						filterPredicates: sli.filterPredicates,
-						folder: sli.folder,
-					});
-				});
-				return sls;
-			});
+	on:dragenter={() => (dragOver = true)}
+	on:dragover={(ev) => ev.preventDefault()}
+	on:dragleave={() => (dragOver = false)}
+	on:drop={(ev) => {
+		dragOver = false;
+		const data = ev.dataTransfer.getData("text/plain");
+		const example = JSON.parse(data);
+		const exampleIds = requirement.examples.map((x) => x.id);
+		if (!exampleIds.includes(example.id)) {
+			requirement.examples.push(example);
 		}
 	}}>
 	<!-- {#if showTooltip}

@@ -12,15 +12,17 @@
 	import { ZenoColumnType, ZenoService } from "../zenoservice";
 	import { clickOutside } from "../util/clickOutside";
 	import RequirementEvalChip from "../metadata/chips/RequirementEvalChip.svelte";
-	import { TrailingIcon } from "@smui/chips";
+	import { TrailingIcon, LeadingIcon } from "@smui/chips";
 	import Paper, { Content } from "@smui/paper";
 	import { Icon } from "@smui/button";
 	import { InitialFocus } from "@smui/dialog";
+	import type { Example } from "../zenoservice/models/prompt";
 
 	export let item;
 	let modelColumn;
 	let evalColumns;
 	let rationaleColumns;
+	let example: Example;
 
 	let requirementIds;
 
@@ -71,6 +73,14 @@
 			}, {});
 
 		requirementIds = Object.keys($requirements);
+
+		example = <Example>{
+			id: item[columnHash($settings.idColumn)],
+			input: item[columnHash($settings.dataColumn)],
+			output: modelColumn ? item[modelColumn] : "",
+			isPositive: true,
+			feedback: "",
+		};
 	}
 
 	function runPrompt() {
@@ -131,7 +141,14 @@
 	}
 </script>
 
-<div class="box svelte-ohpquu">
+<div
+	class="box svelte-ohpquu"
+	draggable="true"
+	on:dragstart={(ev) => {
+		let transferData = JSON.stringify(example);
+		ev.dataTransfer.setData("text/plain", transferData);
+		ev.dataTransfer.dropEffect = "copy";
+	}}>
 	<span class="label svelte-ohpquu">input:</span>
 	<span class="value svelte-ohpquu">
 		{item[columnHash($settings.dataColumn)]}
