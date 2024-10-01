@@ -706,7 +706,7 @@ class ZenoBackend(object):
         if req.text == "":
             self.compile_prompt(new_version)
             update_req = False
-        elif len(req.requirements) == 0:
+        else:
             self.extract_requirements(new_version)
             update_req = False
         if update_req:
@@ -824,6 +824,7 @@ class ZenoBackend(object):
                 self.prompts[prompt_id].requirements[str(idx)] = requirement
 
             break
+
         self.prompts[prompt_id].text = prompt
 
     def update_req(self, req : Requirement) -> Requirement:

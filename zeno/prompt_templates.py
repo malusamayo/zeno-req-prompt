@@ -46,7 +46,7 @@ Output: {{
 Input: Responses should be factually accurate
 Output: {{
     "name": "factuality-check",
-    "evaluation_method": "Review answers and Flag any responses with inaccuracies or unsupported claims for revision."
+    "evaluation_method": "Review answers and flag any responses with inaccuracies or unsupported claims for revision."
 }}
 
 Your task is to fill in **any** missing fields with appropriate content. If all fields have content, return them as is. If any field is an empty string (""), generate its value based on the requirement's description or context.
@@ -97,6 +97,8 @@ Requirements:
 6. Ensure each evaluation method is objective and based on measurable aspects of the output (e.g., "The answer includes the word 'X'", "The response correctly explains Y concept").
 
 7. Be concise in writing the criteria and methods.
+
+8. Requirement name should be in this format: "answer-length", "factuality-check".
 
 Prompt: '''{prompt}'''
 
