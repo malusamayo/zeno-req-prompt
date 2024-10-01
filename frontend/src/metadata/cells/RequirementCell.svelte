@@ -197,6 +197,14 @@
 								style="padding: 0px"
 								on:click={(e) => {
 									e.stopPropagation();
+									suggestedRequirements.update(($reqs) => {
+										delete $reqs[requirement.id];
+										return $reqs;
+									});
+									requirements.update((reqs) => {
+										reqs[requirement.id] = requirement;
+										return reqs;
+									});
 								}}>
 								<Icon component={Svg} viewBox="0 0 24 24">
 									<path fill="green" d={mdiCheckOutline} />

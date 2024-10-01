@@ -139,8 +139,7 @@ Your response should be in the following JSON format:
     {{
         "name": "new requirement name", 
         "description": "new requirement description", 
-        "evaluation_method": "evaluation method of the new requirement which will be executed by GPT", 
-        "prompt_snippet" : "prompt implementation of the new requirement"
+        "evaluation_method": "evaluation method of the new requirement which will be executed by GPT"
     }}
 ] 
 """
