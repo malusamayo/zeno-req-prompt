@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mdiDotsHorizontal } from "@mdi/js";
+	import { mdiDotsHorizontal, mdiCheckOutline } from "@mdi/js";
 	import Button, { Label } from "@smui/button";
 	import { Svg } from "@smui/common";
 	import Dialog, { Actions, Content, InitialFocus, Title } from "@smui/dialog";
@@ -33,6 +33,7 @@
 
 	export let requirement: Requirement;
 	export let compare;
+	export let suggested;
 
 	let confirmDelete = false;
 	let relatedReports = 0;
@@ -44,18 +45,6 @@
 	let compareButton = false;
 
 	$: selected = false;
-	$: transferData = "";
-
-	/** Return slices index stored in $slices **/
-	function getSlicesIndex(sls) {
-		let idxs = [];
-		Array.from($slices.entries()).forEach((s, i) => {
-			if (sls.includes(s[0])) {
-				idxs.push(i);
-			}
-		});
-		return idxs.join(",");
-	}
 
 	function removeRequirement() {
 		confirmDelete = false;
@@ -67,12 +56,6 @@
 		});
 
 		promptToUpdate.set(true);
-	}
-
-	function setSelected() {
-		if (compare && compareButton) {
-			return;
-		}
 	}
 </script>
 
@@ -208,7 +191,18 @@
 						on:click_outside={() => {
 							hovering = false;
 						}}>
-						{#if hovering}
+						{#if suggested}
+							<IconButton
+								size="button"
+								style="padding: 0px"
+								on:click={(e) => {
+									e.stopPropagation();
+								}}>
+								<Icon component={Svg} viewBox="0 0 24 24">
+									<path fill="green" d={mdiCheckOutline} />
+								</Icon>
+							</IconButton>
+						{:else if hovering}
 							<IconButton
 								size="button"
 								style="padding: 0px"

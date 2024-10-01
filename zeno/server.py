@@ -146,6 +146,11 @@ def get_server(zeno: ZenoBackend):
         req = zeno.optimize_requirement(req[0])
         return req
 
+    @api_app.post("/suggest-requirements", response_model=Dict[str, Requirement], tags=["zeno"])
+    def suggest_requirements():
+        requirements = zeno.suggest_requirements()
+        return requirements 
+
     @api_app.post("/suggest-requirement-updates", response_model=Dict[str, Requirement], tags=["zeno"])
     def suggest_requirement_updates(req: FeedbackRequest):
         requirements = zeno.suggest_requirement_updates(req)

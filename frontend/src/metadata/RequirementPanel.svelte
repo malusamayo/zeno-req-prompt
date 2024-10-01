@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mdiArrowDownBold, mdiUpdate, mdiPlus } from "@mdi/js";
+	import { mdiArrowDownBold, mdiRefresh, mdiPlus } from "@mdi/js";
 	import Button from "@smui/button";
 	import CircularProgress from "@smui/circular-progress";
 	import { Svg } from "@smui/common";
@@ -26,47 +26,47 @@
 	import { ZenoService, type Requirement } from "../zenoservice";
 	import { areRequirementsEqual } from "../zenoservice/models/prompt";
 	import RequirementCell from "./cells/RequirementCell.svelte";
+	import { TrailingIcon } from "@smui/chips";
 
 	let newRequirementInput = "";
-	let displayedRequirements: { [key: string]: Requirement };
+	// let displayedRequirements: { [key: string]: Requirement };
 
 	$: inputChanged = newRequirementInput !== "";
 
-	$: {
-		$requirements;
-		displayedRequirements = JSON.parse(JSON.stringify($requirements));
-		Object.entries(displayedRequirements).forEach(([req_id, req]) => {
-			req.mode = "";
-		});
-	}
+	// $: {
+	// 	$requirements;
+	// 	displayedRequirements = JSON.parse(JSON.stringify($requirements));
+	// 	Object.entries(displayedRequirements).forEach(([req_id, req]) => {
+	// 		req.mode = "";
+	// 	});
+	// }
 
-	$: {
-		$suggestedRequirements;
-		displayedRequirements = JSON.parse(JSON.stringify($requirements));
-		Object.entries(displayedRequirements).forEach(([req_id, req]) => {
-			req.mode = "";
-		});
-		if (Object.keys($suggestedRequirements).length > 0) {
-			Object.entries($suggestedRequirements).forEach(([req_id, req]) => {
-				if (!(req_id in displayedRequirements)) {
-					displayedRequirements[req_id] = { ...req, mode: "new" };
-				} else if (
-					!areRequirementsEqual(
-						$suggestedRequirements[req_id],
-						displayedRequirements[req_id]
-					)
-				) {
-					displayedRequirements[req_id] = { ...req, mode: "edited" };
-				}
-			});
-			Object.entries($requirements).forEach(([req_id, req]) => {
-				if (!(req_id in $suggestedRequirements)) {
-					displayedRequirements[req_id] = { ...req, mode: "deleted" };
-				}
-			});
-		}
-		console.log(displayedRequirements);
-	}
+	// $: {
+	// 	$suggestedRequirements;
+	// 	displayedRequirements = JSON.parse(JSON.stringify($requirements));
+	// 	Object.entries(displayedRequirements).forEach(([req_id, req]) => {
+	// 		req.mode = "";
+	// 	});
+	// 	if (Object.keys($suggestedRequirements).length > 0) {
+	// 		Object.entries($suggestedRequirements).forEach(([req_id, req]) => {
+	// 			if (!(req_id in displayedRequirements)) {
+	// 				displayedRequirements[req_id] = { ...req, mode: "new" };
+	// 			} else if (
+	// 				!areRequirementsEqual(
+	// 					$suggestedRequirements[req_id],
+	// 					displayedRequirements[req_id]
+	// 				)
+	// 			) {
+	// 				displayedRequirements[req_id] = { ...req, mode: "edited" };
+	// 			}
+	// 		});
+	// 		Object.entries($requirements).forEach(([req_id, req]) => {
+	// 			if (!(req_id in $suggestedRequirements)) {
+	// 				displayedRequirements[req_id] = { ...req, mode: "deleted" };
+	// 			}
+	// 		});
+	// 	}
+	// }
 
 	function get_max_requirement_id() {
 		return Math.max(
@@ -105,7 +105,7 @@
 		ZenoService.createNewPrompt({
 			text: "",
 			version: "",
-			requirements: displayedRequirements,
+			requirements: $requirements,
 		}).then((createdPrompts) => {
 			prompts.update((pts) => {
 				return pts.set(createdPrompts[0].version, createdPrompts[0]);
@@ -113,6 +113,15 @@
 			currentPromptId.set(createdPrompts[0].version);
 			promptUpdating.set(false);
 			promptToUpdate.set(false);
+		});
+	}
+
+	function suggest_requirements() {
+		suggestedRequirements.set({});
+		requirementUpdating.set(true);
+		ZenoService.suggestRequirements().then(($suggestedRequirements) => {
+			suggestedRequirements.set($suggestedRequirements);
+			requirementUpdating.set(false);
 		});
 	}
 
@@ -166,8 +175,11 @@
 	</div>
 </div>
 
-{#each Object.entries(displayedRequirements) as [id, req]}
-	<RequirementCell requirement={req} compare={$tab === "comparison"} />
+{#each Object.entries($requirements) as [id, req]}
+	<RequirementCell
+		requirement={req}
+		compare={$tab === "comparison"}
+		suggested={false} />
 {/each}
 
 <div class="inline">
@@ -193,6 +205,44 @@
 		</IconButton>
 	</span>
 </div>
+
+<div id="requirement-header" class="inline">
+	<div class="inline">
+		<b>Brainstorm more</b>
+		<TrailingIcon class="material-icons" style="color: #efb118">
+			lightbulb_2
+		</TrailingIcon>
+		{#if $requirementUpdating}
+			<CircularProgress
+				style="height: 15px; width: 15px; margin-left: 10px;"
+				indeterminate />
+		{/if}
+	</div>
+	<div class="inline">
+		<div
+			use:tooltip={{
+				content: "Brainstorm requirements.",
+				position: "left",
+				theme: "zeno-tooltip",
+			}}>
+			<IconButton
+				on:click={() => {
+					suggest_requirements();
+				}}
+				style="cursor:pointer">
+				<Icon component={Svg} viewBox="0 0 24 24">
+					<path fill="var(--G1)" d={mdiRefresh} />
+				</Icon>
+			</IconButton>
+		</div>
+	</div>
+</div>
+{#each Object.entries($suggestedRequirements) as [id, req]}
+	<RequirementCell
+		requirement={req}
+		compare={$tab === "comparison"}
+		suggested={true} />
+{/each}
 
 <style>
 	#requirement-header {

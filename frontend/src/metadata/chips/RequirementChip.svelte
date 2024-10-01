@@ -36,6 +36,9 @@
 		// menuX = spanRect.left;
 		// menuY = spanRect.bottom;
 		// showOptions = !showOptions;
+		if (requirement == null) {
+			return;
+		}
 
 		showNewSlice.set(false);
 		showNewFolder.set(false);

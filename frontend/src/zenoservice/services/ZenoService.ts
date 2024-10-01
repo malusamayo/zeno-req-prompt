@@ -198,21 +198,20 @@ export class ZenoService {
 	 * @returns any Successful Response
 	 * @throws ApiError
 	 */
-		public static evaluatorUpdates(
-			requestBody: EvaluatorFeedbackRequest
-		): CancelablePromise<Record<string, Requirement>> {
-			return __request(OpenAPI, {
-				method: "POST",
-				url: "/evaluator-updates",
-				body: requestBody,
-				mediaType: "application/json",
-				errors: {
-					422: `Validation Error`,
-				},
-			});
-		} 
+	public static evaluatorUpdates(
+		requestBody: EvaluatorFeedbackRequest
+	): CancelablePromise<Record<string, Requirement>> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/evaluator-updates",
+			body: requestBody,
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
 
-	
 	/**
 	 * Suggest requirement updates
 	 * @param requestBody
@@ -231,7 +230,26 @@ export class ZenoService {
 				422: `Validation Error`,
 			},
 		});
-	} 
+	}
+
+	/**
+	 * Suggest requirements
+	 * @param requestBody
+	 * @returns any Successful Response
+	 * @throws ApiError
+	 */
+	public static suggestRequirements(): CancelablePromise<
+		Record<string, Requirement>
+	> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/suggest-requirements",
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
 
 	/**
 	 * Update Reports

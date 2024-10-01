@@ -55,6 +55,7 @@ from zeno.prompt_templates import (
     PROMPT_COMPILER_PROMPT, 
     REQUIREMENT_EXTRACTOR_PROMPT, 
     REQUIREMENT_EVALUATION_PROMPT,
+    REQUIREMENT_SUGGESTION_PROMPT,
     REQUIREMENT_UPDATE_PROMPT,
     REQUIREMENT_UPDATE_REQUEST_PROMPT
 )
@@ -1106,6 +1107,32 @@ class ZenoBackend(object):
 
         return new_requirements
 
+    def suggest_requirements(self,) -> Dict[str, Requirement]:
+        ''' Use LLM to brainstorm new requirements
+
+        Output:
+        - new requirements: Dict[str, Requirement]
+        '''
+
+        # use REQUIREMENT_SUGGESTION_PROMPT for implementation
+        ## MOCKUP CODE
+        suggested_requirements = {
+            "100": Requirement(
+                id = "100",
+                name = "new-requirement",
+                description = "This is a new requirement",
+                prompt_snippet = "",
+                evaluation_method = "",
+            ),
+            "101": Requirement(
+                id = "101",
+                name = "new-requirement-v2",
+                description = "This is also a new requirement",
+                prompt_snippet = "",
+                evaluation_method = "",
+            )
+        }
+        return suggested_requirements
     
     def suggest_requirement_updates(self, req: FeedbackRequest) -> Dict[str, Requirement]:
         ''' Use LLM to update requirements based on user-provided feedback
