@@ -64,7 +64,7 @@
 	{selected ? 'selected' : ''} 
 	{compare ? 'compare-slice-cell' : ''}
 	{compare && compareButton ? '' : 'pointer'}"
-	style="cursor:default"
+	style={suggested ? "cursor:default; background: #f0f0f0" : "cursor:default;"}
 	draggable="false"
 	on:mouseover={() => (hovering = true)}
 	on:focus={() => (hovering = true)}
@@ -205,6 +205,7 @@
 										reqs[requirement.id] = requirement;
 										return reqs;
 									});
+									promptToUpdate.set(true);
 								}}>
 								<Icon component={Svg} viewBox="0 0 24 24">
 									<path fill="green" d={mdiCheckOutline} />

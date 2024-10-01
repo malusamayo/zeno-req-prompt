@@ -208,7 +208,7 @@
 
 <div id="requirement-header" class="inline">
 	<div class="inline">
-		<b>Brainstorm more</b>
+		<h4>Brainstorm more</h4>
 		<TrailingIcon class="material-icons" style="color: #efb118">
 			lightbulb_2
 		</TrailingIcon>

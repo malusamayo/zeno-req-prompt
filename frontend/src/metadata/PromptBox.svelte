@@ -249,11 +249,15 @@
 		justify-content: space-between;
 	}
 	.promptbox {
-		outline: 1px solid #767676;
 		min-height: 150px;
 		padding: 5px;
 		margin-bottom: 10px;
 		line-height: 22px;
 		white-space: pre-wrap;
+		position: relative;
+		overflow: visible;
+		border: 0.5px solid var(--G4);
+		border-radius: 4px;
+		font-weight: normal;
 	}
 </style>
