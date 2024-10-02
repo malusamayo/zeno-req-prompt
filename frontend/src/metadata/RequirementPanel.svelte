@@ -154,6 +154,20 @@
 	<div class="inline">
 		<div
 			use:tooltip={{
+				content: "Brainstorm requirements.",
+				position: "left",
+				theme: "zeno-tooltip",
+			}}>
+			<IconButton
+				on:click={() => {
+					suggest_requirements();
+				}}
+				style="cursor:pointer; margin-top:-5px">
+				<Icon class="material-icons" style="color: #efb118">lightbulb_2</Icon>
+			</IconButton>
+		</div>
+		<div
+			use:tooltip={{
 				content: "Compile to prompt.",
 				position: "left",
 				theme: "zeno-tooltip",
@@ -181,6 +195,12 @@
 		compare={$tab === "comparison"}
 		suggested={false} />
 {/each}
+{#each Object.entries($suggestedRequirements) as [id, req]}
+	<RequirementCell
+		requirement={req}
+		compare={$tab === "comparison"}
+		suggested={true} />
+{/each}
 
 <div class="inline">
 	<input
@@ -205,44 +225,6 @@
 		</IconButton>
 	</span>
 </div>
-
-<div id="requirement-header" class="inline">
-	<div class="inline">
-		<h4>Brainstorm more</h4>
-		<TrailingIcon class="material-icons" style="color: #efb118">
-			lightbulb_2
-		</TrailingIcon>
-		{#if $requirementUpdating}
-			<CircularProgress
-				style="height: 15px; width: 15px; margin-left: 10px;"
-				indeterminate />
-		{/if}
-	</div>
-	<div class="inline">
-		<div
-			use:tooltip={{
-				content: "Brainstorm requirements.",
-				position: "left",
-				theme: "zeno-tooltip",
-			}}>
-			<IconButton
-				on:click={() => {
-					suggest_requirements();
-				}}
-				style="cursor:pointer">
-				<Icon component={Svg} viewBox="0 0 24 24">
-					<path fill="var(--G1)" d={mdiRefresh} />
-				</Icon>
-			</IconButton>
-		</div>
-	</div>
-</div>
-{#each Object.entries($suggestedRequirements) as [id, req]}
-	<RequirementCell
-		requirement={req}
-		compare={$tab === "comparison"}
-		suggested={true} />
-{/each}
 
 <style>
 	#requirement-header {
