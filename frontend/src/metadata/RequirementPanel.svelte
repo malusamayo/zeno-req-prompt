@@ -166,7 +166,7 @@
 				<Icon class="material-icons" style="color: #efb118">lightbulb_2</Icon>
 			</IconButton>
 		</div>
-		<div
+		<!-- <div
 			use:tooltip={{
 				content: "Compile to prompt.",
 				position: "left",
@@ -185,7 +185,7 @@
 					{/if}
 				</Icon>
 			</IconButton>
-		</div>
+		</div> -->
 	</div>
 </div>
 

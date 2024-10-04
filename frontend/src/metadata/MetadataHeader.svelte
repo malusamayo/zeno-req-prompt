@@ -15,14 +15,41 @@
 		prompts,
 		currentPromptId,
 		status,
+		promptUpdating,
+		suggestedRequirements,
+		requirements,
+		promptToUpdate,
 	} from "../stores";
 	import { mdiPlayOutline } from "@mdi/js";
 	import { ZenoService } from "../zenoservice";
+	import { run } from "svelte/internal";
 
 	let confirmRunPrompt = false;
 
 	$: exludeModels = $models.filter((m) => m !== $model);
 	$: promptIds = Array.from($prompts.keys());
+
+	function compilePrompt() {
+		promptUpdating.set(true);
+		suggestedRequirements.set({});
+		status.update((s) => {
+			s.status = "Compiling requirements";
+			return s;
+		});
+		ZenoService.createNewPrompt({
+			text: "",
+			version: "",
+			requirements: $requirements,
+		}).then((createdPrompts) => {
+			prompts.update((pts) => {
+				return pts.set(createdPrompts[0].version, createdPrompts[0]);
+			});
+			currentPromptId.set(createdPrompts[0].version);
+			promptUpdating.set(false);
+			promptToUpdate.set(false);
+			runPrompt();
+		});
+	}
 
 	function runPrompt() {
 		status.update((s) => {
@@ -130,7 +157,7 @@
 			}}>
 			<Label>No</Label>
 		</Button>
-		<Button use={[InitialFocus]} on:click={() => runPrompt()}>
+		<Button use={[InitialFocus]} on:click={() => compilePrompt()}>
 			<Label>Yes</Label>
 		</Button>
 	</Actions>
