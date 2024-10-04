@@ -20,6 +20,8 @@
 	let allowUpdates = false;
 	let contentEditableDiv: HTMLDivElement;
 
+	let hovering = false;
+
 	$: {
 		$currentPromptId;
 		switchPrompt();
@@ -200,47 +202,56 @@
 	}
 </script>
 
-<div class="inline">
-	<div class="inline">
-		<h4>Prompt</h4>
-		{#if $promptUpdating}
-			<CircularProgress
-				style="height: 15px; width: 15px; margin-left: 10px;"
-				indeterminate />
-		{/if}
-	</div>
-	<div class="inline">
-		<div
-			use:tooltip={{
-				content: "Update requirements.",
-				position: "left",
-				theme: "zeno-tooltip",
-			}}>
-			<IconButton
-				on:click={() => {
-					if (allowUpdates) {
-						updatePrompt();
-					}
-				}}
-				style={allowUpdates ? "cursor:pointer" : "cursor:default"}>
-				<Icon component={Svg} viewBox="0 0 24 24">
-					{#if allowUpdates}
-						<path fill="var(--G1)" d={mdiArrowUpBold} />
-					{:else}
-						<path fill="var(--G4)" d={mdiArrowUpBold} />
-					{/if}
-				</Icon>
-			</IconButton>
-		</div>
-	</div>
-</div>
 <div
-	contenteditable="true"
-	bind:this={contentEditableDiv}
-	class="promptbox"
-	on:input={handleInput}
-	on:keydown={handleKeydown}
-	on:paste={handlePaste} />
+	on:mouseover={() => (hovering = true)}
+	on:focus={() => (hovering = true)}
+	on:mouseleave={() => (hovering = false)}
+	on:blur={() => (hovering = false)}>
+	<div class="inline">
+		<div class="inline">
+			<h4>Prompt</h4>
+			{#if $promptUpdating}
+				<CircularProgress
+					style="height: 15px; width: 15px; margin-left: 10px;"
+					indeterminate />
+			{/if}
+		</div>
+
+		<!-- <div class="inline">
+			<div
+				use:tooltip={{
+					content: "Update requirements.",
+					position: "left",
+					theme: "zeno-tooltip",
+				}}>
+				<IconButton
+					on:click={() => {
+						if (allowUpdates) {
+							updatePrompt();
+						}
+					}}
+					style={allowUpdates ? "cursor:pointer" : "cursor:default"}>
+					<Icon component={Svg} viewBox="0 0 24 24">
+						{#if allowUpdates}
+							<path fill="var(--G1)" d={mdiArrowUpBold} />
+						{:else}
+							<path fill="var(--G4)" d={mdiArrowUpBold} />
+						{/if}
+					</Icon>
+				</IconButton>
+			</div>
+		</div> -->
+	</div>
+	{#if hovering}
+		<div
+			contenteditable="true"
+			bind:this={contentEditableDiv}
+			class="promptbox"
+			on:input={handleInput}
+			on:keydown={handleKeydown}
+			on:paste={handlePaste} />
+	{/if}
+</div>
 
 <style>
 	.inline {
