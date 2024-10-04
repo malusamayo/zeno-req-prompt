@@ -143,7 +143,7 @@
 
 <div
 	class="box svelte-ohpquu"
-	draggable="true"
+	draggable="false"
 	on:dragstart={(ev) => {
 		let transferData = JSON.stringify(example);
 		ev.dataTransfer.setData("text/plain", transferData);
