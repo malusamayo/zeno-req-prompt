@@ -131,7 +131,35 @@
 						</TrailingIcon>
 					{/if}
 
-					<div class="description">
+					<div
+						class="description"
+						contenteditable={true}
+						use:clickOutside
+						on:input={(e) => {
+							requirement.description = e.target.innerText;
+							requirements.update((reqs) => {
+								reqs[requirement.id] = requirement;
+								return reqs;
+							});
+						}}
+						on:blur={() => {
+							ZenoService.optimizeRequirement([requirement]).then(
+								(optimizedRequirement) => {
+									requirement = optimizedRequirement;
+									console.log(requirement);
+									requirements.update((reqs) => {
+										reqs[requirement.id] = requirement;
+										return reqs;
+									});
+								}
+							);
+						}}
+						on:keydown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								e.target.blur();
+							}
+						}}>
 						{requirement.description}
 					</div>
 				</div>
@@ -340,9 +368,12 @@
 		background: var(--G5);
 	}
 	.description {
-		font-size: small;
+		font-size: normal;
 		font-weight: lighter;
 		cursor: text;
+		margin-left: -5px;
+		padding-left: 5px;
+		padding-right: 5px;
 	}
 
 	.tag {
