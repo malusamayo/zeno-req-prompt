@@ -934,9 +934,11 @@ class ZenoBackend(object):
             if isinstance(evaluation_method, list):
                 evaluation_method = "\n".join(evaluation_method)  # Join list elements into a single string
 
-            requirement.name = name
+            if requirement.name == "":
+                requirement.name = name
             # requirement.description = description
             requirement.evaluation_method = evaluation_method
+            requirement.prompt_snippet = ""
             break
         
         return requirement
