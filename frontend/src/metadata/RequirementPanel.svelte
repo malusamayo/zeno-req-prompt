@@ -17,6 +17,7 @@
 		requirementUpdating,
 		prompts,
 		currentPromptId,
+		model,
 		showNewRequirement,
 		requirementToEdit,
 		requirements,
@@ -32,6 +33,11 @@
 	// let displayedRequirements: { [key: string]: Requirement };
 
 	$: inputChanged = newRequirementInput !== "";
+
+	$: {
+		$model;
+		$currentPromptId;
+	}
 
 	// $: {
 	// 	$requirements;
@@ -116,10 +122,10 @@
 		});
 	}
 
-	function suggest_requirements() {
+	function suggest_requirements(prompt_id, model) {
 		suggestedRequirements.set({});
 		requirementUpdating.set(true);
-		ZenoService.suggestRequirements().then(($suggestedRequirements) => {
+		ZenoService.suggestRequirements({promptId: prompt_id, model: model}).then(($suggestedRequirements) => {
 			suggestedRequirements.set($suggestedRequirements);
 			requirementUpdating.set(false);
 		});
@@ -160,7 +166,7 @@
 			}}>
 			<IconButton
 				on:click={() => {
-					suggest_requirements();
+					suggest_requirements($currentPromptId, $model);
 				}}
 				style="cursor:pointer; margin-top:-5px">
 				<Icon class="material-icons" style="color: #efb118">lightbulb_2</Icon>

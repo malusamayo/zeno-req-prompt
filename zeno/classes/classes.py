@@ -122,3 +122,7 @@ class Prompt(CamelModel):
     text: str
     version: str
     requirements: Dict[str, Requirement]
+
+class SuggestNewReqRequest(CamelModel):
+    prompt_id: str
+    model: str

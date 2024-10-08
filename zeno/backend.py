@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union, Tuple
 from pydantic import BaseModel
 from openai import OpenAI
+import random
 
 import pandas as pd
 from pandas import DataFrame
@@ -30,7 +31,7 @@ from zeno.api import (
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
 from zeno.openai_client import OpenAIMultiClient
-from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback
+from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
 from zeno.classes.tag import Tag, TagMetricKey
@@ -1109,31 +1110,78 @@ class ZenoBackend(object):
 
         return new_requirements
 
-    def suggest_requirements(self,) -> Dict[str, Requirement]:
+    def suggest_requirements(self,cur_info: SuggestNewReqRequest) -> Dict[str, Requirement]:
         ''' Use LLM to brainstorm new requirements
 
         Output:
         - new requirements: Dict[str, Requirement]
         '''
+        print("suggest_new_reqs")
+        data_col = self.df[str(self.data_column)]
+        model_col_obj = ZenoColumn(
+            column_type=ZenoColumnType.OUTPUT, name="output", model=cur_info.model, prompt_id=cur_info.prompt_id
+        )
+        model_col = self.df[str(model_col_obj)]
+        requirements = self.prompts[cur_info.prompt_id].requirements
 
-        # use REQUIREMENT_SUGGESTION_PROMPT for implementation
-        ## MOCKUP CODE
-        suggested_requirements = {
-            "100": Requirement(
-                id = "100",
-                name = "new-requirement",
-                description = "This is a new requirement",
-                prompt_snippet = "",
-                evaluation_method = "",
-            ),
-            "101": Requirement(
-                id = "101",
-                name = "new-requirement-v2",
-                description = "This is also a new requirement",
-                prompt_snippet = "",
-                evaluation_method = "",
+        input_data = []
+        output_data = []
+        random_indices = random.sample(range(len(data_col)), 5)
+        for i in random_indices:
+            input_data.append(data_col.at[i])
+            output_data.append(model_col.at[i])
+
+        api_prompt = REQUIREMENT_SUGGESTION_PROMPT.format(prompt=self.prompts[cur_info.prompt_id].text, current_requirements = requirements,input_data=input_data, model_output=output_data)
+
+        client = OpenAIMultiClient(endpoint="chats", data_template={"model": cur_info.model})
+
+        def chat_completion():
+            client.request(
+                data={
+                    "messages": [
+                        {"role": "system", "content": "You are an experienced requirement engineer for an LLM application. Please return the response as valid JSON."},
+                        {"role": "user", "content": api_prompt}
+                    ],
+                    'response_format': {"type": "json_object"}
+                }
             )
-        }
+
+        client.run_request_function(chat_completion)
+
+        suggested_requirements ={}
+        rid = str(len(self.prompts[cur_info.prompt_id].requirements)+1)
+
+        for result in client:
+            response = result.response.choices[0].message.content
+            new_reqs = json.loads(response).get("new_reqs", [])
+            for new_req in new_reqs:
+                suggested_requirements[rid] = Requirement(
+                    id = rid,
+                    name = new_req["name"],
+                    description = new_req["description"],
+                    prompt_snippet = "",
+                    evaluation_method = new_req["evaluation_method"])
+                rid = str(int(rid)+1)
+            break
+
+        # # use REQUIREMENT_SUGGESTION_PROMPT for implementation
+        # ## MOCKUP CODE
+        # suggested_requirements = {
+        #     "100": Requirement(
+        #         id = "100",
+        #         name = "new-requirement",
+        #         description = "This is a new requirement",
+        #         prompt_snippet = "",
+        #         evaluation_method = "",
+        #     ),
+        #     "101": Requirement(
+        #         id = "101",
+        #         name = "new-requirement-v2",
+        #         description = "This is also a new requirement",
+        #         prompt_snippet = "",
+        #         evaluation_method = "",
+        #     )
+        # }
         return suggested_requirements
     
     def suggest_requirement_updates(self, req: FeedbackRequest) -> Dict[str, Requirement]:

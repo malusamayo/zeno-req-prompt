@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { Icon } from "@smui/icon-button";
+	import { columnHash } from "../../util/util";
 	import Paper, { Content } from "@smui/paper";
 	import { clickOutside } from "../../util/clickOutside";
-	import type { Requirement } from "src/zenoservice";
+	import type { Requirement} from "src/zenoservice";
+	import {ZenoService} from "../../zenoservice";
+	import { TrailingIcon, LeadingIcon } from "@smui/chips";
 	import {
 		currentPromptId,
 		prompts,
@@ -12,11 +15,18 @@
 		showNewRequirement,
 		showNewSlice,
 		showSliceFinder,
+		requirementUpdating,
+		model,
+		settings,
 	} from "../../stores";
+	// import { ZenoColumnType, ZenoService } from "src/zenoservice";
 
 	export let id;
 	export let isPass;
 	export let rationale;
+	export let item;
+	export let evalColumns;
+	export let reqId;
 
 	let name;
 	let menuX = 0;
@@ -29,22 +39,44 @@
 		id;
 		requirement = $requirements[id];
 		name = requirement.name;
+		$model;
 	}
 
 	$: srcLink = `https://img.shields.io/badge/${name.replaceAll("-", "--")}-${
 		isPass ? "pass" : "fail"
 	}-${isPass ? "green" : "red"}`;
 
+	// function handleMouseOver(event) {
+	// 	const spanRect = event.target.getBoundingClientRect();
+	// 	menuX = spanRect.left;
+	// 	menuY = spanRect.bottom;
+	// 	hovering = !hovering;
+	// }
 	function handleMouseOver(event) {
 		const spanRect = event.target.getBoundingClientRect();
-		menuX = spanRect.left;
-		menuY = spanRect.bottom;
-		hovering = true;
+		// Adjust for scroll position
+		menuX = spanRect.left + window.scrollX;
+		menuY = spanRect.bottom + window.scrollY;
+		hovering = !hovering; // Toggles the visibility on click
+	}
+
+	function feedbackToEvaluators(eval_res, reqId) {
+		requirementUpdating.set(true);
+		ZenoService.evaluatorUpdates({
+			model: $model,
+			promptId: $currentPromptId,
+			exampleId: item[columnHash($settings.idColumn)],
+			corrected_eval: !eval_res,
+			requirementId: reqId,
+		}).then((newRequirements) => {
+			requirements.set(newRequirements);
+			requirementUpdating.set(false);
+		});
 	}
 </script>
 
 <div style="position:relative; display:inline;">
-	<img
+	<!-- <img
 		class="tag"
 		draggable="false"
 		src={srcLink}
@@ -55,6 +87,16 @@
 		on:mouseleave={() => (hovering = false)}
 		on:blur={() => (hovering = false)}
 		on:keydown={() => {}} />
+	{#if hovering} -->
+	<img
+		class="tag"
+		draggable="false"
+		src={srcLink}
+		alt=""
+		data={name}
+		on:click={handleMouseOver}
+		on:keydown={() => {}}
+	/>
 	{#if hovering}
 		<div
 			id="options-container"
@@ -64,6 +106,14 @@
 				<span class="rationale">
 					<b>Rationale:</b>
 					{rationale}
+				<TrailingIcon
+					class="material-icons"
+					style="margin-bottom: 10px; margin-left:0px; margin-right: 5px;  cursor: pointer; color: #e05d44;"
+					on:click={() => {
+						feedbackToEvaluators(item[evalColumns[reqId]], reqId);
+					}}>
+					thumb_down
+				</TrailingIcon>
 				</span>
 				<!-- </Content> -->
 			</Paper>

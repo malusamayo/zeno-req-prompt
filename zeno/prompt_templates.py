@@ -117,8 +117,11 @@ The output format should be:
     }}
 """
 
-REQUIREMENT_SUGGESTION_PROMPT = """You are an experienced requirement engineer for an LLM application. Given current requirements and example inputs / outputs, suggest new requirements.
+REQUIREMENT_SUGGESTION_PROMPT = """You are an experienced requirement engineer for an LLM application. Given the prompt, current requirements and example inputs and outputs , suggest new requirements.
 
+---
+Current prompt:
+{prompt}
 ---
 Current requirements:
 {current_requirements}
@@ -135,13 +138,13 @@ Model output:
 Given the user feedback, suggest new requirements. Each new requirement should be atomic and does not overlap with existing requirements. 
 
 Your response should be in the following JSON format:
-[ 
-    {{
+
+    "new_reqs": [{{
         "name": "new requirement name", 
         "description": "new requirement description", 
         "evaluation_method": "evaluation method of the new requirement which will be executed by GPT"
-    }}
-] 
+    }}]
+
 """
 
 REQUIREMENT_UPDATE_PROMPT = """You are an experienced requirement engineer for an LLM application. Given user feedback on an example, update the requirements.

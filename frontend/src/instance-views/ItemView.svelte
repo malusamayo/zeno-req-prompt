@@ -119,19 +119,19 @@
 		});
 	}
 
-	function feedbackToEvaluators(eval_res, reqId) {
-		requirementUpdating.set(true);
-		ZenoService.evaluatorUpdates({
-			model: $model,
-			promptId: $currentPromptId,
-			exampleId: item[columnHash($settings.idColumn)],
-			corrected_eval: !eval_res,
-			requirementId: reqId,
-		}).then((newRequirements) => {
-			requirements.set(newRequirements);
-			requirementUpdating.set(false);
-		});
-	}
+	// function feedbackToEvaluators(eval_res, reqId) {
+	// 	requirementUpdating.set(true);
+	// 	ZenoService.evaluatorUpdates({
+	// 		model: $model,
+	// 		promptId: $currentPromptId,
+	// 		exampleId: item[columnHash($settings.idColumn)],
+	// 		corrected_eval: !eval_res,
+	// 		requirementId: reqId,
+	// 	}).then((newRequirements) => {
+	// 		requirements.set(newRequirements);
+	// 		requirementUpdating.set(false);
+	// 	});
+	// }
 
 	function submit(e) {
 		if (e.metaKey && e.key === "Enter") {
@@ -214,15 +214,18 @@
 				<RequirementEvalChip
 					id={reqId}
 					isPass={item[evalColumns[reqId]] === true}
-					rationale={item[rationaleColumns[reqId]]} />
-				<TrailingIcon
+					rationale={item[rationaleColumns[reqId]]}
+					item ={item}
+					evalColumns={evalColumns}
+					reqId={reqId}/>
+				<!-- <TrailingIcon
 					class="material-icons"
 					style="margin-bottom: 10px; margin-left:0px; margin-right: 5px;  cursor: pointer; color: #e05d44;"
 					on:click={() => {
 						feedbackToEvaluators(item[evalColumns[reqId]], reqId);
 					}}>
 					thumb_down
-				</TrailingIcon>
+				</TrailingIcon> -->
 			{/if}
 		{/each}
 	{/if}

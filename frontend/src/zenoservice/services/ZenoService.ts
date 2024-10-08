@@ -22,6 +22,7 @@ import type { TagMetricKey } from "../models/TagMetricKey";
 import type { ZenoColumn } from "../models/ZenoColumn";
 import type { ZenoSettings } from "../models/ZenoSettings";
 import type { ZenoVariables } from "../models/ZenoVariables";
+import type {SuggestNewReqRequest} from "../models/SuggestNewReqRequest";
 import type {
 	FeedbackRequest,
 	InferenceRequest,
@@ -238,13 +239,14 @@ export class ZenoService {
 	 * @returns any Successful Response
 	 * @throws ApiError
 	 */
-	public static suggestRequirements(): CancelablePromise<
+	public static suggestRequirements(requestBody: SuggestNewReqRequest): CancelablePromise<
 		Record<string, Requirement>
 	> {
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/suggest-requirements",
 			mediaType: "application/json",
+			body: requestBody,
 			errors: {
 				422: `Validation Error`,
 			},
