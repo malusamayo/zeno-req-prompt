@@ -1183,6 +1183,26 @@ class ZenoBackend(object):
         #     )
         # }
         return suggested_requirements
+
+    def update_requirement_feedback(self, req: FeedbackRequest) -> Dict[str, Requirement]:
+        data_col = self.df[str(self.data_column)]
+        model_col_obj = ZenoColumn(
+            column_type=ZenoColumnType.OUTPUT, name="output", model=req.model, prompt_id=req.prompt_id
+        )
+        model_col = self.df[str(model_col_obj)]
+        requirement = self.prompts[req.prompt_id].requirements[req.requirement_id]
+        is_positive = req.is_positive
+
+        requirement.examples += [Example(
+                            id=req.example_id,
+                            input=data_col.at[int(req.example_id)],
+                            output=model_col.at[int(req.example_id)],
+                            is_positive=is_positive,
+                            feedback=req.feedback,
+                        )]
+        new_requirements = copy.copy(self.prompts[req.prompt_id].requirements)
+
+        return new_requirements
     
     def suggest_requirement_updates(self, req: FeedbackRequest) -> Dict[str, Requirement]:
         ''' Use LLM to update requirements based on user-provided feedback

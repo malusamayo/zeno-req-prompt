@@ -7,6 +7,7 @@
 		requirementUpdating,
 		settings,
 		status,
+		promptToUpdate,
 		suggestedRequirements,
 	} from "../stores";
 	import { ZenoColumnType, ZenoService } from "../zenoservice";
@@ -17,6 +18,8 @@
 	import { Icon } from "@smui/button";
 	import { InitialFocus } from "@smui/dialog";
 	import type { Example } from "../zenoservice/models/prompt";
+	import RequirementCell from "../metadata/cells/RequirementCell.svelte";
+	import UpdateRequirementCell from "../metadata/cells/UpdateRequirementCell.svelte";
 
 	export let item;
 	let modelColumn;
@@ -29,6 +32,10 @@
 	let showFeedback = false;
 	let feedbackThumbUp;
 	let feedbackText = "";
+	let showOptions = false;
+	let newRequirementInput = "";
+	let showRequirementModal = false;
+	let showExistingRequirementModal = false;
 
 	$: {
 		$model;
@@ -103,20 +110,52 @@
 		});
 	}
 
-	function feedbackToRequirements() {
+	// function feedbackToRequirements() {
+	// 	requirementUpdating.set(true);
+	// 	ZenoService.suggestRequirementUpdates({
+	// 		model: $model,
+	// 		promptId: $currentPromptId,
+	// 		exampleId: item[columnHash($settings.idColumn)],
+	// 		isPositive: feedbackThumbUp,
+	// 		feedback: feedbackText,
+	// 	}).then((newRequirements) => {
+	// 		suggestedRequirements.set(newRequirements);
+	// 		showFeedback = false;
+	// 		feedbackText = "";
+	// 		requirementUpdating.set(false);
+	// 	});
+	// }
+	
+	function get_max_requirement_id() {
+		return Math.max(
+			Math.max(...Object.keys($requirements).map((id) => Number(id))),
+			0
+		);
+	}
+
+	function add_requirement() {
+		let requirement = {
+			id: (get_max_requirement_id() + 1).toString(),
+			name: "",
+			description: newRequirementInput,
+			promptSnippet: "",
+			evaluationMethod: "",
+		};
+
 		requirementUpdating.set(true);
-		ZenoService.suggestRequirementUpdates({
-			model: $model,
-			promptId: $currentPromptId,
-			exampleId: item[columnHash($settings.idColumn)],
-			isPositive: feedbackThumbUp,
-			feedback: feedbackText,
-		}).then((newRequirements) => {
-			suggestedRequirements.set(newRequirements);
-			showFeedback = false;
-			feedbackText = "";
-			requirementUpdating.set(false);
-		});
+		ZenoService.optimizeRequirement([requirement]).then(
+			(optimizedRequirement) => {
+				requirement = optimizedRequirement;
+				requirements.update(($reqs) => {
+					$reqs[requirement.id] = requirement;
+					return $reqs;
+				});
+				promptToUpdate.set(true);
+				newRequirementInput = "";
+				requirementUpdating.set(false);
+				showRequirementModal = false;
+			}
+		);
 	}
 
 	// function feedbackToEvaluators(eval_res, reqId) {
@@ -133,12 +172,12 @@
 	// 	});
 	// }
 
-	function submit(e) {
-		if (e.metaKey && e.key === "Enter") {
-			e.preventDefault();
-			feedbackToRequirements();
-		}
-	}
+	// function submit(e) {
+	// 	if (e.metaKey && e.key === "Enter") {
+	// 		e.preventDefault();
+	// 		feedbackToRequirements();
+	// 	}
+	// }
 </script>
 
 <div
@@ -172,8 +211,9 @@
 				class="material-icons"
 				style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; color: #97ca00;"
 				on:click={() => {
-					showFeedback = !showFeedback;
+					// showFeedback = !showFeedback;
 					feedbackThumbUp = true;
+					showExistingRequirementModal = true;
 				}}>
 				thumb_up
 			</TrailingIcon>
@@ -181,12 +221,13 @@
 				class="material-icons"
 				style="margin-bottom: 5px; margin-left: 3px; cursor: pointer; color: #e05d44;"
 				on:click={() => {
-					showFeedback = !showFeedback;
+					// showFeedback = !showFeedback;
 					feedbackThumbUp = false;
+					showOptions = !showOptions;
 				}}>
 				thumb_down
 			</TrailingIcon>
-			{#if showFeedback}
+			<!-- {#if showFeedback}
 				<div
 					id="options-container"
 					use:clickOutside
@@ -204,7 +245,61 @@
 						</div>
 					</Paper>
 				</div>
+			{/if} -->
+			{#if showOptions}
+				<div class="options" style="position: absolute; bottom: 20px; left: 5px;">
+					<TrailingIcon
+						class="material-icons small-icon"
+						style="cursor: pointer; color: #e05d44;"
+						on:click={() => {
+							showOptions = false;
+							showRequirementModal = true;
+						}}>
+						error
+					</TrailingIcon>
+					<TrailingIcon
+						class="material-icons small-icon"
+						style="cursor: pointer; color: #e05d44;"
+						on:click={() => {
+							showOptions = false;
+							showExistingRequirementModal = true;
+						}}>
+						feedback
+					</TrailingIcon>
+				</div>
 			{/if}
+			{#if showRequirementModal}
+			<div class="modal">
+				<div class="modal-content">
+					<h3>Add New Requirement</h3>
+					<textarea
+						bind:value={newRequirementInput}
+						placeholder="Type a description for the new requirement..." />
+					<div class="modal-actions">
+						<button on:click={add_requirement}>Add Requirement</button>
+						<button on:click={() => showRequirementModal = false}>Cancel</button>
+					</div>
+				</div>
+			</div>
+			{/if}
+			{#if showExistingRequirementModal}
+			<div class="modal">
+				<div class="modal-content">
+					<h3>Current Requirements</h3>
+					<div class="requirement-list">
+						{#each Object.entries($requirements) as [id, req]}
+							<UpdateRequirementCell
+								requirement={req}
+								exampleId={item[columnHash($settings.idColumn)]}
+								feedbackPositive={feedbackThumbUp} />
+						{/each}
+					</div>
+					<div class="modal-actions">
+						<button on:click={() => showExistingRequirementModal = false}>Close</button>
+					</div>
+				</div>
+			</div>
+		{/if}
 		</span>
 	{/if}
 	{#if Object.keys(evalColumns).length > 0}
@@ -218,14 +313,6 @@
 					item ={item}
 					evalColumns={evalColumns}
 					reqId={reqId}/>
-				<!-- <TrailingIcon
-					class="material-icons"
-					style="margin-bottom: 10px; margin-left:0px; margin-right: 5px;  cursor: pointer; color: #e05d44;"
-					on:click={() => {
-						feedbackToEvaluators(item[evalColumns[reqId]], reqId);
-					}}>
-					thumb_down
-				</TrailingIcon> -->
 			{/if}
 		{/each}
 	{/if}
@@ -271,5 +358,39 @@
 		font-size: small;
 		font-weight: lighter;
 		resize: none;
+	}
+	.options {
+		display: flex;
+		flex-direction: row; /* Horizontally aligns the icons */
+		gap: 5px; /* Adds spacing between icons */
+	}
+	.modal {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 400px;
+		padding: 20px;
+		background-color: white;
+		border: 1px solid #ccc;
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+		z-index: 100;
+	}
+
+	.modal-content {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.modal-actions {
+		display: flex;
+		justify-content: space-between;
+		margin-top: 10px;
+	}
+
+	.requirement-list {
+		max-height: 300px;
+		overflow-y: auto;
+		margin-bottom: 10px;
 	}
 </style>

@@ -57,6 +57,14 @@ class FeedbackRequest(CamelModel):
     is_positive: bool
     feedback: str = ""
 
+class UpdateFeedbackRequest(CamelModel):
+    model: str
+    prompt_id: str
+    example_id: str
+    is_positive: bool
+    feedback: str = ""
+    requirement_id: str
+
 class EvaluatorFeedback(CamelModel):
     model: str
     prompt_id: str

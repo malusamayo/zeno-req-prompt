@@ -28,6 +28,7 @@ from zeno.classes.classes import (
     Prompt,
     Requirement,
     EvaluatorFeedback,
+    UpdateFeedbackRequest,
     SuggestNewReqRequest
 )
 from zeno.classes.metadata import HistogramBucket, HistogramRequest, StringFilterRequest
@@ -155,6 +156,11 @@ def get_server(zeno: ZenoBackend):
     @api_app.post("/suggest-requirement-updates", response_model=Dict[str, Requirement], tags=["zeno"])
     def suggest_requirement_updates(req: FeedbackRequest):
         requirements = zeno.suggest_requirement_updates(req)
+        return requirements 
+
+    @api_app.post("/update-requirement-feedback", response_model=Dict[str, Requirement], tags=["zeno"])
+    def update_requirement_feedback(req: UpdateFeedbackRequest):
+        requirements = zeno.update_requirement_feedback(req)
         return requirements 
     
     @api_app.post("/evaluator-updates", response_model=Dict[str, Requirement], tags=["zeno"])
