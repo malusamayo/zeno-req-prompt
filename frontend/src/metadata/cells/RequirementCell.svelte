@@ -138,21 +138,24 @@
 						on:input={(e) => {
 							requirement.description = e.target.innerText;
 							requirements.update((reqs) => {
-								reqs[requirement.id] = requirement;
+								if (requirement.id in reqs) {
+									reqs[requirement.id] = requirement;
+								}
 								return reqs;
 							});
 						}}
 						on:blur={() => {
-							ZenoService.optimizeRequirement([requirement]).then(
-								(optimizedRequirement) => {
-									requirement = optimizedRequirement;
-									console.log(requirement);
-									requirements.update((reqs) => {
-										reqs[requirement.id] = requirement;
-										return reqs;
-									});
-								}
-							);
+							if (requirement.id in $requirements) {
+								ZenoService.optimizeRequirement([requirement]).then(
+									(optimizedRequirement) => {
+										requirement = optimizedRequirement;
+										requirements.update((reqs) => {
+											reqs[requirement.id] = requirement;
+											return reqs;
+										});
+									}
+								);
+							}
 						}}
 						on:keydown={(e) => {
 							if (e.key === "Enter") {

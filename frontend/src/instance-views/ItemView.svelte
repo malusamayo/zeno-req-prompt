@@ -125,7 +125,7 @@
 	// 		requirementUpdating.set(false);
 	// 	});
 	// }
-	
+
 	function get_max_requirement_id() {
 		return Math.max(
 			Math.max(...Object.keys($requirements).map((id) => Number(id))),
@@ -247,7 +247,9 @@
 				</div>
 			{/if} -->
 			{#if showOptions}
-				<div class="options" style="position: absolute; bottom: 20px; left: 5px;">
+				<div
+					class="options"
+					style="position: absolute; bottom: 20px; left: 5px;">
 					<TrailingIcon
 						class="material-icons small-icon"
 						style="cursor: pointer; color: #e05d44;"
@@ -269,50 +271,52 @@
 				</div>
 			{/if}
 			{#if showRequirementModal}
-			<div class="modal">
-				<div class="modal-content">
-					<h3>Add New Requirement</h3>
-					<textarea
-						bind:value={newRequirementInput}
-						placeholder="Type a description for the new requirement..." />
-					<div class="modal-actions">
-						<button on:click={add_requirement}>Add Requirement</button>
-						<button on:click={() => showRequirementModal = false}>Cancel</button>
+				<div class="modal">
+					<div class="modal-content">
+						<h3>Add New Requirement</h3>
+						<textarea
+							bind:value={newRequirementInput}
+							placeholder="Type a description for the new requirement..." />
+						<div class="modal-actions">
+							<button on:click={add_requirement}>Add Requirement</button>
+							<button on:click={() => (showRequirementModal = false)}
+								>Cancel</button>
+						</div>
 					</div>
 				</div>
-			</div>
 			{/if}
 			{#if showExistingRequirementModal}
-			<div class="modal">
-				<div class="modal-content">
-					<h3>Current Requirements</h3>
-					<div class="requirement-list">
-						{#each Object.entries($requirements) as [id, req]}
-							<UpdateRequirementCell
-								requirement={req}
-								exampleId={item[columnHash($settings.idColumn)]}
-								feedbackPositive={feedbackThumbUp} />
-						{/each}
-					</div>
-					<div class="modal-actions">
-						<button on:click={() => showExistingRequirementModal = false}>Close</button>
+				<div class="modal">
+					<div class="modal-content">
+						<h3>Current Requirements</h3>
+						<div class="requirement-list">
+							{#each Object.entries($requirements) as [id, req]}
+								<UpdateRequirementCell
+									requirement={req}
+									exampleId={item[columnHash($settings.idColumn)]}
+									feedbackPositive={feedbackThumbUp} />
+							{/each}
+						</div>
+						<div class="modal-actions">
+							<button on:click={() => (showExistingRequirementModal = false)}
+								>Close</button>
+						</div>
 					</div>
 				</div>
-			</div>
-		{/if}
+			{/if}
 		</span>
 	{/if}
 	{#if Object.keys(evalColumns).length > 0}
 		<br />
 		{#each requirementIds as reqId}
-			{#if evalColumns[reqId] !== "" && item[evalColumns[reqId]] !== null}
+			{#if evalColumns[reqId] !== "" && item[evalColumns[reqId]] !== null && item[evalColumns[reqId]] !== undefined}
 				<RequirementEvalChip
 					id={reqId}
 					isPass={item[evalColumns[reqId]] === true}
 					rationale={item[rationaleColumns[reqId]]}
-					item ={item}
-					evalColumns={evalColumns}
-					reqId={reqId}/>
+					{item}
+					{evalColumns}
+					{reqId} />
 			{/if}
 		{/each}
 	{/if}
