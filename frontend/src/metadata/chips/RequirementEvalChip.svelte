@@ -3,8 +3,8 @@
 	import { columnHash } from "../../util/util";
 	import Paper, { Content } from "@smui/paper";
 	import { clickOutside } from "../../util/clickOutside";
-	import type { Requirement} from "src/zenoservice";
-	import {ZenoService} from "../../zenoservice";
+	import type { Requirement } from "src/zenoservice";
+	import { ZenoService } from "../../zenoservice";
 	import { TrailingIcon, LeadingIcon } from "@smui/chips";
 	import {
 		currentPromptId,
@@ -75,8 +75,11 @@
 	}
 </script>
 
-<div style="position:relative; display:inline;">
-	<!-- <img
+<div
+	style="position:relative; display:inline;"
+	on:mouseenter={() => (hovering = true)}
+	on:mouseleave={() => (hovering = false)}>
+	<img
 		class="tag"
 		draggable="false"
 		src={srcLink}
@@ -84,38 +87,27 @@
 		data={name}
 		on:mouseover={handleMouseOver}
 		on:focus={handleMouseOver}
-		on:mouseleave={() => (hovering = false)}
-		on:blur={() => (hovering = false)}
 		on:keydown={() => {}} />
-	{#if hovering} -->
-	<img
-		class="tag"
-		draggable="false"
-		src={srcLink}
-		alt=""
-		data={name}
-		on:click={handleMouseOver}
-		on:keydown={() => {}}
-	/>
+
 	{#if hovering}
 		<div
 			id="options-container"
-			style="position:fixed; top: {menuY}px; left: {menuX}px;">
+			style="position:fixed; top: {menuY}px; left: {menuX}px;"
+			on:mouseenter={() => (hovering = true)}
+			on:mouseleave={() => (hovering = false)}>
 			<Paper style="padding: 3px 7px;" elevation={7}>
-				<!-- <Content> -->
 				<span class="rationale">
 					<b>Rationale:</b>
 					{rationale}
-				<TrailingIcon
-					class="material-icons"
-					style="margin-bottom: 10px; margin-left:0px; margin-right: 5px;  cursor: pointer; color: #e05d44;"
-					on:click={() => {
-						feedbackToEvaluators(item[evalColumns[reqId]], reqId);
-					}}>
-					thumb_down
-				</TrailingIcon>
+					<TrailingIcon
+						class="material-icons"
+						style="margin-bottom: 10px; margin-left:0px; margin-right: 5px; cursor: pointer; color: #e05d44;"
+						on:click={() => {
+							feedbackToEvaluators(item[evalColumns[reqId]], reqId);
+						}}>
+						thumb_down
+					</TrailingIcon>
 				</span>
-				<!-- </Content> -->
 			</Paper>
 		</div>
 	{/if}
