@@ -1109,7 +1109,7 @@ class ZenoBackend(object):
 
         for ex in requirement.examples:
             if ex.id == new_example.id and ex.input == new_example.input and ex.output == new_example.output and ex.is_positive == new_example.is_positive and ex.feedback == new_example.feedback:
-                return self.prompts[req.prompt_id].requirements
+                return self.prompts[feedback.prompt_id].requirements
         
         requirement.examples += [new_example]
         new_requirements = copy.copy(self.prompts[feedback.prompt_id].requirements)
