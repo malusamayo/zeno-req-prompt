@@ -1193,13 +1193,19 @@ class ZenoBackend(object):
         requirement = self.prompts[req.prompt_id].requirements[req.requirement_id]
         is_positive = req.is_positive
 
-        requirement.examples += [Example(
+        new_example = Example(
                             id=req.example_id,
                             input=data_col.at[int(req.example_id)],
                             output=model_col.at[int(req.example_id)],
                             is_positive=is_positive,
                             feedback=req.feedback,
-                        )]
+                    )
+
+        for ex in requirement.examples:
+            if ex.id == new_example.id and ex.input == new_example.input and ex.output == new_example.output and ex.is_positive == new_example.is_positive and ex.feedback == new_example.feedback:
+                return self.prompts[req.prompt_id].requirements
+        
+        requirement.examples += [new_example]
         new_requirements = copy.copy(self.prompts[req.prompt_id].requirements)
 
         return new_requirements
