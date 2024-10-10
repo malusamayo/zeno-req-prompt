@@ -107,7 +107,7 @@ currentPromptId.subscribe(($currentPromptId) => {
 				JSON.stringify(get(prompts).get($currentPromptId).requirements)
 			)
 		);
-		suggestedRequirements.set({});
+		// suggestedRequirements.set({});
 	}
 });
 
