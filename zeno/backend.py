@@ -1099,13 +1099,19 @@ class ZenoBackend(object):
         requirement = self.prompts[feedback.prompt_id].requirements[feedback.requirement_id]
         corrected_eval = feedback.corrected_eval
 
-        requirement.examples += [Example(
+        new_example = Example(
                             id=feedback.example_id,
                             input=data_col.at[int(feedback.example_id)],
                             output=model_col.at[int(feedback.example_id)],
                             is_positive=corrected_eval,
                             feedback=f'''The evaluation should return "{corrected_eval}" based on the requirement.''',
-                        )]
+                        )
+
+        for ex in requirement.examples:
+            if ex.id == new_example.id and ex.input == new_example.input and ex.output == new_example.output and ex.is_positive == new_example.is_positive and ex.feedback == new_example.feedback:
+                return self.prompts[req.prompt_id].requirements
+        
+        requirement.examples += [new_example]
         new_requirements = copy.copy(self.prompts[feedback.prompt_id].requirements)
 
         return new_requirements
