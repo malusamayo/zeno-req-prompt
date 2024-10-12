@@ -158,6 +158,9 @@
 		);
 	}
 
+	function closeModal() {
+		showExistingRequirementModal = false;  // Close modal when clicking outside
+	}
 	// function feedbackToEvaluators(eval_res, reqId) {
 	// 	requirementUpdating.set(true);
 	// 	ZenoService.evaluatorUpdates({
@@ -210,6 +213,7 @@
 			<TrailingIcon
 				class="material-icons"
 				style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; color: #97ca00;"
+				title="Add positive exmaples to existing requirements"
 				on:click={() => {
 					// showFeedback = !showFeedback;
 					feedbackThumbUp = true;
@@ -253,6 +257,7 @@
 					<TrailingIcon
 						class="material-icons small-icon"
 						style="cursor: pointer; color: #e05d44;"
+						title="Propose a new related requirement"
 						on:click={() => {
 							showOptions = false;
 							showRequirementModal = true;
@@ -262,6 +267,7 @@
 					<TrailingIcon
 						class="material-icons small-icon"
 						style="cursor: pointer; color: #e05d44;"
+						title="Add negative exmaples to existing requirements"
 						on:click={() => {
 							showOptions = false;
 							showExistingRequirementModal = true;
@@ -271,7 +277,8 @@
 				</div>
 			{/if}
 			{#if showRequirementModal}
-				<div class="modal">
+				<div class="modal" use:clickOutside
+				on:click_outside={() => (showRequirementModal = false)}>
 					<div class="modal-content">
 						<h3>Add New Requirement</h3>
 						<textarea
@@ -279,16 +286,16 @@
 							placeholder="Type a description for the new requirement..." />
 						<div class="modal-actions">
 							<button on:click={add_requirement}>Add Requirement</button>
-							<button on:click={() => (showRequirementModal = false)}
-								>Cancel</button>
+							<!-- <button on:click={closeModal}>Close</button> -->
 						</div>
 					</div>
 				</div>
 			{/if}
 			{#if showExistingRequirementModal}
-				<div class="modal">
+				<div class="modal" use:clickOutside
+				on:click_outside={() => (showExistingRequirementModal = false)}>
 					<div class="modal-content">
-						<h3>Current Requirements</h3>
+						<h3>Select Related Requirements</h3>
 						<div class="requirement-list">
 							{#each Object.entries($requirements) as [id, req]}
 								<UpdateRequirementCell
@@ -297,10 +304,10 @@
 									feedbackPositive={feedbackThumbUp} />
 							{/each}
 						</div>
-						<div class="modal-actions">
+						<!-- <div class="modal-actions">
 							<button on:click={() => (showExistingRequirementModal = false)}
 								>Close</button>
-						</div>
+						</div> -->
 					</div>
 				</div>
 			{/if}

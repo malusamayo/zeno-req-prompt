@@ -94,6 +94,7 @@ export const currentPromptId: Writable<string> = writable("");
 export const requirements: Writable<{ [key: string]: Requirement }> = writable(
 	{}
 );
+export const requirementAddedExample = writable([]);
 export const suggestedRequirements: Writable<{ [key: string]: Requirement }> =
 	writable({});
 export const promptUpdating: Writable<boolean> = writable(false);

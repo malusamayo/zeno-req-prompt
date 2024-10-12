@@ -64,6 +64,11 @@ class UpdateFeedbackRequest(CamelModel):
     is_positive: bool
     feedback: str = ""
     requirement_id: str
+    
+class RemoveExampleFeedback(CamelModel):
+    prompt_id: str
+    example_id: str
+    requirement_id: str
 
 class EvaluatorFeedback(CamelModel):
     model: str

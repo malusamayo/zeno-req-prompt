@@ -29,7 +29,8 @@ from zeno.classes.classes import (
     Requirement,
     EvaluatorFeedback,
     UpdateFeedbackRequest,
-    SuggestNewReqRequest
+    SuggestNewReqRequest,
+    RemoveExampleFeedback
 )
 from zeno.classes.metadata import HistogramBucket, HistogramRequest, StringFilterRequest
 from zeno.classes.projection import Points2D, PointsColors
@@ -161,6 +162,11 @@ def get_server(zeno: ZenoBackend):
     @api_app.post("/update-requirement-feedback", response_model=Dict[str, Requirement], tags=["zeno"])
     def update_requirement_feedback(req: UpdateFeedbackRequest):
         requirements = zeno.update_requirement_feedback(req)
+        return requirements 
+
+    @api_app.post("/remove-example", response_model=Dict[str, Requirement], tags=["zeno"])
+    def remove_example(request: RemoveExampleFeedback):
+        requirements = zeno.remove_example(request)
         return requirements 
     
     @api_app.post("/evaluator-updates", response_model=Dict[str, Requirement], tags=["zeno"])

@@ -24,6 +24,7 @@ import type { ZenoSettings } from "../models/ZenoSettings";
 import type { ZenoVariables } from "../models/ZenoVariables";
 import type {UpdateFeedbackRequest} from "../models/UpdateFeedbackRequest";
 import type {SuggestNewReqRequest} from "../models/SuggestNewReqRequest";
+import type {RemoveExampleFeedback} from "../models/RemoveExample";
 import type {
 	FeedbackRequest,
 	InferenceRequest,
@@ -246,6 +247,20 @@ export class ZenoService {
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/update-requirement-feedback",
+			body: requestBody,
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	public static removeExample(
+		requestBody: RemoveExampleFeedback
+	): CancelablePromise<Record<string, Requirement>> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/remove-example",
 			body: requestBody,
 			mediaType: "application/json",
 			errors: {

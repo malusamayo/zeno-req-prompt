@@ -31,7 +31,7 @@ from zeno.api import (
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
 from zeno.openai_client import OpenAIMultiClient
-from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest
+from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest, RemoveExampleFeedback
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
 from zeno.classes.tag import Tag, TagMetricKey
@@ -1199,12 +1199,18 @@ class ZenoBackend(object):
         requirement = self.prompts[req.prompt_id].requirements[req.requirement_id]
         is_positive = req.is_positive
 
+        rationale_col_obj = ZenoColumn(
+            column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{req.requirement_id}Rationale", model=req.model, prompt_id=req.prompt_id
+        )
+        rationale_hash = str(rationale_col_obj)
+        rationale_col = self.df[rationale_hash].copy()
+
         new_example = Example(
                             id=req.example_id,
                             input=data_col.at[int(req.example_id)],
                             output=model_col.at[int(req.example_id)],
                             is_positive=is_positive,
-                            feedback=req.feedback,
+                            feedback=rationale_col.at[int(req.example_id)],
                     )
 
         for ex in requirement.examples:
@@ -1214,6 +1220,24 @@ class ZenoBackend(object):
         requirement.examples += [new_example]
         new_requirements = copy.copy(self.prompts[req.prompt_id].requirements)
 
+        return new_requirements
+
+    def remove_example(self, request: RemoveExampleFeedback) -> Dict[str, Requirement]:
+        # Get the specific requirement object
+        requirement = self.prompts[request.prompt_id].requirements[request.requirement_id]
+        
+        # Access the list of examples
+        examples = requirement.examples
+        
+        # Iterate through the examples and remove the one with the matching ID
+        for ex in examples:
+            if int(ex.id) == int(request.example_id):
+                examples.remove(ex)  # Modify the list directly
+                break  # Exit the loop once the example is found and removed
+        
+        # Make a copy of the requirements to return
+        new_requirements = copy.copy(self.prompts[request.prompt_id].requirements)
+        
         return new_requirements
     
     def suggest_requirement_updates(self, req: FeedbackRequest) -> Dict[str, Requirement]:

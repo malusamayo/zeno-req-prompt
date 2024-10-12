@@ -39,23 +39,23 @@
 		"-",
 		"--"
 	)}-${
-		isBadClicked ? "e05d44" : isGoodClicked ? "97ca00" : "a463f2"
+		isBadClicked ? "ff0000" : isGoodClicked ? "97ca00" : "a463f2"
 	}`; // Red if bad clicked, green if good clicked, purple otherwise
 
-    function feedbackToRequirements() {
-		requirementUpdating.set(true);
-		ZenoService.updateReqFeedback({
-			model: $model,
-			promptId: $currentPromptId,
-			exampleId: exampleId,
-			isPositive: feedbackPositive,
-			feedback: '',
-            requirementId: id,
-		}).then((newRequirements) => {
-			requirements.set(newRequirements);
-			requirementUpdating.set(false);
-		});
-	}
+    // function feedbackToRequirements() {
+	// 	requirementUpdating.set(true);
+	// 	ZenoService.updateReqFeedback({
+	// 		model: $model,
+	// 		promptId: $currentPromptId,
+	// 		exampleId: exampleId,
+	// 		isPositive: feedbackPositive,
+	// 		feedback: '',
+    //         requirementId: id,
+	// 	}).then((newRequirements) => {
+	// 		requirements.set(newRequirements);
+	// 		requirementUpdating.set(false);
+	// 	});
+	// }
 
 	function handleSpanClick(event) {
 		// const spanRect = event.target.getBoundingClientRect();
@@ -70,13 +70,13 @@
 		showNewFolder.set(false);
 		showSliceFinder.set(false);
 		// showNewRequirement.update((d) => !d);
-        feedbackToRequirements()
-        if (feedbackPositive) {
-            isGoodClicked = true;
-        }
-        if (!feedbackPositive){
-            isBadClicked = true;
-        }
+        // feedbackToRequirements()
+        // if (feedbackPositive) {
+        //     isGoodClicked = true;
+        // }
+        // if (!feedbackPositive){
+        //     isBadClicked = true;
+        // }
 		requirementToEdit.set(requirement);
 	}
 </script>
@@ -88,7 +88,6 @@
 		src={srcLink}
 		alt=""
 		data={name}
-		on:click={handleSpanClick}
 		on:keydown={() => {}} />
 </span>
 

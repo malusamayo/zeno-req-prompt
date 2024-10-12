@@ -78,7 +78,7 @@ if __name__ == '__main__':
         view='text-classification',
         data_column="query",
         label_column="label",
-        cache_path='.zeno_cache_09263',
+        cache_path='.zeno_cache_101224',
         multiprocessing=False,
     )
     zeno(params)
