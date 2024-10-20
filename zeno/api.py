@@ -1,7 +1,7 @@
 """External API for Zeno. Includes decorator functions, return types, and options."""
 
 import functools
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union, ClassVar
 
 from numpy.typing import NDArray
 from pandas import DataFrame, Series
@@ -54,7 +54,7 @@ class ZenoParameters(BaseModel):
     label_path: str = ""
     batch_size: int = 1
     cache_path: str = ""
-    calculate_histogram_metrics = True
+    calculate_histogram_metrics: ClassVar = True
     editable: bool = True
     multiprocessing: bool = True
     serve: bool = True
