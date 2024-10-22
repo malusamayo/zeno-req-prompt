@@ -74,11 +74,11 @@ if __name__ == '__main__':
         metadata=data,
         functions=[openai_inference],
         models=['gpt-4o-mini'],
-        prompts={'v1': Prompt(text=prompt, version='v1', requirements=[])},
+        prompts={'v1': Prompt(text=prompt, version='v1', requirements={})},
         view='text-classification',
         data_column="query",
         label_column="label",
-        cache_path='.zeno_cache_101224',
+        cache_path='.zeno_cache_1022242',
         multiprocessing=False,
     )
     zeno(params)

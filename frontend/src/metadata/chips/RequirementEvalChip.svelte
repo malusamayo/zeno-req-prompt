@@ -65,7 +65,7 @@
 		ZenoService.evaluatorUpdates({
 			model: $model,
 			promptId: $currentPromptId,
-			exampleId: item[columnHash($settings.idColumn)],
+			exampleId: String(item[columnHash($settings.idColumn)]),
 			corrected_eval: !eval_res,
 			requirementId: reqId,
 		}).then((newRequirements) => {

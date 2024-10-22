@@ -117,7 +117,7 @@ The output format should be:
     }}
 """
 
-REQUIREMENT_SUGGESTION_PROMPT = """You are an experienced requirement engineer for an LLM application. Given the prompt, current requirements and example inputs and outputs , suggest new requirements.
+REQUIREMENT_SUGGESTION_PROMPT = """You are an experienced requirement engineer for an LLM application. Given the prompt, current requirements, and example inputs and outputs, suggest new requirements.
 
 ---
 Current prompt:
@@ -127,25 +127,46 @@ Current requirements:
 {current_requirements}
 
 ---
-Example input:
+Example inputs:
 {input_data}
 
-Model output:
+Model outputs:
 {model_output}
 
 ---
 
-Given the user feedback, suggest new requirements. Each new requirement should be atomic and does not overlap with existing requirements. 
+Given the user feedback, suggest new requirements. Each new requirement should be atomic and should not overlap with existing requirements. Also, include a specific example for each requirement proposed, following the format below:
+
+    Example format:
+    {{
+        "id": "index of the corresponding input-output pair in the provided Example inputs/Model outputs lists",
+        "input": "one of the provided example inputs",
+        "output": "the corresponding output from the model outputs for the given input",
+        "isPositive": true or false,  // indicates if the example demonstrates a positive case for the requirement
+        "feedback": "user feedback on the example"
+    }}
 
 Your response should be in the following JSON format:
 
-    "new_reqs": [{{
-        "name": "new requirement name", 
-        "description": "new requirement description", 
-        "evaluation_method": "evaluation method of the new requirement which will be executed by GPT"
-    }}]
+    {{
+        "new_reqs": [{{
+            "name": "new requirement name", 
+            "description": "new requirement description", 
+            "evaluation_method": "evaluation method of the new requirement which will be executed by GPT",
+            "example": {{
+                "id": "index of the corresponding input-output pair in the provided Example inputs/Model outputs lists",
+                "input": "one of the provided example inputs",
+                "output": "the corresponding output from the model outputs for the given input",
+                "isPositive": true or false,  // indicates if the example demonstrates a positive case for the requirement
+                "feedback": "user feedback on the example"
+            }}
+        }}]
+    }}
 
+Ensure that each example directly links an input from the provided examples with its corresponding output from the model.
 """
+
+
 
 REQUIREMENT_UPDATE_PROMPT = """You are an experienced requirement engineer for an LLM application. Given user feedback on an example, update the requirements.
 

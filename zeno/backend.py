@@ -1091,6 +1091,7 @@ class ZenoBackend(object):
 
     def update_evaluator(self, feedback: EvaluatorFeedback)-> Dict[str, Requirement]:
         # Your logic to modify the custom prompt
+        print("update evaluator feedback")
         data_col = self.df[str(self.data_column)]
         model_col_obj = ZenoColumn(
             column_type=ZenoColumnType.OUTPUT, name="output", model=feedback.model, prompt_id=feedback.prompt_id
@@ -1111,7 +1112,8 @@ class ZenoBackend(object):
             if ex.id == new_example.id and ex.input == new_example.input and ex.output == new_example.output and ex.is_positive == new_example.is_positive and ex.feedback == new_example.feedback:
                 return self.prompts[feedback.prompt_id].requirements
         
-        requirement.examples += [new_example]
+        requirement.examples.append(new_example)
+        print("example added")
         new_requirements = copy.copy(self.prompts[feedback.prompt_id].requirements)
 
         return new_requirements
@@ -1132,7 +1134,7 @@ class ZenoBackend(object):
 
         input_data = []
         output_data = []
-        random_indices = random.sample(range(len(data_col)), 5)
+        random_indices = list(random.sample(range(len(data_col)), 5))
         for i in random_indices:
             input_data.append(data_col.at[i])
             output_data.append(model_col.at[i])
@@ -1161,12 +1163,27 @@ class ZenoBackend(object):
             response = result.response.choices[0].message.content
             new_reqs = json.loads(response).get("new_reqs", [])
             for new_req in new_reqs:
+                example_data = new_req.get("example", {})
+                example_id = random_indices[int(example_data.get("id", ""))]
+                example_input = data_col.at[example_id]
+                example_output = model_col.at[example_id]
+                example_is_positive = example_data.get("isPositive", False)
+                example_feedback = example_data.get("feedback", "")
+
+                example = Example(
+                    id=str(example_id),
+                    input=example_input,
+                    output=example_output,
+                    isPositive=example_is_positive,
+                    feedback=example_feedback
+                )
                 suggested_requirements[rid] = Requirement(
                     id = rid,
                     name = new_req["name"],
                     description = new_req["description"],
                     prompt_snippet = "",
-                    evaluation_method = new_req["evaluation_method"])
+                    evaluation_method = new_req["evaluation_method"],
+                    examples = [example])
                 rid = str(int(rid)+1)
             break
 
@@ -1191,6 +1208,7 @@ class ZenoBackend(object):
         return suggested_requirements
 
     def update_requirement_feedback(self, req: FeedbackRequest) -> Dict[str, Requirement]:
+        print("updating requirements' examples based on thumbs up/down clicks")
         data_col = self.df[str(self.data_column)]
         model_col_obj = ZenoColumn(
             column_type=ZenoColumnType.OUTPUT, name="output", model=req.model, prompt_id=req.prompt_id
@@ -1217,7 +1235,7 @@ class ZenoBackend(object):
             if ex.id == new_example.id and ex.input == new_example.input and ex.output == new_example.output and ex.is_positive == new_example.is_positive and ex.feedback == new_example.feedback:
                 return self.prompts[req.prompt_id].requirements
         
-        requirement.examples += [new_example]
+        requirement.examples.append(new_example)
         new_requirements = copy.copy(self.prompts[req.prompt_id].requirements)
 
         return new_requirements
