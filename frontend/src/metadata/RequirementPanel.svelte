@@ -25,7 +25,7 @@
 		suggestedRequirements,
 	} from "../stores";
 	import { ZenoService, type Requirement } from "../zenoservice";
-	import { areRequirementsEqual } from "../zenoservice/models/prompt";
+	import { areRequirementsEqual } from "../zenoservice/models/Prompt";
 	import RequirementCell from "./cells/RequirementCell.svelte";
 	import { TrailingIcon } from "@smui/chips";
 
@@ -125,10 +125,12 @@
 	function suggest_requirements(prompt_id, model) {
 		suggestedRequirements.set({});
 		requirementUpdating.set(true);
-		ZenoService.suggestRequirements({promptId: prompt_id, model: model}).then(($suggestedRequirements) => {
-			suggestedRequirements.set($suggestedRequirements);
-			requirementUpdating.set(false);
-		});
+		ZenoService.suggestRequirements({ promptId: prompt_id, model: model }).then(
+			($suggestedRequirements) => {
+				suggestedRequirements.set($suggestedRequirements);
+				requirementUpdating.set(false);
+			}
+		);
 	}
 
 	function submit(e) {
