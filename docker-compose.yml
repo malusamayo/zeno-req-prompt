@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  server-start:
+    env_file:
+    - .env
+    build:
+      context: .
+      dockerfile: DockerFile
+    ports: 
+    - 8666:8666
+
+#Define a shared volume for the model file
+volumes:
+  model_storage:
+    driver: local
