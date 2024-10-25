@@ -134,12 +134,25 @@
 	}
 
 	function add_requirement() {
+		let feedback;
+
+		if (feedbackThumbUp === true) {
+			feedback = "This is a positive example for this requirement affirmed by users";
+		} else if (feedbackThumbUp === false) {
+			feedback = "This is a negative example for this requirement affirmed by users";
+		}
 		let requirement = {
 			id: (get_max_requirement_id() + 1).toString(),
 			name: "",
 			description: newRequirementInput,
 			promptSnippet: "",
 			evaluationMethod: "",
+			examples: [<Example>{
+			id: item[columnHash($settings.idColumn)],
+			input: item[columnHash($settings.dataColumn)],
+			output: modelColumn ? item[modelColumn] : "",
+			isPositive: feedbackThumbUp,
+			feedback: feedback,}],
 		};
 
 		requirementUpdating.set(true);
@@ -150,17 +163,14 @@
 					$reqs[requirement.id] = requirement;
 					return $reqs;
 				});
-				promptToUpdate.set(true);
 				newRequirementInput = "";
+				promptToUpdate.set(true);
 				requirementUpdating.set(false);
-				showRequirementModal = false;
+				// showRequirementModal = false;
 			}
 		);
 	}
 
-	function closeModal() {
-		showExistingRequirementModal = false;  // Close modal when clicking outside
-	}
 	// function feedbackToEvaluators(eval_res, reqId) {
 	// 	requirementUpdating.set(true);
 	// 	ZenoService.evaluatorUpdates({
@@ -182,9 +192,6 @@
 	// 	}
 	// }
 
-	import { onMount } from 'svelte';
-    let thumbUpRect;
-    let thumbDownRect;
     let menuX = 0;
     let menuY = 0;
 
@@ -197,7 +204,8 @@
 
     function handleThumbUpClick(event) {
         feedbackThumbUp = true;
-        showExistingRequirementModal = true;
+        // showExistingRequirementModal = true;
+		showOptions = !showOptions;
         updateModalPosition(event);
     }
 
@@ -252,60 +260,22 @@
 				thumb_down
 			</TrailingIcon>
 			{#if showOptions}
-                <div
-                    class="options"
-                    style="position: absolute; bottom: 20px; left: 5px;">
-                    <TrailingIcon
-                        class="material-icons small-icon"
-                        style="cursor: pointer; color: #e05d44;"
-                        title="Propose a new related requirement"
-                        on:click={() => {
-                            showOptions = false;
-                            showRequirementModal = true;
-                        }}>
-                        error
-                    </TrailingIcon>
-                    <TrailingIcon
-                        class="material-icons small-icon"
-                        style="cursor: pointer; color: #e05d44;"
-                        title="Add negative exmaples to existing requirements"
-                        on:click={() => {
-                            showOptions = false;
-                            showExistingRequirementModal = true;
-                        }}>
-                        feedback
-                    </TrailingIcon>
-                </div>
-            {/if}
-		</span>
-
-		{#if showRequirementModal}
-                <div class="modal" 
-				style="position: fixed; top: {menuY}px; left: {menuX}px; z-index: 10;"
-				use:clickOutside
-                on:click_outside={() => (showRequirementModal = false)}>
-                    <div class="modal-content">
-                        <h3>Add New Requirement</h3>
-                        <textarea
-                            bind:value={newRequirementInput}
-                            placeholder="Type a description for the new requirement..." />
-                        <div class="modal-actions">
-                            <button on:click={add_requirement}>Add Requirement</button>
-                            <!-- <button on:click={closeModal}>Close</button> -->
-                        </div>
-                    </div>
-                </div>
-            {/if}
-
-		{#if showExistingRequirementModal}
-			<div
+				<div
 				class="modal"
 				style="position: fixed; top: {menuY}px; left: {menuX}px; z-index: 10;"
 				use:clickOutside
-				on:click_outside={() => (showExistingRequirementModal = false)}
+				on:click_outside={() => (showOptions = false)}
 			>
 				<div class="modal-content">
-					<h3>Select Related Requirements</h3>
+					<h3>Add a New Requirement if You Notice Something Missing</h3>
+					<textarea
+						bind:value={newRequirementInput}
+						placeholder="Type a description for the new requirement..." />
+					<div class="modal-actions">
+						<button on:click={() => add_requirement()}>Add Requirement</button>
+						<!-- <button on:click={closeModal}>Close</button> -->
+					</div>
+					<h3>OR Add Example To Related Requirements</h3>
 					<div class="requirement-list">
 						{#each Object.entries($requirements) as [id, req]}
 							<UpdateRequirementCell
@@ -316,7 +286,10 @@
 					</div>
 				</div>
 			</div>
-		{/if}
+            {/if}
+		</span>
+
+
 	{/if}
 	{#if Object.keys(evalColumns).length > 0}
 		<br />

@@ -41,6 +41,7 @@
     export let requirement: Requirement;
     export let exampleId;
     export let feedbackPositive;
+
     
     onMount(() => {
 		console.log(parseInt($currentPromptId[1], 10));
