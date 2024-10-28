@@ -146,8 +146,7 @@ def get_server(zeno: ZenoBackend):
         zeno.extract_requirements()
 
     @api_app.post("/optimize-requirement", response_model=Requirement, tags=["zeno"])
-    def optimize_requirement(req: List[Requirement]):
-        print("here")
+    def optimize_requirement(req: OptimizeRequirement):
         req = zeno.optimize_requirement(req)
         return req
 

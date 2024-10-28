@@ -952,7 +952,6 @@ class ZenoBackend(object):
             requirement.category = category
             requirement.feature = feature
             break
-        print("newly generated req:", requirement, "/n")
         return requirement
 
     def compile_prompt(self, prompt_id):

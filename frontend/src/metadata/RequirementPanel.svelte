@@ -28,7 +28,7 @@
 	import { areRequirementsEqual } from "../zenoservice/models/Prompt";
 	import RequirementCell from "./cells/RequirementCell.svelte";
 	import { TrailingIcon } from "@smui/chips";
-	import type { OptimizeRequirement } from "src/zenoservice";
+	import type { RequirementTree } from "src/zenoservice";
 	
 
 	let newRequirementInput = "";
@@ -76,6 +76,8 @@
 	// 	}
 	// }
 
+	
+
 	function get_max_requirement_id() {
 		return Math.max(
 			Math.max(...Object.keys($requirements).map((id) => Number(id))),
@@ -84,7 +86,7 @@
 	}
 
 	function add_requirement() {
-		let requirement : Requirement = {
+		let requirement: Requirement = {
 			id: (get_max_requirement_id() + 1).toString(),
 			name: "",
 			description: newRequirementInput,
@@ -93,26 +95,8 @@
 		};
 
 		requirementUpdating.set(true);
-		// console.log({promptId: $currentPromptId,
-		// 	requirement: [requirement]});
-		// let t : OptimizeRequirement = {promptId: $currentPromptId,
-		// 	requirement: [requirement]};
-		// console.log(t);
-
-		const requestBody: OptimizeRequirement = {
-		promptId: "v1",
-		requirement: 
-			{
-				id: "1",
-				name: "travel-plan-generation",           
-				description: "generate a travel plan",
-				promptSnippet: "Create a detailed travel itinerary.", 
-				evaluationMethod: "Check if the plan includes destinations and dates.", 
-			},
-	};
 		
-		ZenoService.optimizeRequirement(
-			[requirement]).then(
+		ZenoService.optimizeRequirement({promptId: $currentPromptId, requirement: requirement}).then(
 			(optimizedRequirement) => {
 				requirement = optimizedRequirement;
 				requirements.update(($reqs) => {
@@ -160,6 +144,46 @@
 			add_requirement();
 		}
 	}
+
+	function organizeRequirements(requirements: { [key: string]: Requirement }): RequirementTree[] {
+		const tree: Record<string, RequirementTree> = {};
+
+		Object.values(requirements).forEach((requirement) => {
+			const feature = requirement.feature || "General"; // Default feature if not specified
+			const categoryColor = getCategoryColor(requirement.category); // Function to determine color
+			const priorityShade = getPriorityShade(requirement.priority); // Function to determine shade
+
+			if (!tree[feature]) {
+				tree[feature] = {
+					feature,
+					requirements: [],
+				};
+			}
+
+			tree[feature].requirements.push({
+				requirement,
+				color: categoryColor,
+				shade: priorityShade,
+			});
+		});
+
+		return Object.values(tree);
+	}
+
+	function getCategoryColor(category: string | undefined): string {
+		if (category === "content") return "#FFDDC1"; // Example colors
+		if (category === "structure") return "#D1E7DD";
+		if (category === "presentation") return "#CFE2FF";
+		return "#E2E3E5"; // Default color
+	}
+
+	function getPriorityShade(priority: string | undefined): string {
+		if (priority === "hard") return "dark"; // Darker shade for hard requirements
+		if (priority === "soft") return "light"; // Lighter shade for soft requirements
+		return "normal"; // Default shade
+	}
+
+	$: requirementTree = organizeRequirements($requirements);
 
 	// $: {
 	// 	$promptToUpdate;
@@ -218,12 +242,29 @@
 	</div>
 </div>
 
-{#each Object.entries($requirements) as [id, req]}
+<!-- {#each Object.entries($requirements) as [id, req]}
 	<RequirementCell
 		requirement={req}
 		compare={$tab === "comparison"}
 		suggested={false} />
-{/each}
+{/each} -->
+
+<div class="requirement-tree">
+    {#each requirementTree as featureGroup}
+        <div class="feature-node">
+            <h3 class="feature-title">{featureGroup.feature}</h3>
+            {#each featureGroup.requirements as { requirement, color, shade }}
+                <div class="requirement-node" style="background-color: {color}; opacity: {shade === 'dark' ? 0.9 : shade === 'light' ? 0.6 : 0.8}">
+                    <RequirementCell
+					requirement={requirement}
+					compare={$tab === "comparison"}
+					suggested={false} />
+                </div>
+            {/each}
+        </div>
+    {/each}
+</div>
+
 {#each Object.entries($suggestedRequirements) as [id, req]}
 	<RequirementCell
 		requirement={req}
@@ -281,4 +322,24 @@
 		font-size: small;
 		font-weight: lighter;
 	}
+	.requirement-tree {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .feature-node {
+        margin-bottom: 20px;
+    }
+
+    .feature-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .requirement-node {
+        margin-left: 20px;
+        margin-bottom: 5px;
+        padding: 5px;
+        border-radius: 4px;
+    }
 </style>

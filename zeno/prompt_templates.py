@@ -78,27 +78,27 @@ Guidelines:
 **User Input**: "Answer should be concise"
 - **Generated Output**: 
     ```json
-    { 
+    {{
         "name": "answer-length", 
         "description": "Ensure that responses are concise to meet brevity standards.",
         "evaluation_method": "Review answers to ensure they do not exceed 50 words.",
         "priority": "soft",
         "category": "content",
         "feature": "response-format"
-    }
+    }}
     ```
 
 **User Input**: "Responses should be factually accurate"
 - **Generated Output**: 
     ```json
-    {
+    {{
         "name": "factuality-check",
         "description": "Verify that responses are factually accurate and free from unsupported claims.",
         "evaluation_method": "Review answers for inaccuracies and flag any unsupported claims for revision.",
         "priority": "hard",
         "category": "content",
         "feature": "accuracy-check"
-    }
+    }}
     ```
 
 Task Instructions:
