@@ -19,6 +19,10 @@ export type Requirement = {
 	examples?: Array<Example>;
 	mode?: string;
 	implementationUpdateFlag?: boolean;
+	// priority?: string;
+	// category?: string;
+	// feature?: string;
+
 };
 
 export type Prompt = {

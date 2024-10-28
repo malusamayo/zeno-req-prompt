@@ -156,7 +156,9 @@
 		};
 
 		requirementUpdating.set(true);
-		ZenoService.optimizeRequirement([requirement]).then(
+		ZenoService.optimizeRequirement(
+			{promptId: $currentPromptId,
+			requirement: [requirement]}).then(
 			(optimizedRequirement) => {
 				requirement = optimizedRequirement;
 				requirements.update(($reqs) => {

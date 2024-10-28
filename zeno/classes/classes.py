@@ -128,9 +128,12 @@ class Requirement(CamelModel):
     description: str
     prompt_snippet: str
     evaluation_method: str
+    # priority: Optional[str]
+    # category: Optional[str]
+    # feature: Optional[str]
     examples: List[Example] = []
     implementationUpdateFlag: Optional[bool] = False
-
+ 
 class Prompt(CamelModel):
     text: str
     version: str
@@ -139,3 +142,7 @@ class Prompt(CamelModel):
 class SuggestNewReqRequest(CamelModel):
     prompt_id: str
     model: str
+
+class OptimizeRequirement(CamelModel):
+    prompt_id: str
+    requirement: Requirement

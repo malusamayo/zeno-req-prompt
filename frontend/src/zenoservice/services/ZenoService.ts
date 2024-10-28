@@ -25,6 +25,7 @@ import type { ZenoVariables } from "../models/ZenoVariables";
 import type {UpdateFeedbackRequest} from "../models/UpdateFeedbackRequest";
 import type {SuggestNewReqRequest} from "../models/SuggestNewReqRequest";
 import type {RemoveExampleFeedback} from "../models/RemoveExample";
+import type {OptimizeRequirement} from "../models/OptimizeRequirement";
 import type {
 	FeedbackRequest,
 	InferenceRequest,
@@ -184,6 +185,7 @@ export class ZenoService {
 	public static optimizeRequirement(
 		requestBody: Array<Requirement>
 	): CancelablePromise<Requirement> {
+		console.log(requestBody);
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/optimize-requirement",

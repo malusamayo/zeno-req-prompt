@@ -28,6 +28,8 @@
 	import { areRequirementsEqual } from "../zenoservice/models/Prompt";
 	import RequirementCell from "./cells/RequirementCell.svelte";
 	import { TrailingIcon } from "@smui/chips";
+	import type { OptimizeRequirement } from "src/zenoservice";
+	
 
 	let newRequirementInput = "";
 	// let displayedRequirements: { [key: string]: Requirement };
@@ -82,7 +84,7 @@
 	}
 
 	function add_requirement() {
-		let requirement = {
+		let requirement : Requirement = {
 			id: (get_max_requirement_id() + 1).toString(),
 			name: "",
 			description: newRequirementInput,
@@ -91,7 +93,26 @@
 		};
 
 		requirementUpdating.set(true);
-		ZenoService.optimizeRequirement([requirement]).then(
+		// console.log({promptId: $currentPromptId,
+		// 	requirement: [requirement]});
+		// let t : OptimizeRequirement = {promptId: $currentPromptId,
+		// 	requirement: [requirement]};
+		// console.log(t);
+
+		const requestBody: OptimizeRequirement = {
+		promptId: "v1",
+		requirement: 
+			{
+				id: "1",
+				name: "travel-plan-generation",           
+				description: "generate a travel plan",
+				promptSnippet: "Create a detailed travel itinerary.", 
+				evaluationMethod: "Check if the plan includes destinations and dates.", 
+			},
+	};
+		
+		ZenoService.optimizeRequirement(
+			[requirement]).then(
 			(optimizedRequirement) => {
 				requirement = optimizedRequirement;
 				requirements.update(($reqs) => {
