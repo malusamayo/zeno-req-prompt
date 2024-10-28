@@ -24,6 +24,7 @@
 		requirements,
 		promptToUpdate,
 		suggestedRequirements,
+		currentPromptId
 	} from "../../stores";
 	import { clickOutside } from "../../util/clickOutside";
 	import { ZenoService, type Slice, type Requirement } from "../../zenoservice";
@@ -146,7 +147,9 @@
 						}}
 						on:blur={() => {
 							if (requirement.id in $requirements) {
-								ZenoService.optimizeRequirement([requirement]).then(
+								ZenoService.optimizeRequirement(
+								{promptId: $currentPromptId,
+								requirement: [requirement]}).then(
 									(optimizedRequirement) => {
 										requirement = optimizedRequirement;
 										requirements.update((reqs) => {

@@ -31,7 +31,7 @@ from zeno.api import (
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
 from zeno.openai_client import OpenAIMultiClient
-from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest, RemoveExampleFeedback
+from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest, RemoveExampleFeedback, OptimizeRequirement
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
 from zeno.classes.tag import Tag, TagMetricKey
@@ -883,15 +883,20 @@ class ZenoBackend(object):
 
         return req
 
-    def optimize_requirement(self, requirement: Requirement):
+    def optimize_requirement(self, req: List[Requirement]):
         '''Use LLM to optimize local requirements
 
         Input: requirement, with description field filled in
         Output: requirement, with description optimized (if needed) and other fields filled in
         '''
+        
+        requirement = req.requirement
+        prompt_id = req.prompt_id
 
+        other_requirements = self.prompts[prompt_id].requirements
         api_prompt = REQUIREMENT_CREATOR_PROMPT.format(
             user_input=requirement.description, 
+            existing_requirements=other_requirements,
         )
 
         payload = {
@@ -932,6 +937,9 @@ class ZenoBackend(object):
             name = optimize_req.get('name', "")
             description = optimize_req.get('description', "")
             evaluation_method = optimize_req.get('evaluation_method', "")
+            priority = optimize_req.get('priority', "")
+            category = optimize_req.get('category', "")
+            feature = optimize_req.get('feature', "")
             if isinstance(evaluation_method, list):
                 evaluation_method = "\n".join(evaluation_method)  # Join list elements into a single string
 
@@ -940,8 +948,11 @@ class ZenoBackend(object):
             # requirement.description = description
             requirement.evaluation_method = evaluation_method
             requirement.prompt_snippet = ""
+            requirement.priority = priority
+            requirement.category = category
+            requirement.feature = feature
             break
-        
+        print("newly generated req:", requirement, "/n")
         return requirement
 
     def compile_prompt(self, prompt_id):

@@ -29,31 +29,85 @@ The current requirement is:
 }}
 """
 
-REQUIREMENT_CREATOR_PROMPT = """You are given a user-written requirement. Based on the user's input, you need to generate a requirement with the following fields: 'name' and 'evaluation_method'.
+# REQUIREMENT_CREATOR_PROMPT = """You are given a user-written requirement. Based on the user's input, you need to generate a requirement with the following fields: 'name' and 'evaluation_method'.
 
-1. For the 'name' field, generate a name based on the user input that is concise and descriptive of the requirement. The name should be in lowercase and contain hyphens (-) instead of spaces.
-2. For the 'description' field, generate a description based on the 'name' that clearly explains the requirement in detail.
-3. For the 'evaluation_method' field, generate a clear, step-by-step method based on the 'description' that explains how to evaluate whether the requirement is met. The evaluation method should include specific, measurable steps. (i.e., how GPT should verify if the requirement is fulfilled, step-by-step)
-4. Make sure the evaluation method uses simple language that GPT can follow directly and evaluation method does not mention steps GPT cannot execute.
-5. Ensure each evaluation method is objective and based on measurable aspects of the output (e.g., "The answer includes the word 'X'", "The response correctly explains Y concept").
-### Examples:
-Input: Answer should be concise
-Output: {{ 
-    "name": "answer-length", 
-    "evaluation_method": "Review the answers and ensure none exceed 50 words."
-}}
+# 1. For the 'name' field, generate a name based on the user input that is concise and descriptive of the requirement. The name should be in lowercase and contain hyphens (-) instead of spaces.
+# 2. For the 'description' field, generate a description based on the 'name' that clearly explains the requirement in detail.
+# 3. For the 'evaluation_method' field, generate a clear, step-by-step method based on the 'description' that explains how to evaluate whether the requirement is met. The evaluation method should include specific, measurable steps. (i.e., how GPT should verify if the requirement is fulfilled, step-by-step)
+# 4. Make sure the evaluation method uses simple language that GPT can follow directly and evaluation method does not mention steps GPT cannot execute.
+# 5. Ensure each evaluation method is objective and based on measurable aspects of the output (e.g., "The answer includes the word 'X'", "The response correctly explains Y concept").
+# ### Examples:
+# Input: Answer should be concise
+# Output: {{ 
+#     "name": "answer-length", 
+#     "evaluation_method": "Review the answers and ensure none exceed 50 words."
+# }}
 
-Input: Responses should be factually accurate
-Output: {{
-    "name": "factuality-check",
-    "evaluation_method": "Review answers and flag any responses with inaccuracies or unsupported claims for revision."
-}}
+# Input: Responses should be factually accurate
+# Output: {{
+#     "name": "factuality-check",
+#     "evaluation_method": "Review answers and flag any responses with inaccuracies or unsupported claims for revision."
+# }}
 
-Your task is to fill in **any** missing fields with appropriate content. If all fields have content, return them as is. If any field is an empty string (""), generate its value based on the requirement's description or context.
+# Your task is to fill in **any** missing fields with appropriate content. If all fields have content, return them as is. If any field is an empty string (""), generate its value based on the requirement's description or context.
 
-When you create the requirement, make sure the requirement is atomic, i.e., we can not be further break it down to multiple smaller requirements.
+# When you create the requirement, make sure the requirement is atomic, i.e., we can not be further break it down to multiple smaller requirements.
+
+# The user input requirement is: {user_input}
+# """
+REQUIREMENT_CREATOR_PROMPT = """
+You are given a user-written requirement along with other existing requirements. Your task is to generate a complete requirement specification with the following fields: 'name', 'description', 'evaluation_method', and additional fields for priority, category, and feature alignment.
+
+Guidelines:
+1. **Name**: Create a concise, descriptive name that reflects the requirement’s core intent. Use lowercase letters and replace spaces with hyphens (e.g., "answer-length").
+2. **Description**: Based on the 'name', generate a detailed description explaining the purpose and intent of the requirement.
+3. **Evaluation Method**: Outline a specific, objective, and measurable method for evaluating whether the requirement is met. This method should:
+    - Include step-by-step instructions that GPT can follow directly.
+    - Avoid mentioning any steps that GPT cannot execute.
+    - Focus on objective, measurable outcomes (e.g., "The response includes the word 'X'", "The answer correctly explains Y concept").
+
+4. **Priority**: Determine if the requirement is a *soft* (less critical, flexible for prompt compilation) or *hard* (strictly necessary for prompt compilation) requirement.
+5. **Category**: Classify the requirement based on its focus area as either *structure* (e.g., response organization), *content* (e.g., factual accuracy), or *presentation* (e.g., format, styling).
+6. **Feature**:
+    - Review the new requirement against existing ones to determine if it pertains to the same feature or scenario.
+    - If the new requirement aligns with an existing feature, label it with that feature's name.
+    - If it represents a distinct feature, generate a new, concise feature label.
+
+**Examples**:
+
+**User Input**: "Answer should be concise"
+- **Generated Output**: 
+    ```json
+    { 
+        "name": "answer-length", 
+        "description": "Ensure that responses are concise to meet brevity standards.",
+        "evaluation_method": "Review answers to ensure they do not exceed 50 words.",
+        "priority": "soft",
+        "category": "content",
+        "feature": "response-format"
+    }
+    ```
+
+**User Input**: "Responses should be factually accurate"
+- **Generated Output**: 
+    ```json
+    {
+        "name": "factuality-check",
+        "description": "Verify that responses are factually accurate and free from unsupported claims.",
+        "evaluation_method": "Review answers for inaccuracies and flag any unsupported claims for revision.",
+        "priority": "hard",
+        "category": "content",
+        "feature": "accuracy-check"
+    }
+    ```
+
+Task Instructions:
+- Complete all fields for any requirement provided. If any field is missing or blank (""), generate a suitable value based on the requirement's content or context.
+- Ensure the requirement is atomic, meaning it cannot be broken down into smaller requirements.
+- When determining the feature, compare it against other input requirements to check for alignment. If a similar feature exists, use that feature name. Otherwise, assign a new, relevant label.
 
 The user input requirement is: {user_input}
+Existing requirements: {existing_requirements}
 """
 
 PROMPT_COMPILER_PROMPT = """Given the following requirements, generate a prompt that satisfies all the requirements listed. For each requirement:

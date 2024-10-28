@@ -11,6 +11,7 @@
 		requirementToEdit,
 		requirements,
 		promptToUpdate,
+		currentPromptId,
 	} from "../../stores";
 	import Textfield from "@smui/textfield";
 	import { mdiMagicStaff } from "@mdi/js";
@@ -49,7 +50,9 @@
 	}
 
 	function optimizeRequirement() {
-		ZenoService.optimizeRequirement([requirement]).then(
+		ZenoService.optimizeRequirement(
+		{promptId: $currentPromptId,
+		requirement: [requirement]}).then(
 			(optimizedRequirement) => {
 				requirement = optimizedRequirement;
 			}
