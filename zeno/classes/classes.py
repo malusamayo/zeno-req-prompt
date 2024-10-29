@@ -128,9 +128,9 @@ class Requirement(CamelModel):
     description: str
     prompt_snippet: str
     evaluation_method: str
-    # priority: Optional[str]
-    # category: Optional[str]
-    # feature: Optional[str]
+    priority: Optional[str] = None
+    category: Optional[str] = None
+    feature: Optional[str] = None
     examples: List[Example] = []
     implementationUpdateFlag: Optional[bool] = False
  

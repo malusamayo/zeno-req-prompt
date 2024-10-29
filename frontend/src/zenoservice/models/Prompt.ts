@@ -19,9 +19,15 @@ export type Requirement = {
 	examples?: Array<Example>;
 	mode?: string;
 	implementationUpdateFlag?: boolean;
+<<<<<<< HEAD
 	// priority?: string;
 	// category?: string;
 	// feature?: string;
+=======
+	priority?: string;
+	category?: string;
+	feature?: string;
+>>>>>>> my-changes
 
 };
 

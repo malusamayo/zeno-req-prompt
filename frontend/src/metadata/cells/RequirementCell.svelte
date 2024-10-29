@@ -33,6 +33,7 @@
 	import { TrailingIcon } from "@smui/chips";
 
 	export let requirement: Requirement;
+	export let color: string;
 	export let compare;
 	export let suggested;
 
@@ -65,7 +66,7 @@
 	{selected ? 'selected' : ''} 
 	{compare ? 'compare-slice-cell' : ''}
 	{compare && compareButton ? '' : 'pointer'}"
-	style={suggested ? "cursor:default; background: #f0f0f0" : "cursor:default;"}
+	style={suggested ? `cursor:default; background: #f0f0f0;` : `cursor:default; background-color: ${color};`}
 	draggable="false"
 	on:mouseover={() => (hovering = true)}
 	on:focus={() => (hovering = true)}
@@ -91,178 +92,180 @@
 		</div>
 	{/if} -->
 
-	<div class="group" style:width="100%">
 		<div class="group" style:width="100%">
-			<div class="inline">
-				<div class="hori-group" style:color="var(--G1)">
-					<RequirementChip name={requirement.name} id={requirement.id} />
-					{#if requirement.mode && requirement.mode !== ""}
-						<img
-							class="tag"
-							draggable="false"
-							src="https://img.shields.io/badge/{requirement.mode === 'new'
-								? 'new-green'
-								: requirement.mode === 'deleted'
-								? 'deleted-red'
-								: 'edited-yellow'}"
-							alt=""
-							on:keydown={() => {}} />
-						<TrailingIcon
-							class="material-icons"
-							style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; color: #97ca00;"
-							on:click={() => {
-								requirements.update((reqs) => {
-									reqs[requirement.id] = requirement;
-									return reqs;
-								});
-								promptToUpdate.set(true);
-							}}>
-							check
-						</TrailingIcon>
-						<TrailingIcon
-							class="material-icons"
-							style="margin-bottom: 5px; margin-left: 3px; cursor: pointer; color: #e05d44;"
-							on:click={() => {
-								suggestedRequirements.update(($suggestRequirements) => {
-									delete $suggestRequirements[requirement.id];
-									return $suggestRequirements;
-								});
-							}}>
-							close
-						</TrailingIcon>
-					{/if}
-
-					<div
-						class="description"
-						contenteditable={true}
-						use:clickOutside
-						on:input={(e) => {
-							requirement.description = e.target.innerText;
-							requirements.update((reqs) => {
-								if (requirement.id in reqs) {
-									reqs[requirement.id] = requirement;
-								}
-								return reqs;
-							});
-						}}
-						on:blur={() => {
-							if (requirement.id in $requirements) {
-								ZenoService.optimizeRequirement(
-								{promptId: $currentPromptId,
-								requirement: [requirement]}).then(
-									(optimizedRequirement) => {
-										requirement = optimizedRequirement;
-										requirements.update((reqs) => {
-											reqs[requirement.id] = requirement;
-											return reqs;
-										});
-									}
-								);
-							}
-						}}
-						on:keydown={(e) => {
-							if (e.key === "Enter") {
-								e.preventDefault();
-								e.target.blur();
-							}
-						}}>
-						{requirement.description}
-					</div>
-				</div>
-			</div>
-			<div
-				class="group"
-				use:clickOutside
-				on:click_outside={() => {
-					showOptions = false;
-				}}>
-				{#if showOptions}
-					<div id="options-container">
-						<Paper style="padding: 3px 0px;" elevation={7}>
-							<Content>
-								<div
-									class="option"
-									on:keydown={() => ({})}
-									on:click={(e) => {
-										e.stopPropagation();
-										showOptions = false;
-										showNewSlice.set(false);
-										showNewFolder.set(false);
-										showSliceFinder.set(false);
-										showNewRequirement.update((d) => !d);
-										requirementToEdit.set(requirement);
-									}}>
-									<Icon style="font-size: 18px;" class="material-icons"
-										>edit</Icon
-									>&nbsp;
-									<span>Edit</span>
-								</div>
-								<div
-									class="option"
-									on:keydown={() => ({})}
-									on:click={(e) => {
-										e.stopPropagation();
-										showOptions = false;
-										removeRequirement();
-									}}>
-									<Icon style="font-size: 18px;" class="material-icons"
-										>delete_outline</Icon
-									>&nbsp;
-									<span>Remove</span>
-								</div>
-							</Content>
-						</Paper>
-					</div>
-				{/if}
-				<RequirementCellResult {compare} {requirement} />
-				<!-- {#if compare}
-					<RequirementCellResult {compare} {slice} sliceModel={$comparisonModel} />
-				{/if} -->
-				<div class="inline" style:cursor="pointer">
-					<div
-						style:width="36px"
-						use:clickOutside
-						on:click_outside={() => {
-							hovering = false;
-						}}>
-						{#if suggested}
-							<IconButton
-								size="button"
-								style="padding: 0px"
-								on:click={(e) => {
-									e.stopPropagation();
-									suggestedRequirements.update(($reqs) => {
-										delete $reqs[requirement.id];
-										return $reqs;
-									});
+			<div class="group" style:width="100%">
+				<div class="inline">
+					<div class="hori-group" style:color="var(--G1)">
+						<RequirementChip name={requirement.name} id={requirement.id} />
+						<span class="category-tag">{requirement.category}</span>
+						<span class="priority-tag">{requirement.priority}</span>
+						{#if requirement.mode && requirement.mode !== ""}
+							<img
+								class="tag"
+								draggable="false"
+								src="https://img.shields.io/badge/{requirement.mode === 'new'
+									? 'new-green'
+									: requirement.mode === 'deleted'
+									? 'deleted-red'
+									: 'edited-yellow'}"
+								alt=""
+								on:keydown={() => {}} />
+							<TrailingIcon
+								class="material-icons"
+								style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; color: #97ca00;"
+								on:click={() => {
 									requirements.update((reqs) => {
 										reqs[requirement.id] = requirement;
 										return reqs;
 									});
 									promptToUpdate.set(true);
 								}}>
-								<Icon component={Svg} viewBox="0 0 24 24">
-									<path fill="green" d={mdiCheckOutline} />
-								</Icon>
-							</IconButton>
-						{:else if hovering}
-							<IconButton
-								size="button"
-								style="padding: 0px"
-								on:click={(e) => {
-									e.stopPropagation();
-									showOptions = !showOptions;
+								check
+							</TrailingIcon>
+							<TrailingIcon
+								class="material-icons"
+								style="margin-bottom: 5px; margin-left: 3px; cursor: pointer; color: #e05d44;"
+								on:click={() => {
+									suggestedRequirements.update(($suggestRequirements) => {
+										delete $suggestRequirements[requirement.id];
+										return $suggestRequirements;
+									});
 								}}>
-								<Icon component={Svg} viewBox="0 0 24 24">
-									<path fill="black" d={mdiDotsHorizontal} />
-								</Icon>
-							</IconButton>
+								close
+							</TrailingIcon>
 						{/if}
+
+						<div
+							class="description"
+							contenteditable={true}
+							use:clickOutside
+							on:input={(e) => {
+								requirement.description = e.target.innerText;
+								requirements.update((reqs) => {
+									if (requirement.id in reqs) {
+										reqs[requirement.id] = requirement;
+									}
+									return reqs;
+								});
+							}}
+							on:blur={() => {
+								if (requirement.id in $requirements) {
+									ZenoService.optimizeRequirement(
+									{promptId: $currentPromptId,
+									requirement: requirement}).then(
+										(optimizedRequirement) => {
+											requirement = optimizedRequirement;
+											requirements.update((reqs) => {
+												reqs[requirement.id] = requirement;
+												return reqs;
+											});
+										}
+									);
+								}
+							}}
+							on:keydown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									e.target.blur();
+								}
+							}}>
+							{requirement.description}
+						</div>
+					</div>
+				</div>
+				<div
+					class="group"
+					use:clickOutside
+					on:click_outside={() => {
+						showOptions = false;
+					}}>
+					{#if showOptions}
+						<div id="options-container">
+							<Paper style="padding: 3px 0px;" elevation={7}>
+								<Content>
+									<div
+										class="option"
+										on:keydown={() => ({})}
+										on:click={(e) => {
+											e.stopPropagation();
+											showOptions = false;
+											showNewSlice.set(false);
+											showNewFolder.set(false);
+											showSliceFinder.set(false);
+											showNewRequirement.update((d) => !d);
+											requirementToEdit.set(requirement);
+										}}>
+										<Icon style="font-size: 18px;" class="material-icons"
+											>edit</Icon
+										>&nbsp;
+										<span>Edit</span>
+									</div>
+									<div
+										class="option"
+										on:keydown={() => ({})}
+										on:click={(e) => {
+											e.stopPropagation();
+											showOptions = false;
+											removeRequirement();
+										}}>
+										<Icon style="font-size: 18px;" class="material-icons"
+											>delete_outline</Icon
+										>&nbsp;
+										<span>Remove</span>
+									</div>
+								</Content>
+							</Paper>
+						</div>
+					{/if}
+					<RequirementCellResult {compare} {requirement} />
+					<!-- {#if compare}
+						<RequirementCellResult {compare} {slice} sliceModel={$comparisonModel} />
+					{/if} -->
+					<div class="inline" style:cursor="pointer">
+						<div
+							style:width="36px"
+							use:clickOutside
+							on:click_outside={() => {
+								hovering = false;
+							}}>
+							{#if suggested}
+								<IconButton
+									size="button"
+									style="padding: 0px"
+									on:click={(e) => {
+										e.stopPropagation();
+										suggestedRequirements.update(($reqs) => {
+											delete $reqs[requirement.id];
+											return $reqs;
+										});
+										requirements.update((reqs) => {
+											reqs[requirement.id] = requirement;
+											return reqs;
+										});
+										promptToUpdate.set(true);
+									}}>
+									<Icon component={Svg} viewBox="0 0 24 24">
+										<path fill="green" d={mdiCheckOutline} />
+									</Icon>
+								</IconButton>
+							{:else if hovering}
+								<IconButton
+									size="button"
+									style="padding: 0px"
+									on:click={(e) => {
+										e.stopPropagation();
+										showOptions = !showOptions;
+									}}>
+									<Icon component={Svg} viewBox="0 0 24 24">
+										<path fill="black" d={mdiDotsHorizontal} />
+									</Icon>
+								</IconButton>
+							{/if}
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	</div>
 </div>
 
 <!-- <Dialog
@@ -355,7 +358,7 @@
 	#options-container {
 		top: 0px;
 		right: 0px;
-		z-index: 5;
+		z-index: 10;
 		position: absolute;
 		margin-top: 35px;
 	}
@@ -387,4 +390,20 @@
 		margin-right: 2px;
 		margin-bottom: -2.5px;
 	}
+
+    .category-tag {
+        background-color: #c9d2ee; /* Example color for category tag */
+        color: #333;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.8em;
+    }
+
+    .priority-tag {
+        background-color: #f4f2b5; /* Example color for priority tag */
+        color: #333;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.8em;
+    }
 </style>

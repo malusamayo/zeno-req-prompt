@@ -36,6 +36,13 @@ build:
 	@rm zeno/frontend/index.html
 	@mv zeno/frontend/index_og.html zeno/frontend/index.html
 
+.PHONY: localbuild
+build:
+	@echo "==> 👷‍♀️ Local Build"
+	@cd frontend && npm run build
+	@cd frontend && node build.js
+	@mv zeno/frontend/index_tmp.html zeno/frontend/index.html
+
 .PHONY: clean
 clean:
 	@rm -rf dist

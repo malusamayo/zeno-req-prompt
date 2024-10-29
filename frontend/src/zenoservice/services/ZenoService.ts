@@ -183,7 +183,7 @@ export class ZenoService {
 	 * @throws ApiError
 	 */
 	public static optimizeRequirement(
-		requestBody: Array<Requirement>
+		requestBody: OptimizeRequirement
 	): CancelablePromise<Requirement> {
 		console.log(requestBody);
 		return __request(OpenAPI, {

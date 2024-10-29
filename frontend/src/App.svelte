@@ -2,6 +2,7 @@
 	import { onMount } from "svelte";
 	import Router from "svelte-spa-router";
 	import Explore from "./Explore.svelte";
+	import Build from "./Build.svelte";
 	import Comparison from "./Comparison.svelte";
 	import Report from "./Report.svelte";
 	import Header from "./general/Header.svelte";
@@ -30,6 +31,7 @@
 		"/report/": Report,
 		"/report/:id": ReportPage,
 		"/report/:id/new": ReportPage,
+		"/requirement/": Build,
 		"*": Explore,
 	};
 

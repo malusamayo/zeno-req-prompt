@@ -6,6 +6,7 @@
 		mdiGithub,
 		mdiHomeOutline,
 		mdiCompare,
+		mdiRobotAngryOutline,
 	} from "@mdi/js";
 	import { Svg } from "@smui/common";
 	import IconButton, { Icon } from "@smui/icon-button";
@@ -33,6 +34,23 @@
 				alt="Square spiral logo next to 'Zeno'" />
 		</a>
 		<div id="tabs">
+			<div
+				class="item {$tab === 'requirement' ? 'selected' : ''}"
+				on:keydown={() => ({})}
+				on:click={() => updateTab("requirement")}
+				use:tooltip={{
+					content: "Build LLM applications from requirements.",
+					position: "right",
+					theme: "zeno-tooltip",
+				}}>
+				<div class="icon">
+					<Icon style="outline:none" component={Svg} viewBox="0 0 24 24">
+						<path
+							fill={$tab === "requirement" ? "#6a1b9a" : "black"}
+							d={mdiRobotAngryOutline} />
+					</Icon>
+				</div>
+			</div>
 			<div
 				class="item {$tab === 'explore' ? 'selected' : ''}"
 				on:keydown={() => ({})}

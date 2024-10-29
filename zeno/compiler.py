@@ -71,6 +71,14 @@ class GenerateFieldDescription(dspy.Signature):
         desc="Description of the field.",
     )
 
+class ConvertFeedbackToRequirement(dspy.Signature):
+    """Convert user feedback to a new requirement that an LLM should satisfy."""
+
+    task_description = dspy.InputField(desc="Description of the task")
+    existing_requirements = dspy.InputField(format=dsp.passages2text, desc="A list of existing requirements")
+    feedback = dspy.InputField(desc="User feedback on concrete model observations")
+    requirement = dspy.OutputField(desc="A new requirement for the prompt.")
+
 class TaskProgram(dspy.Signature):
     pass
 
@@ -202,7 +210,89 @@ class HITLPromptOptimizer:
             task_program.__doc__ = prompt
 
         return prompt
-        
+
+class ReqHITLPromptOptimizer:
+
+    def __init__(self):
+        super().__init__()
+        self.prompt_compiler = dspy.Predict(BasicCompilePrompt)
+        self.prompt_refiner = dspy.Predict(RefinePromptWithFeedback)
+        self.feedback_converter = dspy.Predict(ConvertFeedbackToRequirement)
+        self.optimizer = LabeledFewShot()
+
+    def forward(self, 
+        task_description: str, 
+        input_variable: str, 
+        requirements: List[str], 
+        examples: List[str],
+        trainset: List[dspy.Example],
+        optimization_flag: str = "o0",
+    ) -> str:
+        """Forward pass of the HITL
+        Args:
+            task_description (str): Description of the task.
+            input_variable (str): Name of the input variable.
+            requirements (List[str]): A list of requirements that the prompt must satisfy.
+            examples (List[str]): A list of examples for the task.
+            optimization_flag (str): Optimization flag for the model.
+        Returns:
+            str: The optimized prompt.
+        """
+
+        task_program = construct_task_program(
+            task_description=task_description,
+            input_variable=input_variable,
+            output_variable="output",
+            prompt=task_description,
+        )
+
+        prompt = self.prompt_compiler(
+            task_description=task_description,
+            requirements=requirements,
+        ).prompt
+
+        task_program.__doc__ = prompt
+
+        feedback = ""
+        while True:
+            if optimization_flag == "o0":
+                task_program_predictor = dspy.Predict(task_program)
+            elif optimization_flag == "o1":
+                task_program_predictor = dspy.Predict(task_program)
+                task_program_predictor = self.optimizer.compile(student=task_program_predictor, trainset=trainset)
+
+            if feedback == "":
+                sampled_example = random.choice(examples)
+            output = task_program_predictor(
+                **{input_variable: sampled_example},
+            ).output
+            dspy.inspect_history(n=1)
+            print("Requirements: ", requirements)
+            print("Input: ", sampled_example)
+            print("Output: ", output)
+            feedback = input("Provide feedback on the requirements: ")
+            if feedback == "":
+                continue
+            elif feedback == "done":
+                break
+
+            new_requirement = self.feedback_converter(
+                task_description=task_description,
+                existing_requirements=requirements,
+                feedback=feedback,
+            ).requirement
+            requirements.append(new_requirement)
+            prompt = self.prompt_refiner(
+                task_description=task_description,
+                requirements=requirements,
+                previous_prompt=prompt,
+                past_input=sampled_example,
+                past_output=output,
+                feedback=feedback
+            ).prompt
+            task_program.__doc__ = prompt
+
+        return prompt
 
 if __name__ == '__main__':
     turbo = dspy.LM(model='gpt-4o-mini', max_tokens=4096)
@@ -228,7 +318,7 @@ if __name__ == '__main__':
         dspy.Example(tweet="I'm feeling terrible 😭", output="negative"),
     ]
 
-    optimizer = HITLPromptOptimizer()
+    optimizer = ReqHITLPromptOptimizer()
     prompt = optimizer.forward(
         task_description=task_description,
         input_variable=input_variable,

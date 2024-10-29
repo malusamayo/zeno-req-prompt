@@ -25,10 +25,10 @@
 		suggestedRequirements,
 	} from "../stores";
 	import { ZenoService, type Requirement } from "../zenoservice";
-	import { areRequirementsEqual } from "../zenoservice/models/prompt";
+	import { areRequirementsEqual } from "../zenoservice/models/Prompt";
 	import RequirementCell from "./cells/RequirementCell.svelte";
 	import { TrailingIcon } from "@smui/chips";
-	import type { OptimizeRequirement } from "src/zenoservice";
+	import type { RequirementTree } from "src/zenoservice";
 	
 
 	let newRequirementInput = "";
@@ -76,6 +76,8 @@
 	// 	}
 	// }
 
+	
+
 	function get_max_requirement_id() {
 		return Math.max(
 			Math.max(...Object.keys($requirements).map((id) => Number(id))),
@@ -84,7 +86,7 @@
 	}
 
 	function add_requirement() {
-		let requirement : Requirement = {
+		let requirement: Requirement = {
 			id: (get_max_requirement_id() + 1).toString(),
 			name: "",
 			description: newRequirementInput,
@@ -93,26 +95,8 @@
 		};
 
 		requirementUpdating.set(true);
-		// console.log({promptId: $currentPromptId,
-		// 	requirement: [requirement]});
-		// let t : OptimizeRequirement = {promptId: $currentPromptId,
-		// 	requirement: [requirement]};
-		// console.log(t);
-
-		const requestBody: OptimizeRequirement = {
-		promptId: "v1",
-		requirement: 
-			{
-				id: "1",
-				name: "travel-plan-generation",           
-				description: "generate a travel plan",
-				promptSnippet: "Create a detailed travel itinerary.", 
-				evaluationMethod: "Check if the plan includes destinations and dates.", 
-			},
-	};
 		
-		ZenoService.optimizeRequirement(
-			[requirement]).then(
+		ZenoService.optimizeRequirement({promptId: $currentPromptId, requirement: requirement}).then(
 			(optimizedRequirement) => {
 				requirement = optimizedRequirement;
 				requirements.update(($reqs) => {
@@ -146,10 +130,12 @@
 	function suggest_requirements(prompt_id, model) {
 		suggestedRequirements.set({});
 		requirementUpdating.set(true);
-		ZenoService.suggestRequirements({promptId: prompt_id, model: model}).then(($suggestedRequirements) => {
-			suggestedRequirements.set($suggestedRequirements);
-			requirementUpdating.set(false);
-		});
+		ZenoService.suggestRequirements({ promptId: prompt_id, model: model }).then(
+			($suggestedRequirements) => {
+				suggestedRequirements.set($suggestedRequirements);
+				requirementUpdating.set(false);
+			}
+		);
 	}
 
 	function submit(e) {
@@ -158,6 +144,51 @@
 			add_requirement();
 		}
 	}
+
+	function organizeRequirements(requirements: { [key: string]: Requirement }): RequirementTree[] {
+		const tree: Record<string, RequirementTree> = {};
+
+		Object.values(requirements).forEach((requirement) => {
+			const feature = requirement.feature || "General"; // Default feature if not specified
+			const categoryColor = getCategoryColor(requirement.category, requirement.priority); // Adjust color based on priority
+
+			if (!tree[feature]) {
+				tree[feature] = {
+					feature,
+					requirements: [],
+				};
+			}
+
+			tree[feature].requirements.push({
+					requirement,
+					color: categoryColor, // Only the color is passed, without shade
+				});
+			});
+
+		return Object.values(tree);
+	}
+
+	// Adjust `getCategoryColor` to handle priority-based color adjustment
+	function getCategoryColor(category: string | undefined, priority: string | undefined): string {
+		let baseColor;
+
+		if (category === "content") {
+			baseColor = priority === "soft" ? "#FFEFE2" : "#FFDDC1"; // Lighter and regular colors for content
+		} else if (category === "structure") {
+			baseColor = priority === "soft" ? "#E3F2E9" : "#D1E7DD"; // Lighter and regular colors for structure
+		} else if (category === "presentation") {
+			baseColor = priority === "soft" ? "#E8F0FF" : "#CFE2FF"; // Lighter and regular colors for presentation
+		} else {
+			baseColor = priority === "soft" ? "#F0F1F2" : "#E2E3E5"; // Default lighter and regular colors
+		}
+
+		return baseColor;
+	}
+
+
+
+	$: requirementTree = organizeRequirements($requirements);
+	$: suggestedrequirementTree = organizeRequirements($suggestedRequirements);
 
 	// $: {
 	// 	$promptToUpdate;
@@ -216,17 +247,63 @@
 	</div>
 </div>
 
-{#each Object.entries($requirements) as [id, req]}
+<!-- {#each Object.entries($requirements) as [id, req]}
 	<RequirementCell
 		requirement={req}
 		compare={$tab === "comparison"}
 		suggested={false} />
+{/each} -->
+
+<!-- <div class="requirement-tree">
+    {#each requirementTree as featureGroup}
+        <div class="feature-node">
+            <h3 class="feature-title">{featureGroup.feature}</h3>
+            {#each featureGroup.requirements as { requirement, color, shade }}
+                <div class="requirement-node" style="background-color: {color}; opacity: {shade === 'dark' ? 0.9 : shade === 'light' ? 0.6 : 0.8}">
+                    <RequirementCell
+					requirement={requirement}
+					compare={$tab === "comparison"}
+					suggested={false} />
+                </div>
+            {/each}
+        </div>
+    {/each}
+</div> -->
+
+{#each requirementTree as featureGroup}
+    <div class="feature-node">
+        <h3 class="feature-title">{featureGroup.feature}</h3>
+        {#each featureGroup.requirements as { requirement, color }}
+            <RequirementCell
+                requirement={requirement}
+                color={color}
+                compare={$tab === "comparison"}
+                suggested={false}
+            />
+        {/each}
+    </div>
 {/each}
-{#each Object.entries($suggestedRequirements) as [id, req]}
+
+<!-- {#each Object.entries($suggestedRequirements) as [id, req]}
 	<RequirementCell
 		requirement={req}
 		compare={$tab === "comparison"}
 		suggested={true} />
+{/each} -->
+
+
+{#each suggestedrequirementTree as featureGroup}
+    <div class="feature-node">
+        <h3 class="feature-title">{featureGroup.feature}</h3>
+        {#each featureGroup.requirements as { requirement, color }}
+            <RequirementCell
+                requirement={requirement}
+                color={color}
+                compare={$tab === "comparison"}
+                suggested={true}
+            />
+        {/each}
+    </div>
 {/each}
 
 <div class="inline">
@@ -279,4 +356,25 @@
 		font-size: small;
 		font-weight: lighter;
 	}
+	.requirement-tree {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .feature-node {
+        margin-bottom:20px;
+    }
+
+    .feature-title {
+		font-weight: bold;
+		margin-bottom: 10px;
+		font-size: 14px; /* Set to any smaller size you prefer */
+	}
+
+    .requirement-node {
+        margin-left: 20px;
+        margin-bottom: 5px;
+        padding: 5px;
+        border-radius: 4px;
+    }
 </style>
