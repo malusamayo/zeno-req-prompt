@@ -189,7 +189,8 @@ Model outputs:
 
 ---
 
-Given the user feedback, suggest new requirements. Each new requirement should be atomic and should not overlap with existing requirements. Also, include a specific example for each requirement proposed, following the format below:
+Given the user feedback, suggest new requirements. Each new requirement should be atomic and should not overlap with existing requirements. 
+Also, include a specific example for each requirement proposed, following the format below:
 
     Example format:
     {{
@@ -200,6 +201,15 @@ Given the user feedback, suggest new requirements. Each new requirement should b
         "feedback": "user feedback on the example"
     }}
 
+For each suggested requirement, be careful of providing the following fields:
+
+**Priority**: Determine if the requirement is a *soft* (less critical, flexible for prompt compilation) or *hard* (strictly necessary for prompt compilation) requirement.
+**Category**: Classify the requirement based on its focus area as either *structure* (e.g., response organization), *content* (e.g., factual accuracy), or *presentation* (e.g., format, styling).
+**Feature**:
+    - Review the new requirement against existing ones to determine if it pertains to the same feature or scenario.
+    - If the new requirement aligns with an existing feature, label it with that feature's name.
+    - If it represents a distinct feature, generate a new, concise feature label.
+
 Your response should be in the following JSON format:
 
     {{
@@ -207,6 +217,9 @@ Your response should be in the following JSON format:
             "name": "new requirement name", 
             "description": "new requirement description", 
             "evaluation_method": "evaluation method of the new requirement which will be executed by GPT",
+            "priority": "soft or hard", 
+            "category": "content, structure, or presentation", 
+            "feature": "feature or functionality addressed by this requirement",
             "example": {{
                 "id": "index of the corresponding input-output pair in the provided Example inputs/Model outputs lists",
                 "input": "one of the provided example inputs",

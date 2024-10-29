@@ -52,7 +52,7 @@
 	function optimizeRequirement() {
 		ZenoService.optimizeRequirement(
 		{promptId: $currentPromptId,
-		requirement: [requirement]}).then(
+		requirement: requirement}).then(
 			(optimizedRequirement) => {
 				requirement = optimizedRequirement;
 			}

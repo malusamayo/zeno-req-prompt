@@ -184,6 +184,7 @@
 	}
 
 	$: requirementTree = organizeRequirements($requirements);
+	$: suggestedrequirementTree = organizeRequirements($suggestedRequirements);
 
 	// $: {
 	// 	$promptToUpdate;
@@ -249,7 +250,7 @@
 		suggested={false} />
 {/each} -->
 
-<div class="requirement-tree">
+<!-- <div class="requirement-tree">
     {#each requirementTree as featureGroup}
         <div class="feature-node">
             <h3 class="feature-title">{featureGroup.feature}</h3>
@@ -263,13 +264,44 @@
             {/each}
         </div>
     {/each}
-</div>
+</div> -->
 
-{#each Object.entries($suggestedRequirements) as [id, req]}
+{#each requirementTree as featureGroup}
+    <div class="feature-node">
+        <h3 class="feature-title">{featureGroup.feature}</h3>
+        {#each featureGroup.requirements as { requirement, color, shade }}
+            <RequirementCell
+                requirement={requirement}
+                color={color}
+                shade={shade}
+                compare={$tab === "comparison"}
+                suggested={false}
+            />
+        {/each}
+    </div>
+{/each}
+
+<!-- {#each Object.entries($suggestedRequirements) as [id, req]}
 	<RequirementCell
 		requirement={req}
 		compare={$tab === "comparison"}
 		suggested={true} />
+{/each} -->
+
+
+{#each suggestedrequirementTree as featureGroup}
+    <div class="feature-node">
+        <h3 class="feature-title">{featureGroup.feature}</h3>
+        {#each featureGroup.requirements as { requirement, color, shade }}
+            <RequirementCell
+                requirement={requirement}
+                color={color}
+                shade={shade}
+                compare={$tab === "comparison"}
+                suggested={true}
+            />
+        {/each}
+    </div>
 {/each}
 
 <div class="inline">
@@ -328,13 +360,14 @@
     }
 
     .feature-node {
-        margin-bottom: 20px;
+        margin-bottom:38px;
     }
 
     .feature-title {
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
+		font-weight: bold;
+		margin-bottom: 10px;
+		font-size: 14px; /* Set to any smaller size you prefer */
+	}
 
     .requirement-node {
         margin-left: 20px;

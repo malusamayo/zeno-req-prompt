@@ -1134,7 +1134,6 @@ class ZenoBackend(object):
         Output:
         - new requirements: Dict[str, Requirement]
         '''
-        print("suggest_new_reqs")
         data_col = self.df[str(self.data_column)]
         model_col_obj = ZenoColumn(
             column_type=ZenoColumnType.OUTPUT, name="output", model=cur_info.model, prompt_id=cur_info.prompt_id
@@ -1179,7 +1178,7 @@ class ZenoBackend(object):
                 example_output = model_col.at[example_id]
                 example_is_positive = example_data.get("isPositive", False)
                 example_feedback = example_data.get("feedback", "")
-
+                
                 example = Example(
                     id=str(example_id),
                     input=example_input,
@@ -1193,6 +1192,9 @@ class ZenoBackend(object):
                     description = new_req["description"],
                     prompt_snippet = "",
                     evaluation_method = new_req["evaluation_method"],
+                    priority = new_req["priority"],
+                    category = new_req["category"],
+                    feature = new_req["feature"],
                     examples = [example])
                 rid = str(int(rid)+1)
             break
