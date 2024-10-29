@@ -4,6 +4,5 @@ export type RequirementTree = {
     requirements: Array<{
         requirement: Requirement;
         color: string; // for category color
-        shade: string; // for priority shade
     }>;
 };

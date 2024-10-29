@@ -34,7 +34,6 @@
 
 	export let requirement: Requirement;
 	export let color: string;
-    export let shade: string;
 	export let compare;
 	export let suggested;
 
@@ -67,7 +66,7 @@
 	{selected ? 'selected' : ''} 
 	{compare ? 'compare-slice-cell' : ''}
 	{compare && compareButton ? '' : 'pointer'}"
-	style={suggested ? `cursor:default; background: #f0f0f0;` : `cursor:default; background-color: ${color}; opacity: ${shade === 'dark' ? 0.9 : shade === 'light' ? 0.8 : 0.8};`}
+	style={suggested ? `cursor:default; background: #f0f0f0;` : `cursor:default; background-color: ${color};`}
 	draggable="false"
 	on:mouseover={() => (hovering = true)}
 	on:focus={() => (hovering = true)}

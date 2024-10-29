@@ -150,8 +150,7 @@
 
 		Object.values(requirements).forEach((requirement) => {
 			const feature = requirement.feature || "General"; // Default feature if not specified
-			const categoryColor = getCategoryColor(requirement.category); // Function to determine color
-			const priorityShade = getPriorityShade(requirement.priority); // Function to determine shade
+			const categoryColor = getCategoryColor(requirement.category, requirement.priority); // Adjust color based on priority
 
 			if (!tree[feature]) {
 				tree[feature] = {
@@ -161,27 +160,32 @@
 			}
 
 			tree[feature].requirements.push({
-				requirement,
-				color: categoryColor,
-				shade: priorityShade,
+					requirement,
+					color: categoryColor, // Only the color is passed, without shade
+				});
 			});
-		});
 
 		return Object.values(tree);
 	}
 
-	function getCategoryColor(category: string | undefined): string {
-		if (category === "content") return "#FFDDC1"; // Example colors
-		if (category === "structure") return "#D1E7DD";
-		if (category === "presentation") return "#CFE2FF";
-		return "#E2E3E5"; // Default color
+	// Adjust `getCategoryColor` to handle priority-based color adjustment
+	function getCategoryColor(category: string | undefined, priority: string | undefined): string {
+		let baseColor;
+
+		if (category === "content") {
+			baseColor = priority === "soft" ? "#FFEFE2" : "#FFDDC1"; // Lighter and regular colors for content
+		} else if (category === "structure") {
+			baseColor = priority === "soft" ? "#E3F2E9" : "#D1E7DD"; // Lighter and regular colors for structure
+		} else if (category === "presentation") {
+			baseColor = priority === "soft" ? "#E8F0FF" : "#CFE2FF"; // Lighter and regular colors for presentation
+		} else {
+			baseColor = priority === "soft" ? "#F0F1F2" : "#E2E3E5"; // Default lighter and regular colors
+		}
+
+		return baseColor;
 	}
 
-	function getPriorityShade(priority: string | undefined): string {
-		if (priority === "hard") return "dark"; // Darker shade for hard requirements
-		if (priority === "soft") return "light"; // Lighter shade for soft requirements
-		return "normal"; // Default shade
-	}
+
 
 	$: requirementTree = organizeRequirements($requirements);
 	$: suggestedrequirementTree = organizeRequirements($suggestedRequirements);
@@ -269,11 +273,10 @@
 {#each requirementTree as featureGroup}
     <div class="feature-node">
         <h3 class="feature-title">{featureGroup.feature}</h3>
-        {#each featureGroup.requirements as { requirement, color, shade }}
+        {#each featureGroup.requirements as { requirement, color }}
             <RequirementCell
                 requirement={requirement}
                 color={color}
-                shade={shade}
                 compare={$tab === "comparison"}
                 suggested={false}
             />
@@ -292,11 +295,10 @@
 {#each suggestedrequirementTree as featureGroup}
     <div class="feature-node">
         <h3 class="feature-title">{featureGroup.feature}</h3>
-        {#each featureGroup.requirements as { requirement, color, shade }}
+        {#each featureGroup.requirements as { requirement, color }}
             <RequirementCell
                 requirement={requirement}
                 color={color}
-                shade={shade}
                 compare={$tab === "comparison"}
                 suggested={true}
             />
@@ -360,7 +362,7 @@
     }
 
     .feature-node {
-        margin-bottom:38px;
+        margin-bottom:20px;
     }
 
     .feature-title {
