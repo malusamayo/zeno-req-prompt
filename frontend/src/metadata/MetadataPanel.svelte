@@ -49,6 +49,7 @@
 		prompts,
 		currentPromptId,
 		showNewRequirement,
+		task,
 	} from "../stores";
 	import { columnHash, updateModelDependentSlices } from "../util/util";
 	import { ZenoColumnType, type ZenoColumn } from "../zenoservice";
@@ -61,9 +62,34 @@
 	import SliceCellResult from "./cells/SliceCellResult.svelte";
 	import PromptBox from "./PromptBox.svelte";
 	import RequirementPanel from "./RequirementPanel.svelte";
+	import { ZenoService } from "../zenoservice";
 
 	let metadataHistograms: InternMap<ZenoColumn, HistogramEntry[]> =
 		new InternMap([], columnHash);
+
+	let newTaskInput = "";
+
+	$: inputChanged = newTaskInput !== "";
+
+	$: {
+		$task;
+	}
+
+	function add_task() {
+		
+		ZenoService.addTask({task: newTaskInput}).then(
+			(new_task) => {
+				task.set(new_task);
+			}
+		);
+	}
+
+	function submit(e) {
+		if (e.metaKey && e.key === "Enter") {
+			e.preventDefault();
+			add_task();
+		}
+	}
 
 	// Get histogram buckets, counts, and metrics when columns update.
 	status.subscribe((s) => {
@@ -269,6 +295,33 @@
 
 <div class="side-container">
 	<MetadataHeader />
+
+	<div class="inline">
+		<h4>Task description</h4>
+	</div>
+	<div class="inline">
+		<input
+			placeholder="Write a new task here. ⌘ + Enter to submit."
+			bind:value={newTaskInput}
+			on:keydown={submit} />
+		<span>
+			<IconButton
+				on:click={() => {
+					if (inputChanged) {
+						add_task();
+					}
+				}}
+				style={inputChanged ? "cursor:pointer" : "cursor:default"}>
+				<Icon component={Svg} viewBox="0 0 24 24">
+					{#if inputChanged}
+						<path fill="var(--G1)" d={mdiPlus} />
+					{:else}
+						<path fill="var(--G4)" d={mdiPlus} />
+					{/if}
+				</Icon>
+			</IconButton>
+		</span>
+	</div>
 
 	<RequirementPanel />
 
@@ -556,6 +609,20 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+	}
+	input {
+		position: relative;
+		overflow: visible;
+		border: 0.5px solid var(--G4);
+		border-radius: 4px;
+		margin-top: 5px;
+		display: flex;
+		padding-left: 10px;
+		padding-right: 10px;
+		min-height: 36px;
+		width: 85%;
+		font-size: small;
+		font-weight: lighter;
 	}
 	.compare-slice-cell {
 		padding-top: 5px;

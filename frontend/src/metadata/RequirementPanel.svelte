@@ -356,10 +356,6 @@
 		font-size: small;
 		font-weight: lighter;
 	}
-	.requirement-tree {
-        display: flex;
-        flex-direction: column;
-    }
 
     .feature-node {
         margin-bottom:20px;
@@ -370,11 +366,4 @@
 		margin-bottom: 10px;
 		font-size: 14px; /* Set to any smaller size you prefer */
 	}
-
-    .requirement-node {
-        margin-left: 20px;
-        margin-bottom: 5px;
-        padding: 5px;
-        border-radius: 4px;
-    }
 </style>

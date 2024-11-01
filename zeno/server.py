@@ -32,6 +32,7 @@ from zeno.classes.classes import (
     SuggestNewReqRequest,
     RemoveExampleFeedback,
     OptimizeRequirement,
+    Task
 )
 from zeno.classes.metadata import HistogramBucket, HistogramRequest, StringFilterRequest
 from zeno.classes.projection import Points2D, PointsColors
@@ -144,6 +145,11 @@ def get_server(zeno: ZenoBackend):
     @api_app.post("/extract-requirements", tags=["zeno"])
     def extract_requirements():
         zeno.extract_requirements()
+
+    @api_app.post("/add-task", response_model=str, tags=["zeno"])
+    def add_task(task:Task):
+        task = zeno.add_task(task)
+        return task
 
     @api_app.post("/optimize-requirement", response_model=Requirement, tags=["zeno"])
     def optimize_requirement(req: OptimizeRequirement):

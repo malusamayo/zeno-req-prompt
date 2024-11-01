@@ -117,6 +117,7 @@ class ZenoBackend(object):
             "prompts.pickle", self.cache_path, self.params.prompts
         )
         self.current_prompt_id = list(self.prompts.keys())[-1]
+        self.task = ''
 
         # for pid, prompt in self.prompts.items():
         #     if len(prompt.requirements) == 0:
@@ -733,6 +734,10 @@ class ZenoBackend(object):
             innerdict.update({"requirement_id": requirement_id})
             requests_with_requirement.append(InferenceRequest(**innerdict))
         self.__run_evaluation(requests_with_requirement)
+    
+    def add_task(self, task):
+        self.task = task.task
+        return self.task
     
     def find_best_match(self, prompt, snippet):
         normalized_snippet = " ".join(snippet.split())

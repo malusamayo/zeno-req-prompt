@@ -146,3 +146,6 @@ class SuggestNewReqRequest(CamelModel):
 class OptimizeRequirement(CamelModel):
     prompt_id: str
     requirement: Requirement
+
+class Task(CamelModel):
+    task: str

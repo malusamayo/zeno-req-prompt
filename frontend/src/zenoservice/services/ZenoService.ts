@@ -26,6 +26,7 @@ import type {UpdateFeedbackRequest} from "../models/UpdateFeedbackRequest";
 import type {SuggestNewReqRequest} from "../models/SuggestNewReqRequest";
 import type {RemoveExampleFeedback} from "../models/RemoveExample";
 import type {OptimizeRequirement} from "../models/OptimizeRequirement";
+import type {Task} from "../models/Task";
 import type {
 	FeedbackRequest,
 	InferenceRequest,
@@ -168,6 +169,25 @@ export class ZenoService {
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/run-prompt",
+			body: requestBody,
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**Add task
+	 * @param requestBody
+	 * @returns any Successful Response
+	 * @throws ApiError
+	 */
+	public static addTask(
+		requestBody: Task
+	): CancelablePromise<string> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/add-task",
 			body: requestBody,
 			mediaType: "application/json",
 			errors: {

@@ -94,6 +94,7 @@ export const currentPromptId: Writable<string> = writable("");
 export const requirements: Writable<{ [key: string]: Requirement }> = writable(
 	{}
 );
+export const task: Writable<string> = writable("");
 export const requirementAddedExample = writable<Array<{ 
     req_id: string; 
     example_id: string; 
