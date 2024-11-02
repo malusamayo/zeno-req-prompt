@@ -66,8 +66,8 @@
 
 	let metadataHistograms: InternMap<ZenoColumn, HistogramEntry[]> =
 		new InternMap([], columnHash);
-
-	let newTaskInput = "";
+	
+	let newTaskInput = $task;
 
 	$: inputChanged = newTaskInput !== "";
 
@@ -611,18 +611,28 @@
 		justify-content: space-between;
 	}
 	input {
-		position: relative;
-		overflow: visible;
-		border: 0.5px solid var(--G4);
-		border-radius: 4px;
-		margin-top: 5px;
-		display: flex;
-		padding-left: 10px;
-		padding-right: 10px;
-		min-height: 36px;
-		width: 85%;
-		font-size: small;
-		font-weight: lighter;
+    position: relative;
+    overflow: visible;
+    border: 1px solid var(--G4); 
+    border-radius: 10px; 
+    margin-top: 8px; 
+    display: flex;
+    padding: 8px 12px; 
+    min-height: 40px; 
+    width: 90%; 
+    font-size: 14px; 
+    font-weight: 400;
+    background-color: #f9f9f9; 
+    color: #333; 
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; 
+	}
+
+	/* Adding a focus effect */
+	input:focus {
+		border-color: var(--G5); 
+		box-shadow: 0 0 0 2px rgba(0, 120, 215, 0.2); 
+		outline: none; 
+		background-color: #fff; 
 	}
 	.compare-slice-cell {
 		padding-top: 5px;

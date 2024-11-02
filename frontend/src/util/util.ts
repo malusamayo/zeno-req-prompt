@@ -16,6 +16,7 @@ import {
 	tags,
 	prompts,
 	currentPromptId,
+	task
 } from "../stores";
 import { ZenoService } from "../zenoservice";
 import {
@@ -44,6 +45,9 @@ export async function getInitialData() {
 	const promptsRes = await ZenoService.getPrompts();
 	const promptsMap = new Map(Object.entries(promptsRes));
 	prompts.set(promptsMap);
+
+	const current_task =  await ZenoService.getTask();
+	task.set(current_task);
 
 	const promptVersionRes = await ZenoService.getCurrentPromptId();
 	currentPromptId.set(promptVersionRes[0]);

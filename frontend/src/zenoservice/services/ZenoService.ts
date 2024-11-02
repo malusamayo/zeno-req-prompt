@@ -137,6 +137,18 @@ export class ZenoService {
 	}
 
 	/**
+	 * Get Task
+	 * @returns Report Successful Response
+	 * @throws ApiError
+	 */
+	public static getTask(): CancelablePromise<string> {
+		return __request(OpenAPI, {
+			method: "GET",
+			url: "/get-task",
+		});
+	}
+
+	/**
 	 * Create New Prompt
 	 * @param requestBody
 	 * @returns any Successful Response
