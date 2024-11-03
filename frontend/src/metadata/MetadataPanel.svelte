@@ -66,7 +66,7 @@
 
 	let metadataHistograms: InternMap<ZenoColumn, HistogramEntry[]> =
 		new InternMap([], columnHash);
-	
+
 	let newTaskInput = $task;
 
 	$: inputChanged = newTaskInput !== "";
@@ -76,19 +76,10 @@
 	}
 
 	function add_task() {
-		
-		ZenoService.addTask({task: newTaskInput}).then(
-			(new_task) => {
-				task.set(new_task);
-			}
-		);
-	}
-
-	function submit(e) {
-		if (e.metaKey && e.key === "Enter") {
-			e.preventDefault();
-			add_task();
-		}
+		console.log("hey");
+		ZenoService.addTask({ task: newTaskInput }).then((new_task) => {
+			task.set(new_task);
+		});
 	}
 
 	// Get histogram buckets, counts, and metrics when columns update.
@@ -301,26 +292,9 @@
 	</div>
 	<div class="inline">
 		<input
-			placeholder="Write a new task here. ⌘ + Enter to submit."
+			placeholder="Write the task description here."
 			bind:value={newTaskInput}
-			on:keydown={submit} />
-		<span>
-			<IconButton
-				on:click={() => {
-					if (inputChanged) {
-						add_task();
-					}
-				}}
-				style={inputChanged ? "cursor:pointer" : "cursor:default"}>
-				<Icon component={Svg} viewBox="0 0 24 24">
-					{#if inputChanged}
-						<path fill="var(--G1)" d={mdiPlus} />
-					{:else}
-						<path fill="var(--G4)" d={mdiPlus} />
-					{/if}
-				</Icon>
-			</IconButton>
-		</span>
+			on:change={add_task} />
 	</div>
 
 	<RequirementPanel />
@@ -611,28 +585,28 @@
 		justify-content: space-between;
 	}
 	input {
-    position: relative;
-    overflow: visible;
-    border: 1px solid var(--G4); 
-    border-radius: 10px; 
-    margin-top: 8px; 
-    display: flex;
-    padding: 8px 12px; 
-    min-height: 40px; 
-    width: 90%; 
-    font-size: 14px; 
-    font-weight: 400;
-    background-color: #f9f9f9; 
-    color: #333; 
-    transition: border-color 0.3s ease, box-shadow 0.3s ease; 
+		position: relative;
+		overflow: visible;
+		border: 1px solid var(--G4);
+		border-radius: 10px;
+		margin-bottom: 8px;
+		display: flex;
+		padding: 8px 12px;
+		min-height: 40px;
+		width: 90%;
+		font-size: 14px;
+		font-weight: 400;
+		background-color: #fff;
+		color: #333;
+		transition: border-color 0.3s ease, box-shadow 0.3s ease;
 	}
 
 	/* Adding a focus effect */
 	input:focus {
-		border-color: var(--G5); 
-		box-shadow: 0 0 0 2px rgba(0, 120, 215, 0.2); 
-		outline: none; 
-		background-color: #fff; 
+		border-color: var(--G5);
+		box-shadow: 0 0 0 1px rgba(0, 120, 215, 0.2);
+		outline: none;
+		background-color: #fff;
 	}
 	.compare-slice-cell {
 		padding-top: 5px;
