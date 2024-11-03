@@ -34,7 +34,7 @@
 				alt="Square spiral logo next to 'Zeno'" />
 		</a>
 		<div id="tabs">
-			<div
+			<!-- <div
 				class="item {$tab === 'requirement' ? 'selected' : ''}"
 				on:keydown={() => ({})}
 				on:click={() => updateTab("requirement")}
@@ -50,7 +50,7 @@
 							d={mdiRobotAngryOutline} />
 					</Icon>
 				</div>
-			</div>
+			</div> -->
 			<div
 				class="item {$tab === 'explore' ? 'selected' : ''}"
 				on:keydown={() => ({})}

@@ -423,7 +423,7 @@
 		<SliceCell compare={$tab === "comparison"} slice={s} />
 	{/each}
 
-	<div id="tag-header" class="inline" style:margin-top="10px">
+	<!-- <div id="tag-header" class="inline" style:margin-top="10px">
 		<div class="inline">
 			<h4>Tags</h4>
 			<div
@@ -546,7 +546,7 @@
 					histogram={metadataHistograms.get(outputCol[0])} />
 			{/if}
 		{/if}
-	{/if}
+	{/if} -->
 </div>
 
 <style>
