@@ -60,7 +60,7 @@ from zeno.prompt_templates import (
     REQUIREMENT_UPDATE_PROMPT,
     REQUIREMENT_UPDATE_REQUEST_PROMPT
 )
-
+from zeno.compiler import PromptAgent
 
 class ZenoBackend(object):
     def __init__(self, args: ZenoParameters):
@@ -81,6 +81,8 @@ class ZenoBackend(object):
         self.view = self.params.view
         self.calculate_histogram_metrics = self.params.calculate_histogram_metrics
         self.model_names = self.params.models
+
+        self.prompt_agent = PromptAgent(input_variable=self.params.data_column)
 
         self.df = read_metadata(self.metadata)
         self.tests = read_functions(self.functions)
@@ -970,53 +972,10 @@ class ZenoBackend(object):
 
         requirements = self.prompts[prompt_id].requirements
         
-        api_prompt = PROMPT_COMPILER_PROMPT.format(requirements=requirements_to_str(requirements))
-
-        payload = {
-            'model': 'gpt-4-turbo',
-            'messages': [
-                {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
-                {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
-            ],
-            'temperature': 0.7,
-            'max_tokens': 2048,
-            'top_p': 1.0,
-            'frequency_penalty': 0.0,
-            'presence_penalty': 0.0,
-            'response_format': {"type": "json_object"}  
-        }
-
-
-        client = OpenAIMultiClient()
-
-        client.request(
-            data=payload,
-            endpoint="chat.completions"
+        prompt = self.prompt_agent.compile_requirements(
+            task_description=self.task,
+            requirements=list(requirements.values())
         )
-
-        for response in client:
-            if response.failed:
-                print("Error generating response")
-                return
-        
-            output_text = response.response.choices[0].message.content
-    
-            try:
-            # Parse the JSON response
-                compile_output = json.loads(output_text)
-            except json.JSONDecodeError:
-                print("Failed to parse the response as JSON.")
-                return
-            
-            prompt = compile_output.get('prompt', "")
-            requirements_prompt_snippets = compile_output.get('requirements_prompt_snippets', [])
-
-            for req_prompt in requirements_prompt_snippets:
-                id = req_prompt.get("requirement_id", None)
-                prompt_snippet = req_prompt.get("prompt_snippet",'')
-                self.prompts[prompt_id].requirements[str(id)].prompt_snippet = prompt_snippet
-    
-            break
         
         self.prompts[prompt_id].text = prompt
 

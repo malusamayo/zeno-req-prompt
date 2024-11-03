@@ -20,6 +20,15 @@ def examples2text(examples: Union[str, List[Example]]) -> str:
     
     return "\n".join([f"[{idx+1}] «{example2text(example)}»" for idx, example in enumerate(examples)])
 
+def requirement2text(requirement: Requirement) -> str:
+    return f'''{requirement.name}: {requirement.description}'''
+
+def requirements2text(requirements: Union[str, List[Requirement]]) -> str:
+    """Formats the given one or more requirements into a single structured string."""
+    if isinstance(requirements, str):
+        return requirements
+    
+    return "\n".join([f"[{idx+1}] «{requirement2text(requirement)}»" for idx, requirement in enumerate(requirements)])
 
 class BasicCompilePrompt(dspy.Signature):
     """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task. 
@@ -27,7 +36,20 @@ class BasicCompilePrompt(dspy.Signature):
 Your task is to propose a prompt will lead a good language model to perform the task well and meet all the requirements. Don't be afraid to be creative."""
 
     task_description = dspy.InputField(desc="Description of the task")
-    requirements = dspy.InputField(format=dsp.passages2text, desc="A list of requirements that the prompt must satisfy")
+    requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
+    input_variable = dspy.InputField(desc="The name of the input variable")
+    prompt = dspy.OutputField(desc="The proposed prompt")
+
+class CompilePromptWithConstraint(dspy.Signature):
+    """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task. 
+There are some hard requirements that the model must satisfy, and some soft requirements that the model should satisfy if possible.
+    
+Your task is to propose a prompt will lead a good language model to perform the task well and meet all the requirements. Don't be afraid to be creative."""
+
+    task_description = dspy.InputField(desc="Description of the task")
+    requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
+    hard_requirements = dspy.InputField(format=requirements2text, desc="A list of hard requirements that the prompt must include")
+    input_variable = dspy.InputField(desc="The name of the input variable")
     prompt = dspy.OutputField(desc="The proposed prompt")
 
 class BasicCompilePromptWithExamples(dspy.Signature):
@@ -37,7 +59,7 @@ I will also provide you with some positive ``examples`` of the expected inputs a
 Your task is to propose a prompt will lead a good language model to perform the task well and meet all the requirements. Don't be afraid to be creative."""
 
     task_description = dspy.InputField(desc="Description of the task")
-    requirements = dspy.InputField(format=dsp.passages2text, desc="A list of requirements that the prompt must satisfy")
+    requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
     incorrect_examples = dspy.InputField(format=examples2text, desc="A list of incorrect examples")
     prompt = dspy.OutputField(desc="The proposed prompt")
 
@@ -47,7 +69,7 @@ class RefinePromptWithFeedback(dspy.Signature):
 Your task is to propose a new prompt will lead a good language model to perform the task well, meet all the requirements, and incorporate the feedback. Don't be afraid to be creative."""
 
     task_description = dspy.InputField(desc="Description of the task")
-    requirements = dspy.InputField(format=dsp.passages2text, desc="A list of requirements that the prompt must satisfy")
+    requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
     previous_prompt = dspy.InputField(desc="The previous prompt")
     past_input = dspy.InputField(desc="The input that was used with the previous prompt")
     past_output = dspy.InputField(desc="The output that was generated with the previous prompt")
@@ -294,6 +316,50 @@ class ReqHITLPromptOptimizer:
 
         return prompt
 
+class PromptAgent:
+
+    def __init__(self, input_variable="input"):
+        super().__init__()
+        turbo = dspy.LM(model='gpt-4o-mini', max_tokens=4096)
+        dspy.settings.configure(lm=turbo)
+
+        self.input_variable = input_variable
+        self.basic_compiler = dspy.Predict(BasicCompilePrompt)
+        self.compiler_with_constraint = dspy.Predict(CompilePromptWithConstraint)
+
+        self.prompt_refiner = dspy.Predict(RefinePromptWithFeedback)
+        self.feedback_converter = dspy.Predict(ConvertFeedbackToRequirement)
+
+    def compile_requirements(
+        self, 
+        task_description, 
+        requirements: List[Requirement]
+    ) -> str:
+        """Compile a prompt that satisfies the given requirements.
+        Args:
+            task_description (str): Description of the task.
+            requirements (List[Requirement]): A list of requirements that the prompt should include.
+        Returns:
+            str: The compiled prompt.
+        """
+        hard_requirements = [req for req in requirements if req.priority == "hard"]
+        if len(hard_requirements) > 0:
+            prompt = self.compiler_with_constraint(
+                task_description=task_description,
+                requirements=requirements,
+                hard_requirements=hard_requirements,
+                input_variable=self.input_variable,
+            ).prompt
+        else:
+            prompt = self.basic_compiler(
+                task_description=task_description,
+                requirements=requirements,
+                input_variable=self.input_variable,
+            ).prompt
+        return prompt
+    
+
+
 if __name__ == '__main__':
     turbo = dspy.LM(model='gpt-4o-mini', max_tokens=4096)
     dspy.settings.configure(lm=turbo)
@@ -301,31 +367,16 @@ if __name__ == '__main__':
     task_description = "Classify the sentiment of a tweet"
     input_variable = "tweet"
     requirements=[
-        "The classification result must be one of 'positive', 'negative', or 'neutral'",
-        "The model should be able to detect sarcasm",
-        "The model should be able to detect sentiment in emojis",
-    ]
-    examples = [
-        "I'm feeling great 😊",
-        "I'm feeling terrible 😭",
-        "Feeling great lol",
-        "I'm feeling great 😭",
-    ]
-    trainset = [
-        dspy.Example(tweet="Feeling great lol", output="negative"),
-        dspy.Example(tweet="I'm feeling great 😭", output="negative"),
-        dspy.Example(tweet="I'm feeling great 😊", output="positive"),
-        dspy.Example(tweet="I'm feeling terrible 😭", output="negative"),
+        Requirement(id="0", name="classification-result", description="The classification result must be one of 'positive', 'negative', or 'neutral", prompt_snippet="", evaluation_method=""),
+        Requirement(id="1", name="sarcasm-sentiment", description="The model should be able to detect sentiment in sarcasm", prompt_snippet="", evaluation_method=""),
+        Requirement(id="2", name="emoji-sentiment", description="The model should be able to detect sentiment in emojis", prompt_snippet="", evaluation_method=""),
     ]
 
-    optimizer = ReqHITLPromptOptimizer()
-    prompt = optimizer.forward(
+    optimizer = PromptAgent(input_variable=input_variable)
+    prompt = optimizer.compile_requirements(
         task_description=task_description,
-        input_variable=input_variable,
         requirements=requirements,
-        examples=examples,
-        trainset=trainset,
-        optimization_flag="o1",
     )
 
-    turbo.inspect_history(n=10)
+    print(prompt)
+    # turbo.inspect_history(n=10)
