@@ -40,15 +40,18 @@ Your task is to propose a prompt will lead a good language model to perform the 
     input_variable = dspy.InputField(desc="The name of the input variable")
     prompt = dspy.OutputField(desc="The proposed prompt")
 
-class CompilePromptWithConstraint(dspy.Signature):
-    """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task. 
+class CompilePrompt(dspy.Signature):
+    """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task.
 There are some hard requirements that the model must satisfy, and some soft requirements that the model should satisfy if possible.
-    
+I will also provide you with some positive ``examples`` of the expected inputs and outputs for this task, as well as some negative ``examples`` that the model should avoid. You can incorporate these examples in your prompt.
+
 Your task is to propose a prompt will lead a good language model to perform the task well and meet all the requirements. Don't be afraid to be creative."""
 
     task_description = dspy.InputField(desc="Description of the task")
     requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
     hard_requirements = dspy.InputField(format=requirements2text, desc="A list of hard requirements that the prompt must include")
+    good_examples = dspy.InputField(format=examples2text, desc="A list of good examples")
+    bad_examples = dspy.InputField(format=examples2text, desc="A list of bad examples")
     input_variable = dspy.InputField(desc="The name of the input variable")
     prompt = dspy.OutputField(desc="The proposed prompt")
 
@@ -325,7 +328,7 @@ class PromptAgent:
 
         self.input_variable = input_variable
         self.basic_compiler = dspy.Predict(BasicCompilePrompt)
-        self.compiler_with_constraint = dspy.Predict(CompilePromptWithConstraint)
+        self.compiler = dspy.Predict(CompilePrompt)
 
         self.prompt_refiner = dspy.Predict(RefinePromptWithFeedback)
         self.feedback_converter = dspy.Predict(ConvertFeedbackToRequirement)
@@ -343,11 +346,18 @@ class PromptAgent:
             str: The compiled prompt.
         """
         hard_requirements = [req for req in requirements if req.priority == "hard"]
-        if len(hard_requirements) > 0:
-            prompt = self.compiler_with_constraint(
+        examples = []
+        for req in requirements:
+            if len(req.examples) > 0:
+                examples.extend(req.examples)
+
+        if len(examples) > 0 or len(hard_requirements) > 0:
+            prompt = self.compiler(
                 task_description=task_description,
                 requirements=requirements,
                 hard_requirements=hard_requirements,
+                good_examples=[example for example in examples if example.is_positive],
+                bad_examples=[example for example in examples if not example.is_positive],
                 input_variable=self.input_variable,
             ).prompt
         else:
