@@ -1,0 +1,11 @@
+settings:
+  cache_path: ".zeno_cache"
+  port: 8000
+
+data:
+  data_path: "data/mmlu.csv"
+  sample_size: 10
+  data_column: "question"
+
+models:
+  - "gpt-4o-mini"
