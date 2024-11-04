@@ -49,6 +49,8 @@
 	let compareButton = false;
 	let currentRequirementUpdating = false;
 
+	let originalRequirement = JSON.parse(JSON.stringify(requirement));
+
 	$: selected = false;
 
 	function removeRequirement() {
@@ -163,18 +165,20 @@
 						}}
 						on:blur={() => {
 							// if (requirement.id in $requirements) {
-							currentRequirementUpdating = true;
-							ZenoService.optimizeRequirement({
-								promptId: $currentPromptId,
-								requirement: requirement,
-							}).then((optimizedRequirement) => {
-								requirement = optimizedRequirement;
-								requirements.update((reqs) => {
-									reqs[requirement.id] = requirement;
-									return reqs;
+							if (requirement.description !== originalRequirement.description) {
+								currentRequirementUpdating = true;
+								ZenoService.optimizeRequirement({
+									promptId: $currentPromptId,
+									requirement: requirement,
+								}).then((optimizedRequirement) => {
+									requirement = optimizedRequirement;
+									requirements.update((reqs) => {
+										reqs[requirement.id] = requirement;
+										return reqs;
+									});
+									currentRequirementUpdating = false;
 								});
-								currentRequirementUpdating = false;
-							});
+							}
 							// }
 						}}
 						on:keydown={(e) => {
