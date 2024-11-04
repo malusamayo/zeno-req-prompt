@@ -291,7 +291,7 @@
 		<h4>Task description</h4>
 	</div>
 	<div class="inline">
-		<input
+		<textarea
 			placeholder="Write the task description here."
 			bind:value={newTaskInput}
 			on:change={add_task} />
@@ -584,7 +584,7 @@
 		align-items: center;
 		justify-content: space-between;
 	}
-	input {
+	textarea {
 		position: relative;
 		overflow: visible;
 		border: 1px solid var(--G4);
@@ -594,15 +594,14 @@
 		padding: 8px 12px;
 		min-height: 40px;
 		width: 90%;
-		font-size: 14px;
-		font-weight: 400;
 		background-color: #fff;
 		color: #333;
 		transition: border-color 0.3s ease, box-shadow 0.3s ease;
+		resize: none;
 	}
 
 	/* Adding a focus effect */
-	input:focus {
+	textarea:focus {
 		border-color: var(--G5);
 		box-shadow: 0 0 0 1px rgba(0, 120, 215, 0.2);
 		outline: none;
