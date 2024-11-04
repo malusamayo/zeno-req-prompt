@@ -742,6 +742,8 @@ class ZenoBackend(object):
     
     def add_task(self, task):
         self.task = task.task
+        prompt_id = task.prompt_id
+        self.prompts[prompt_id].task = self.task
         return self.task
     
     def find_best_match(self, prompt, snippet):

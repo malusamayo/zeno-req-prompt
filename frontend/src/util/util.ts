@@ -46,9 +46,6 @@ export async function getInitialData() {
 	const promptsMap = new Map(Object.entries(promptsRes));
 	prompts.set(promptsMap);
 
-	const current_task =  await ZenoService.getTask();
-	task.set(current_task);
-
 	const promptVersionRes = await ZenoService.getCurrentPromptId();
 	currentPromptId.set(promptVersionRes[0]);
 

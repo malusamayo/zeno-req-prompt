@@ -49,6 +49,54 @@
 	let compareButton = false;
 	let currentRequirementUpdating = false;
 
+	let editingPriority = false;
+	const priorities = ["soft", "hard"];
+	let editingCategory = false;
+	const categories = ["content", "structure", "presentation"];
+
+
+	function toggleEditingPriority() {
+        editingPriority = !editingPriority;
+    }
+
+	function toggleEditingCategory() {
+        editingCategory = !editingCategory;
+    }
+
+	function getCategoryColor(
+		category: string | undefined,
+		priority: string | undefined
+	): string {
+		let baseColor;
+
+		if (category === "content") {
+			baseColor = priority === "soft" ? "#FFEFE2" : "#FFDDC1"; // Lighter and regular colors for content
+		} else if (category === "structure") {
+			baseColor = priority === "soft" ? "#E3F2E9" : "#D1E7DD"; // Lighter and regular colors for structure
+		} else if (category === "presentation") {
+			baseColor = priority === "soft" ? "#E8F0FF" : "#CFE2FF"; // Lighter and regular colors for presentation
+		} else {
+			baseColor = "white"; // Default white
+		}
+
+		return baseColor;
+	}
+
+    function handlePriorityChange(newPriority) {
+        if (requirement) {
+            requirement.priority = newPriority;
+            editingPriority = false; // Close the dropdown after selection
+			color = getCategoryColor(requirement.category,newPriority);
+        }
+    }
+
+	function handleCategoryChange(newCategory) {
+        if (requirement) {
+            requirement.category = newCategory;
+            editingCategory = false; // Close the dropdown after selection
+			color = getCategoryColor(newCategory,requirement.priority);
+        }
+    }
 	let originalRequirement = JSON.parse(JSON.stringify(requirement));
 
 	$: selected = false;
@@ -64,6 +112,7 @@
 
 		promptToUpdate.set(true);
 	}
+
 </script>
 
 <div
@@ -105,8 +154,46 @@
 				<div class="hori-group" style:color="var(--G1)">
 					{#if requirement.name !== ""}
 						<RequirementChip name={requirement.name} id={requirement.id} />
-						<span class="category-tag">{requirement.category}</span>
-						<span class="priority-tag">{requirement.priority}</span>
+						<!-- <span class="category-tag">{requirement.category}</span> -->
+						{#if editingCategory}
+							<select
+								class="dropdown"
+								use:clickOutside
+								on:click_outside={() => {
+									editingCategory= false;
+								}}
+								bind:value={requirement.category}
+								on:change={(event) => handleCategoryChange(event.target.value)}
+							>
+								{#each categories as category}
+									<option value={category}>{category}</option>
+								{/each}
+							</select>
+						{:else}
+							<span class="category-tag" on:click={() => toggleEditingCategory()}>
+								{requirement.category}
+							</span>
+						{/if}
+						<!-- <span class="priority-tag">{requirement.priority}</span> -->
+						{#if editingPriority}
+							<select
+								class="dropdown"
+								use:clickOutside
+								on:click_outside={() => {
+									editingPriority = false;
+								}}
+								bind:value={requirement.priority}
+								on:change={(event) => handlePriorityChange(event.target.value)}
+							>
+								{#each priorities as priority}
+									<option value={priority}>{priority}</option>
+								{/each}
+							</select>
+						{:else}
+							<span class="priority-tag" on:click={() => toggleEditingPriority()}>
+								{requirement.priority}
+							</span>
+						{/if}
 					{/if}
 
 					{#if currentRequirementUpdating}
@@ -424,4 +511,11 @@
 		border-radius: 3px;
 		font-size: 0.8em;
 	}
+	.category-tag, .priority-tag {
+        padding: 4px 8px;
+        cursor: pointer;
+    }
+    .dropdown {
+        padding: 4px 8px;
+    }
 </style>

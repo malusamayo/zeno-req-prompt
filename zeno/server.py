@@ -124,10 +124,6 @@ def get_server(zeno: ZenoBackend):
     @api_app.get("/prompts", response_model=Dict[str, Prompt], tags=["zeno"])
     def get_prompts():
         return zeno.prompts
-    
-    @api_app.get("/get-task", response_model=str, tags=["zeno"])
-    def get_task():
-        return zeno.task
 
     @api_app.get("/prompt-version", response_model=List[str], tags=["zeno"])
     def get_prompt_version():

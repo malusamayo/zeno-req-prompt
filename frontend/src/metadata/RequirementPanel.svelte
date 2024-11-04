@@ -116,6 +116,7 @@
 			text: "",
 			version: "",
 			requirements: $requirements,
+			task: $prompts.get($currentPromptId).task,
 		}).then((createdPrompts) => {
 			prompts.update((pts) => {
 				return pts.set(createdPrompts[0].version, createdPrompts[0]);

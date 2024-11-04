@@ -150,3 +150,4 @@ class OptimizeRequirement(CamelModel):
 
 class Task(CamelModel):
     task: str
+    prompt_id: str

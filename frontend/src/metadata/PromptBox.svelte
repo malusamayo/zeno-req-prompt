@@ -68,7 +68,7 @@
 			text: newInnerPrompt,
 			version: "",
 			requirements: $requirements,
-			task: ""
+			task: $prompts.get($currentPromptId).task,
 		}).then((createdPrompts) => {
 			// ZenoService.getCurrentPromptId().then((res) => {
 			ZenoService.getCompleteColumns().then((cols) => {

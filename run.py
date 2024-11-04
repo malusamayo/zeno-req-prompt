@@ -63,7 +63,7 @@ if __name__ == '__main__':
         functions=[openai_inference],
         models=config["models"],
         task_description=config["prompt"]["task_description"],
-        prompts={'v1': Prompt(text=prompt, version='v1', requirements=requirements)},
+        prompts={'v1': Prompt(text=prompt, version='v1', requirements=requirements, task='')},
         view='text-classification',
         data_column=config["data"]["data_column"],
         label_column="label",

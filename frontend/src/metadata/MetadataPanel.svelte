@@ -67,18 +67,28 @@
 	let metadataHistograms: InternMap<ZenoColumn, HistogramEntry[]> =
 		new InternMap([], columnHash);
 
-	let newTaskInput = $task;
+	let newTaskInput = $prompts.get($currentPromptId).task;
 
-	$: inputChanged = newTaskInput !== "";
+	$: if ($currentPromptId) {
+		const prompt = $prompts.get($currentPromptId);
+		if (prompt) {
+			newTaskInput = (prompt.task || ""); 
+		}
+	}
 
 	$: {
-		$task;
+		$prompts.get($currentPromptId).task;
 	}
 
 	function add_task() {
-		console.log("hey");
-		ZenoService.addTask({ task: newTaskInput }).then((new_task) => {
-			task.set(new_task);
+		ZenoService.addTask({ task: newTaskInput, promptId: $currentPromptId }).then((new_task) => {
+			prompts.update((currentPrompts) => {
+				const prompt = currentPrompts.get($currentPromptId);
+				if (prompt) {
+					prompt.task = new_task;
+				}
+				return currentPrompts;
+			});
 		});
 	}
 
