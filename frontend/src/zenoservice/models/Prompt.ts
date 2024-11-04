@@ -28,6 +28,7 @@ export type Prompt = {
 	text: string;
 	version: string;
 	requirements: { [id: string]: Requirement };
+	task: string;
 };
 
 // Utility function to compare arrays of Examples
