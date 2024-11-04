@@ -25,11 +25,9 @@
 		suggestedRequirements,
 	} from "../stores";
 	import { ZenoService, type Requirement } from "../zenoservice";
-	import { areRequirementsEqual } from "../zenoservice/models/Prompt";
 	import RequirementCell from "./cells/RequirementCell.svelte";
 	import { TrailingIcon } from "@smui/chips";
-	import type { RequirementTree } from "src/zenoservice";
-	
+	import type { RequirementTree } from "../zenoservice";
 
 	let newRequirementInput = "";
 	// let displayedRequirements: { [key: string]: Requirement };
@@ -76,8 +74,6 @@
 	// 	}
 	// }
 
-	
-
 	function get_max_requirement_id() {
 		return Math.max(
 			Math.max(...Object.keys($requirements).map((id) => Number(id))),
@@ -85,29 +81,31 @@
 		);
 	}
 
-	function add_requirement() {
+	function add_requirement(feature) {
 		let requirement: Requirement = {
 			id: (get_max_requirement_id() + 1).toString(),
 			name: "",
 			description: newRequirementInput,
 			promptSnippet: "",
 			evaluationMethod: "",
+			feature: feature,
 		};
 
 		requirementUpdating.set(true);
-		
-		ZenoService.optimizeRequirement({promptId: $currentPromptId, requirement: requirement}).then(
-			(optimizedRequirement) => {
-				requirement = optimizedRequirement;
-				requirements.update(($reqs) => {
-					$reqs[requirement.id] = requirement;
-					return $reqs;
-				});
-				promptToUpdate.set(true);
-				newRequirementInput = "";
-				requirementUpdating.set(false);
-			}
-		);
+
+		ZenoService.optimizeRequirement({
+			promptId: $currentPromptId,
+			requirement: requirement,
+		}).then((optimizedRequirement) => {
+			requirement = optimizedRequirement;
+			requirements.update(($reqs) => {
+				$reqs[requirement.id] = requirement;
+				return $reqs;
+			});
+			promptToUpdate.set(true);
+			newRequirementInput = "";
+			requirementUpdating.set(false);
+		});
 	}
 
 	function compile_to_prompt() {
@@ -138,38 +136,40 @@
 		);
 	}
 
-	function submit(e) {
-		if (e.metaKey && e.key === "Enter") {
-			e.preventDefault();
-			add_requirement();
-		}
-	}
-
-	function organizeRequirements(requirements: { [key: string]: Requirement }): RequirementTree[] {
+	function organizeRequirements(requirements: {
+		[key: string]: Requirement;
+	}): RequirementTree[] {
 		const tree: Record<string, RequirementTree> = {};
 
 		Object.values(requirements).forEach((requirement) => {
 			const feature = requirement.feature || "General"; // Default feature if not specified
-			const categoryColor = getCategoryColor(requirement.category, requirement.priority); // Adjust color based on priority
+			const categoryColor = getCategoryColor(
+				requirement.category,
+				requirement.priority
+			); // Adjust color based on priority
 
 			if (!tree[feature]) {
 				tree[feature] = {
 					feature,
 					requirements: [],
+					showNewRequirement: false,
 				};
 			}
 
 			tree[feature].requirements.push({
-					requirement,
-					color: categoryColor, // Only the color is passed, without shade
-				});
+				requirement,
+				color: categoryColor, // Only the color is passed, without shade
 			});
+		});
 
 		return Object.values(tree);
 	}
 
 	// Adjust `getCategoryColor` to handle priority-based color adjustment
-	function getCategoryColor(category: string | undefined, priority: string | undefined): string {
+	function getCategoryColor(
+		category: string | undefined,
+		priority: string | undefined
+	): string {
 		let baseColor;
 
 		if (category === "content") {
@@ -184,8 +184,6 @@
 
 		return baseColor;
 	}
-
-
 
 	$: requirementTree = organizeRequirements($requirements);
 	$: suggestedrequirementTree = organizeRequirements($suggestedRequirements);
@@ -271,17 +269,41 @@
 </div> -->
 
 {#each requirementTree as featureGroup}
-    <div class="feature-node">
-        <h3 class="feature-title">{featureGroup.feature}</h3>
-        {#each featureGroup.requirements as { requirement, color }}
-            <RequirementCell
-                requirement={requirement}
-                color={color}
-                compare={$tab === "comparison"}
-                suggested={false}
-            />
-        {/each}
-    </div>
+	<div class="feature-node">
+		<span class="feature-title">{featureGroup.feature}</span>
+		<TrailingIcon
+			class="material-icons"
+			style="margin-bottom: 4px; color: lightgrey; cursor: pointer;"
+			on:click={() => {
+				featureGroup.showNewRequirement = !featureGroup.showNewRequirement;
+			}}>
+			add_circle
+		</TrailingIcon>
+
+		{#each featureGroup.requirements as { requirement, color }}
+			<RequirementCell
+				{requirement}
+				{color}
+				compare={$tab === "comparison"}
+				suggested={false} />
+		{/each}
+
+		{#if featureGroup.showNewRequirement}
+			<RequirementCell
+				requirement={{
+					id: (get_max_requirement_id() + 1).toString(),
+					name: "",
+					description: "Write new requirements here...",
+					promptSnippet: "",
+					evaluationMethod: "",
+					feature: featureGroup.feature,
+				}}
+				color={"white"}
+				compare={$tab === "comparison"}
+				suggested={false}
+				newRequirement={true} />
+		{/if}
+	</div>
 {/each}
 
 <!-- {#each Object.entries($suggestedRequirements) as [id, req]}
@@ -291,31 +313,32 @@
 		suggested={true} />
 {/each} -->
 
-
 {#each suggestedrequirementTree as featureGroup}
-    <div class="feature-node">
-        <h3 class="feature-title">{featureGroup.feature}</h3>
-        {#each featureGroup.requirements as { requirement, color }}
-            <RequirementCell
-                requirement={requirement}
-                color={color}
-                compare={$tab === "comparison"}
-                suggested={true}
-            />
-        {/each}
-    </div>
+	<div class="feature-node">
+		<h3 class="feature-title">{featureGroup.feature}</h3>
+		{#each featureGroup.requirements as { requirement, color }}
+			<RequirementCell
+				{requirement}
+				{color}
+				compare={$tab === "comparison"}
+				suggested={true} />
+		{/each}
+	</div>
 {/each}
 
 <div class="inline">
 	<input
-		placeholder="Write a new requirement here. ⌘ + Enter to submit."
+		placeholder="Add a new goal here. ⌘ + Enter to submit."
 		bind:value={newRequirementInput}
-		on:keydown={submit} />
+		on:keydown={(e) => {
+			if (e.metaKey && e.key === "Enter") {
+				e.preventDefault();
+			}
+		}} />
 	<span>
 		<IconButton
 			on:click={() => {
 				if (inputChanged) {
-					add_requirement();
 				}
 			}}
 			style={inputChanged ? "cursor:pointer" : "cursor:default"}>
@@ -357,13 +380,14 @@
 		font-weight: lighter;
 	}
 
-    .feature-node {
-        margin-bottom:20px;
-    }
+	.feature-node {
+		margin-bottom: 20px;
+	}
 
-    .feature-title {
+	.feature-title {
 		font-weight: bold;
 		margin-bottom: 10px;
 		font-size: 14px; /* Set to any smaller size you prefer */
+		color: var(--G1);
 	}
 </style>

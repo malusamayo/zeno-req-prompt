@@ -957,7 +957,8 @@ class ZenoBackend(object):
             requirement.prompt_snippet = ""
             requirement.priority = priority
             requirement.category = category
-            requirement.feature = feature
+            if requirement.feature == "":
+                requirement.feature = feature
             break
         return requirement
 
