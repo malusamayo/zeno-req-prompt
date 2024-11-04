@@ -22,9 +22,6 @@
 	let paperHeight;
 	let nameInput;
 
-	let requirement_strategies;
-	let options = ["few-shot", "repeat", "capitalize"];
-
 	$: if ($showNewRequirement) {
 		updateRequirement();
 	}
@@ -50,13 +47,12 @@
 	}
 
 	function optimizeRequirement() {
-		ZenoService.optimizeRequirement(
-		{promptId: $currentPromptId,
-		requirement: requirement}).then(
-			(optimizedRequirement) => {
-				requirement = optimizedRequirement;
-			}
-		);
+		ZenoService.optimizeRequirement({
+			promptId: $currentPromptId,
+			requirement: requirement,
+		}).then((optimizedRequirement) => {
+			requirement = optimizedRequirement;
+		});
 	}
 </script>
 
@@ -94,14 +90,6 @@
 		<textarea
 			bind:value={requirement.evaluationMethod}
 			style="min-height: 120px;" />
-		<label>Prompting Strategy</label>
-		<Svelecte
-			style="margin-top: 5px"
-			multiple
-			bind:value={requirement_strategies}
-			{options}
-			placeholder="Strategies" />
-
 		<label>Prompt Implementation</label>
 		<textarea bind:value={requirement.promptSnippet} />
 		{#if requirement.examples && requirement.examples.length > 0}
