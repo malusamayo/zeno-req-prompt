@@ -3,6 +3,8 @@ import random
 import dsp
 import dspy
 from dspy import LabeledFewShot
+import threading
+import queue
 
 from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest, RemoveExampleFeedback
 
@@ -333,6 +335,8 @@ class PromptAgent:
         self.prompt_refiner = dspy.Predict(RefinePromptWithFeedback)
         self.feedback_converter = dspy.Predict(ConvertFeedbackToRequirement)
 
+        self.result_queue = queue.Queue()
+
     def compile_requirements(
         self, 
         task_description, 
@@ -351,7 +355,15 @@ class PromptAgent:
             if len(req.examples) > 0:
                 examples.extend(req.examples)
 
-        if len(examples) > 0 or len(hard_requirements) > 0:
+        def compile_task_simple(task_description, requirements):
+            prompt = self.basic_compiler(
+                task_description=task_description,
+                requirements=requirements,
+                input_variable=self.input_variable,
+            ).prompt
+            self.result_queue.put(prompt)
+
+        def compile_task(task_description, requirements, hard_requirements, examples):
             prompt = self.compiler(
                 task_description=task_description,
                 requirements=requirements,
@@ -360,12 +372,20 @@ class PromptAgent:
                 bad_examples=[example for example in examples if not example.is_positive],
                 input_variable=self.input_variable,
             ).prompt
+            self.result_queue.put(prompt)
+
+        if len(examples) > 0 or len(hard_requirements) > 0:
+            thread = threading.Thread(
+                target=compile_task,
+                args=(task_description, requirements, hard_requirements, examples)
+            )
         else:
-            prompt = self.basic_compiler(
-                task_description=task_description,
-                requirements=requirements,
-                input_variable=self.input_variable,
-            ).prompt
+            thread = threading.Thread(
+                target=compile_task_simple,
+                args=(task_description, requirements)
+            )
+        thread.start()
+        prompt = self.result_queue.get()
         return prompt
     
 
