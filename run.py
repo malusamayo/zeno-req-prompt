@@ -4,7 +4,7 @@ import argparse
 from zeno.runner import zeno
 from zeno.api import model
 from zeno.api import ZenoParameters, ZenoOptions, ModelReturn
-from zeno.classes.classes import Prompt
+from zeno.classes.classes import Prompt, Requirement
 from zeno.openai_client import OpenAIMultiClient
 
 
@@ -45,12 +45,25 @@ if __name__ == '__main__':
     data = pd.read_csv(config["data"]["data_path"]).sample(config["data"]["sample_size"], random_state=42).reset_index(drop=True)
     data["label"] = ""
     prompt = "<prompt></prompt>"
+    requirements = {}
+    for i, req in enumerate(config["prompt"]["requirements"]):
+        requirements[str(i)] = Requirement(
+            id=str(i),
+            name=req["name"],
+            description=req["description"],
+            prompt_snippet="",
+            evaluation_method="",
+            priority=req["priority"],
+            category=req["category"],
+            feature=req["feature"],
+        )
 
     params = ZenoParameters(
         metadata=data,
         functions=[openai_inference],
         models=config["models"],
-        prompts={'v1': Prompt(text=prompt, version='v1', requirements={})},
+        task_description=config["prompt"]["task_description"],
+        prompts={'v1': Prompt(text=prompt, version='v1', requirements=requirements)},
         view='text-classification',
         data_column=config["data"]["data_column"],
         label_column="label",

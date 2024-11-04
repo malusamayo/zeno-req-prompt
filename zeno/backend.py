@@ -119,7 +119,7 @@ class ZenoBackend(object):
             "prompts.pickle", self.cache_path, self.params.prompts
         )
         self.current_prompt_id = list(self.prompts.keys())[-1]
-        self.task = ''
+        self.task = self.params.task_description
 
         # for pid, prompt in self.prompts.items():
         #     if len(prompt.requirements) == 0:
@@ -159,6 +159,9 @@ class ZenoBackend(object):
             output_column="",
             output_path="",
         )
+
+        if self.prompts[self.current_prompt_id].text == "":
+            self.compile_prompt(self.current_prompt_id)
 
     def __setup_dataframe(self, id_column: str, data_column: str, label_column: str):
         if data_column != "":

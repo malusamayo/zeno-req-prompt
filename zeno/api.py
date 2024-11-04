@@ -46,6 +46,7 @@ class ZenoParameters(BaseModel):
     functions: Union[List[Callable], str] = []
     view: str = ""
     models: List[str] = []
+    task_description: str = ""
     prompts: Dict[str, Prompt] = {}
     id_column: str = ""
     data_column: str = ""

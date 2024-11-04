@@ -9,3 +9,32 @@ data:
 
 models:
   - "gpt-4o-mini"
+
+prompt:
+  task_description: "Write quiz answer options for the following question."
+  requirements:
+    - name: "num-options"
+      description: "Write exactly 4 answer options."
+      priority: "hard"
+      category: "content"
+      feature: "clarity-to-student"
+    - name: "short-options"
+      description: "Each answer option is less than 10 words."
+      priority: "soft"
+      category: "content"
+      feature: "clarity-to-student"
+    - name: "answer-format"
+      description: "EThe answer options are ordered in (A) (B) (C) (D)."
+      priority: "hard"
+      category: "presentation"
+      feature: "clarity-to-student"
+    - name: "correct-answer"
+      description: "The correct answer is included after the answer options."
+      priority: "hard"
+      category: "content"
+      feature: "grading-for-teacher"
+    - name: "correct-answer-justification"
+      description: "Provide a justification for the correct answer."
+      priority: "hard"
+      category: "content"
+      feature: "grading-for-teacher"
