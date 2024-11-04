@@ -30,6 +30,7 @@
 	import type { RequirementTree } from "../zenoservice";
 
 	let newRequirementInput = "";
+	let newGoalInput = "";
 	// let displayedRequirements: { [key: string]: Requirement };
 
 	$: inputChanged = newRequirementInput !== "";
@@ -179,10 +180,25 @@
 		} else if (category === "presentation") {
 			baseColor = priority === "soft" ? "#E8F0FF" : "#CFE2FF"; // Lighter and regular colors for presentation
 		} else {
-			baseColor = priority === "soft" ? "#F0F1F2" : "#E2E3E5"; // Default lighter and regular colors
+			baseColor = "white"; // Default white
 		}
 
 		return baseColor;
+	}
+
+	function createNewGoal(feature) {
+		let requirement: Requirement = {
+			id: (get_max_requirement_id() + 1).toString(),
+			name: "",
+			description: "Write new requirements here...",
+			promptSnippet: "",
+			evaluationMethod: "",
+			feature: feature,
+		};
+		requirements.update(($reqs) => {
+			$reqs[requirement.id] = requirement;
+			return $reqs;
+		});
 	}
 
 	$: requirementTree = organizeRequirements($requirements);
@@ -305,6 +321,19 @@
 		{/if}
 	</div>
 {/each}
+<div class="feature-node">
+	<input
+		class="new-feature-title"
+		placeholder="New goals..."
+		bind:value={newGoalInput}
+		on:keydown={(e) => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				createNewGoal(newGoalInput);
+				newGoalInput = "";
+			}
+		}} />
+</div>
 
 <!-- {#each Object.entries($suggestedRequirements) as [id, req]}
 	<RequirementCell
@@ -326,7 +355,7 @@
 	</div>
 {/each}
 
-<div class="inline">
+<!-- <div class="inline">
 	<input
 		placeholder="Add a new goal here. ⌘ + Enter to submit."
 		bind:value={newRequirementInput}
@@ -351,7 +380,7 @@
 			</Icon>
 		</IconButton>
 	</span>
-</div>
+</div> -->
 
 <style>
 	#requirement-header {
@@ -365,7 +394,7 @@
 		align-items: center;
 		justify-content: space-between;
 	}
-	input {
+	/* input {
 		position: relative;
 		overflow: visible;
 		border: 0.5px solid var(--G4);
@@ -378,7 +407,7 @@
 		width: 85%;
 		font-size: small;
 		font-weight: lighter;
-	}
+	} */
 
 	.feature-node {
 		margin-bottom: 20px;
@@ -388,6 +417,16 @@
 		font-weight: bold;
 		margin-bottom: 10px;
 		font-size: 14px; /* Set to any smaller size you prefer */
+		color: var(--G1);
+	}
+
+	input {
+		font-weight: bold;
+		margin-bottom: 10px;
+		font-size: 14px; /* Set to any smaller size you prefer */
+		border: 1px solid var(--G4);
+		border-radius: 4px;
+		padding: 3px;
 		color: var(--G1);
 	}
 </style>

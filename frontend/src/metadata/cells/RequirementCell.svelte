@@ -103,7 +103,7 @@
 		<div class="group" style:width="100%">
 			<div class="inline">
 				<div class="hori-group" style:color="var(--G1)">
-					{#if !newRequirement}
+					{#if requirement.name !== ""}
 						<RequirementChip name={requirement.name} id={requirement.id} />
 						<span class="category-tag">{requirement.category}</span>
 						<span class="priority-tag">{requirement.priority}</span>
