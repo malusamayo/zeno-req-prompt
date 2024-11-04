@@ -1023,13 +1023,19 @@ class ZenoBackend(object):
         )
         model_hash = str(model_col_obj)
         model_col = self.df[model_hash].copy()
+        data_col = self.df[str(self.data_column)].copy()
 
         client = OpenAIMultiClient(endpoint="chats", data_template={"model": model_name})
 
         def chat_completion(indices):
             for i in indices:
                 model_ouput = model_col[i]
-                api_prompt = REQUIREMENT_EVALUATION_PROMPT.format(prompt=self.prompts[prompt_id].text, requirement = requirement.description,evaluation_method=requirement.evaluation_method, modelOutput=model_ouput)
+                api_prompt = REQUIREMENT_EVALUATION_PROMPT.format(
+                    prompt=self.prompts[prompt_id].text, 
+                    requirement = requirement.description,
+                    model_input=data_col[i],
+                    model_output=model_ouput
+                )
                 client.request(
                     data={
                         "messages": [

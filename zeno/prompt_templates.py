@@ -159,16 +159,19 @@ Prompt: '''{prompt}'''
 Requirements:
 """
 
-REQUIREMENT_EVALUATION_PROMPT = """
-Answer 1 for yes and 0 for no. 
-Given the prompt '''${prompt}''' and requirement '''${requirement}''', follow the evaluation method to determine if the model output fulfills the requirement: '''${evaluation_method}'''? Give a rationale to explain your answer.
-Model Output: '''${modelOutput} '''
-The output format should be:
-    {{ 
-        "modelOutput": evaluated_model_output, 
-        "pass/fail": 0 or 1
-        "rationale":
-    }}
+REQUIREMENT_EVALUATION_PROMPT = """Given the prompt and requirement, determine if the model output fulfills the requirement. 
+Answer 1 for yes and 0 for no. Give a rationale to explain your answer.
+
+Prompt: '''${prompt}'''
+Requirement: '''${requirement}'''
+Model Input: '''${model_input}'''
+Model Output: '''${model_output} '''
+
+Provide a JSON response in the following format:
+{{
+    "pass/fail": 0 or 1
+    "rationale":
+}}
 """
 
 REQUIREMENT_SUGGESTION_PROMPT = """You are an experienced requirement engineer for an LLM application. Given the prompt, current requirements, and example inputs and outputs, suggest new requirements.
