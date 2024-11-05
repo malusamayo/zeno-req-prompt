@@ -16,7 +16,6 @@ import {
 	tags,
 	prompts,
 	currentPromptId,
-	task
 } from "../stores";
 import { ZenoService } from "../zenoservice";
 import {

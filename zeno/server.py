@@ -138,6 +138,10 @@ def get_server(zeno: ZenoBackend):
     def run_prompt(req: InferenceRequest):
         zeno.run_prompt(req)
 
+    @api_app.post("/run-evaluation", tags=["zeno"])
+    def run_evaluation(req: InferenceRequest):
+        zeno.run_evaluation(req)
+
     @api_app.get("/requirements", response_model=Dict[str, Requirement], tags=["zeno"])
     def get_requirements():
         return zeno.prompts[zeno.current_prompt_id].requirements

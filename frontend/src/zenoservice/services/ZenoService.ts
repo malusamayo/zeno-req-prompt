@@ -22,11 +22,11 @@ import type { TagMetricKey } from "../models/TagMetricKey";
 import type { ZenoColumn } from "../models/ZenoColumn";
 import type { ZenoSettings } from "../models/ZenoSettings";
 import type { ZenoVariables } from "../models/ZenoVariables";
-import type {UpdateFeedbackRequest} from "../models/UpdateFeedbackRequest";
-import type {SuggestNewReqRequest} from "../models/SuggestNewReqRequest";
-import type {RemoveExampleFeedback} from "../models/RemoveExample";
-import type {OptimizeRequirement} from "../models/OptimizeRequirement";
-import type {Task} from "../models/Task";
+import type { UpdateFeedbackRequest } from "../models/UpdateFeedbackRequest";
+import type { SuggestNewReqRequest } from "../models/SuggestNewReqRequest";
+import type { RemoveExampleFeedback } from "../models/RemoveExample";
+import type { OptimizeRequirement } from "../models/OptimizeRequirement";
+import type { Task } from "../models/Task";
 import type {
 	FeedbackRequest,
 	InferenceRequest,
@@ -165,10 +165,29 @@ export class ZenoService {
 	public static runPrompt(
 		requestBody: InferenceRequest
 	): CancelablePromise<any> {
-		console.log(requestBody);
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/run-prompt",
+			body: requestBody,
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * Run Evaluation on Results
+	 * @param requestBody
+	 * @returns any Successful Response
+	 * @throws ApiError
+	 */
+	public static runEvaluation(
+		requestBody: InferenceRequest
+	): CancelablePromise<any> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/run-evaluation",
 			body: requestBody,
 			mediaType: "application/json",
 			errors: {
@@ -182,9 +201,7 @@ export class ZenoService {
 	 * @returns any Successful Response
 	 * @throws ApiError
 	 */
-	public static addTask(
-		requestBody: Task
-	): CancelablePromise<string> {
+	public static addTask(requestBody: Task): CancelablePromise<string> {
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/add-task",
@@ -205,7 +222,6 @@ export class ZenoService {
 	public static optimizeRequirement(
 		requestBody: OptimizeRequirement
 	): CancelablePromise<Requirement> {
-		console.log(requestBody);
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/optimize-requirement",
@@ -297,9 +313,9 @@ export class ZenoService {
 	 * @returns any Successful Response
 	 * @throws ApiError
 	 */
-	public static suggestRequirements(requestBody: SuggestNewReqRequest): CancelablePromise<
-		Record<string, Requirement>
-	> {
+	public static suggestRequirements(
+		requestBody: SuggestNewReqRequest
+	): CancelablePromise<Record<string, Requirement>> {
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/suggest-requirements",

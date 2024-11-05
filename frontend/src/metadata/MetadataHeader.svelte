@@ -22,7 +22,7 @@
 	} from "../stores";
 	import { mdiPlayOutline } from "@mdi/js";
 	import { ZenoService } from "../zenoservice";
-	import { run } from "svelte/internal";
+	import { runPrompt } from "../api/prompt";
 
 	let confirmRunPrompt = false;
 
@@ -48,26 +48,8 @@
 			currentPromptId.set(createdPrompts[0].version);
 			promptUpdating.set(false);
 			promptToUpdate.set(false);
-			runPrompt();
+			runPrompt($model, $currentPromptId);
 		});
-	}
-
-	function runPrompt() {
-		status.update((s) => {
-			s.status = "Running inference";
-			return s;
-		});
-		ZenoService.runPrompt({ model: $model, promptId: $currentPromptId }).then(
-			() => {
-				ZenoService.getCompleteColumns().then((cols) => {
-					status.update((s) => {
-						s.status = "Done processing";
-						s.completeColumns = cols;
-						return s;
-					});
-				});
-			}
-		);
 	}
 </script>
 

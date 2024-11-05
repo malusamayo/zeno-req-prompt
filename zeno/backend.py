@@ -733,6 +733,8 @@ class ZenoBackend(object):
 
     def run_prompt(self, req: InferenceRequest):
         self.__inference([req])
+
+    def run_evaluation(self, req: InferenceRequest):
         requests_with_requirement = []
         for requirement_id in self.prompts[req.prompt_id].requirements.keys():
             innerdict = req.dict()

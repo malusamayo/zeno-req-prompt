@@ -20,6 +20,7 @@
 	import type { Example } from "../zenoservice/models/prompt";
 	import RequirementCell from "../metadata/cells/RequirementCell.svelte";
 	import UpdateRequirementCell from "../metadata/cells/UpdateRequirementCell.svelte";
+	import { runPrompt } from "../api/prompt";
 
 	export let item;
 	let modelColumn;
@@ -90,26 +91,6 @@
 			isPositive: true,
 			feedback: "",
 		};
-	}
-
-	function runPrompt() {
-		status.update((s) => {
-			s.status = "Running inference";
-			return s;
-		});
-		ZenoService.runPrompt({
-			model: $model,
-			promptId: $currentPromptId,
-			filterIds: { ids: [item[columnHash($settings.idColumn)]] },
-		}).then(() => {
-			ZenoService.getCompleteColumns().then((cols) => {
-				status.update((s) => {
-					s.status = "Done processing";
-					s.completeColumns = cols;
-					return s;
-				});
-			});
-		});
 	}
 
 	// function feedbackToRequirements() {
@@ -250,7 +231,9 @@
 		class="material-icons"
 		style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; opacity: 0.8;"
 		on:click={() => {
-			runPrompt();
+			runPrompt($model, $currentPromptId, {
+				ids: [item[columnHash($settings.idColumn)]],
+			});
 		}}>
 		play_circle
 	</TrailingIcon>
