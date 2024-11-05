@@ -56,14 +56,6 @@
 
 	let isEditing = false;
 
-	function toggleEditingPriority() {
-		editingPriority = !editingPriority;
-	}
-
-	function toggleEditingCategory() {
-		editingCategory = !editingCategory;
-	}
-
 	function getCategoryColor(
 		category: string | undefined,
 		priority: string | undefined
@@ -162,52 +154,86 @@
 			<div class="inline">
 				<div class="hori-group" style:color="var(--G1)">
 					{#if requirement.name !== ""}
-						<RequirementChip
-							name={requirement.name}
-							id={requirement.id}
-							{color} />
+						<RequirementChip name={requirement.name} id={requirement.id} />
 						<!-- <span class="category-tag">{requirement.category}</span> -->
-						{#if editingCategory}
-							<select
-								class="dropdown"
+						<div class="dropdown-container">
+							<span
+								class="category-tag"
+								on:click={() => {
+									editingCategory = !editingCategory;
+								}}
+								on:keydown={() => {}}>
+								{requirement.category}
+							</span>
+							<div
+								class="group"
 								use:clickOutside
 								on:click_outside={() => {
 									editingCategory = false;
-								}}
-								bind:value={requirement.category}
-								on:change={(event) => handleCategoryChange(event.target.value)}>
-								{#each categories as category}
-									<option value={category}>{category}</option>
-								{/each}
-							</select>
-						{:else}
+								}}>
+								{#if editingCategory}
+									<div id="dropdown-container">
+										<Paper style="padding: 3px 0px;" elevation={7}>
+											<Content>
+												{#each categories as category}
+													<div
+														class="option"
+														on:click={() => handleCategoryChange(category)}
+														on:keydown={(e) => {
+															if (e.key === "Enter") {
+																e.preventDefault();
+																handleCategoryChange(category);
+															}
+														}}>
+														<span>{category}</span>
+													</div>
+												{/each}
+											</Content>
+										</Paper>
+									</div>
+								{/if}
+							</div>
+						</div>
+
+						<div class="dropdown-container">
 							<span
-								class="category-tag"
-								on:click={() => toggleEditingCategory()}>
-								{requirement.category}
+								class="priority-tag"
+								on:click={() => {
+									editingPriority = !editingPriority;
+								}}
+								on:keydown={() => {}}>
+								{requirement.priority}
 							</span>
-						{/if}
-						<!-- <span class="priority-tag">{requirement.priority}</span> -->
-						{#if editingPriority}
-							<select
-								class="dropdown"
+							<div
+								class="group"
 								use:clickOutside
 								on:click_outside={() => {
 									editingPriority = false;
-								}}
-								bind:value={requirement.priority}
-								on:change={(event) => handlePriorityChange(event.target.value)}>
-								{#each priorities as priority}
-									<option value={priority}>{priority}</option>
-								{/each}
-							</select>
-						{:else}
-							<span
-								class="priority-tag"
-								on:click={() => toggleEditingPriority()}>
-								{requirement.priority}
-							</span>
-						{/if}
+								}}>
+								{#if editingPriority}
+									<div id="dropdown-container">
+										<Paper style="padding: 0px" elevation={7}>
+											<Content>
+												{#each priorities as priority}
+													<div
+														class="option"
+														style="width:30px;"
+														on:click={() => handlePriorityChange(priority)}
+														on:keydown={(e) => {
+															if (e.key === "Enter") {
+																e.preventDefault();
+																handlePriorityChange(priority);
+															}
+														}}>
+														<span>{priority}</span>
+													</div>
+												{/each}
+											</Content>
+										</Paper>
+									</div>
+								{/if}
+							</div>
+						</div>
 					{/if}
 
 					{#if currentRequirementUpdating}
@@ -499,7 +525,7 @@
 		align-items: center;
 		cursor: pointer;
 		width: 73px;
-		padding: 1px 6px;
+		padding: 0px 6px;
 	}
 	.option span {
 		font-size: 12px;
@@ -545,5 +571,18 @@
 		border-radius: 3px;
 		margin-bottom: 3px;
 		font-size: 0.8em;
+	}
+
+	.dropdown-container {
+		position: relative;
+		display: inline-block;
+	}
+
+	#dropdown-container {
+		top: 0px;
+		right: 0px;
+		z-index: 10;
+		position: absolute;
+		margin-top: 18px;
 	}
 </style>
