@@ -54,6 +54,8 @@
 	let editingCategory = false;
 	const categories = ["content", "structure", "presentation"];
 
+	let isEditing = false;
+
 	function toggleEditingPriority() {
 		editingPriority = !editingPriority;
 	}
@@ -239,8 +241,15 @@
 
 					<div
 						class="description"
+						style="background-color: {isEditing ? 'white' : color}"
 						contenteditable={true}
 						use:clickOutside
+						on:click={() => {
+							isEditing = true;
+							if (requirement.description == "Write new requirements here...") {
+								requirement.description = "";
+							}
+						}}
 						on:input={(e) => {
 							requirement.description = e.target.innerText;
 							// requirements.update((reqs) => {
@@ -252,6 +261,11 @@
 						}}
 						on:blur={() => {
 							// if (requirement.id in $requirements) {
+							isEditing = false;
+							if (requirement.description === "") {
+								requirement.description = "Write new requirements here...";
+								return;
+							}
 							if (requirement.description !== originalRequirement.description) {
 								currentRequirementUpdating = true;
 								ZenoService.optimizeRequirement({
@@ -502,6 +516,7 @@
 		padding: 2px 5px;
 		border-radius: 3px;
 		font-size: 0.8em;
+		cursor: pointer;
 	}
 
 	.priority-tag {
@@ -510,13 +525,13 @@
 		padding: 2px 5px;
 		border-radius: 3px;
 		font-size: 0.8em;
-	}
-	.category-tag,
-	.priority-tag {
-		padding: 4px 8px;
 		cursor: pointer;
 	}
 	.dropdown {
-		padding: 4px 8px;
+		color: #333;
+		padding: 2px 5px;
+		border-radius: 3px;
+		margin-bottom: 3px;
+		font-size: 0.8em;
 	}
 </style>
