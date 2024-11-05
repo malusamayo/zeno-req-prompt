@@ -1,9 +1,11 @@
 settings:
-  host: localhost
+  cache_path: ".zeno_cache"
+  host: 0.0.0.0
+  port: 8666
 
 data:
   data_path: "data/mmlu.csv"
-  sample_size: 10
+  sample_size: 30
   data_column: "question"
 
 models:

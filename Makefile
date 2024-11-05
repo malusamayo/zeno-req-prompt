@@ -37,7 +37,7 @@ build:
 	@mv zeno/frontend/index_og.html zeno/frontend/index.html
 
 .PHONY: localbuild
-build:
+localbuild:
 	@echo "==> 👷‍♀️ Local Build"
 	@cd frontend && npm run build
 	@cd frontend && node build.js
