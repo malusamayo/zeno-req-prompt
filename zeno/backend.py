@@ -1151,7 +1151,7 @@ class ZenoBackend(object):
                 example_data = new_req.get("example", {})
                 example_id = random_indices[int(example_data.get("id", ""))]
                 example_input = data_col.at[example_id]
-                example_output = model_col.at[example_id]
+                example_output = str(model_col.at[example_id])
                 example_is_positive = example_data.get("isPositive", False)
                 example_feedback = example_data.get("feedback", "")
                 
