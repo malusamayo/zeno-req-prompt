@@ -68,6 +68,7 @@ if __name__ == '__main__':
         label_column="label",
         cache_path=config["settings"]["cache_path"],
         multiprocessing=False,
-        port=config["settings"]["port"]
+        host=config["settings"]["host"],
+        port=config["settings"]["port"],
     )
     zeno(params)

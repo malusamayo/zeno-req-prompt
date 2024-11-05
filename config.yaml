@@ -1,6 +1,5 @@
 settings:
-  cache_path: ".zeno_cache"
-  port: 8000
+  host: localhost
 
 data:
   data_path: "data/mmlu.csv"
