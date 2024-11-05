@@ -15,6 +15,7 @@
 	import CircularProgress from "@smui/circular-progress";
 	import RequirementChip from "./chips/RequirementChip.svelte";
 	import RequirementSpan from "./chips/RequirementSpan.svelte";
+	import { compilePrompt } from "../api/prompt";
 	const parser = new DOMParser();
 	let prompt: string = $prompts.get($currentPromptId).text;
 	let allowUpdates = false;
@@ -218,8 +219,8 @@
 			{/if}
 		</div>
 
-		<!-- <div class="inline">
-			<div
+		<div class="inline">
+			<!-- <div
 				use:tooltip={{
 					content: "Update requirements.",
 					position: "left",
@@ -240,8 +241,32 @@
 						{/if}
 					</Icon>
 				</IconButton>
+			</div> -->
+			<div
+				use:tooltip={{
+					content: "Compile prompts.",
+					position: "left",
+					theme: "zeno-tooltip",
+				}}>
+				<IconButton
+					on:click={() => {
+						compilePrompt(
+							$requirements,
+							$prompts.get($currentPromptId).task,
+							true
+						);
+					}}
+					style={"cursor:pointer"}>
+					<Icon component={Svg} viewBox="0 0 24 24">
+						{#if allowUpdates}
+							<path fill="var(--G1)" d={mdiUpdate} />
+						{:else}
+							<path fill="var(--G4)" d={mdiUpdate} />
+						{/if}
+					</Icon>
+				</IconButton>
 			</div>
-		</div> -->
+		</div>
 	</div>
 	{#if hovering}
 		<div

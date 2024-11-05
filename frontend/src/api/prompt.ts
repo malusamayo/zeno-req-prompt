@@ -43,7 +43,7 @@ export async function runPrompt(model, promptId, filterIds?) {
 	});
 }
 
-export async function compilePrompt(requirements, task) {
+export async function compilePrompt(requirements, task, compileOnly?: boolean) {
 	promptUpdating.set(true);
 	suggestedRequirements.set({});
 	status.update((s) => {
@@ -62,6 +62,16 @@ export async function compilePrompt(requirements, task) {
 		currentPromptId.set(createdPrompts[0].version);
 		promptUpdating.set(false);
 		promptToUpdate.set(false);
-		runPrompt(get(model), get(currentPromptId));
+		if (!compileOnly) {
+			runPrompt(get(model), get(currentPromptId));
+		} else {
+			ZenoService.getCompleteColumns().then((cols) => {
+				status.update((s) => {
+					s.status = "Done processing";
+					s.completeColumns = cols;
+					return s;
+				});
+			});
+		}
 	});
 }
