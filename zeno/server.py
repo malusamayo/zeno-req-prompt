@@ -129,6 +129,11 @@ def get_server(zeno: ZenoBackend):
     def get_prompt_version():
         return [zeno.current_prompt_id]
 
+    @api_app.post("/prompt-version", tags=["zeno"])
+    def update_prompt_version(prompt_id: List[str]):
+        if prompt_id[0] in zeno.prompts:
+            zeno.current_prompt_id = prompt_id[0]
+
     @api_app.post("/prompt", response_model=List[Prompt], tags=["zeno"])
     def create_new_prompt(req: Prompt):
         prompt = zeno.create_new_prompt(req)

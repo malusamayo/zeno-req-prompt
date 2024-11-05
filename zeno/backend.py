@@ -979,6 +979,7 @@ class ZenoBackend(object):
         - self.prompts[prompt_id].requirements with prompt_snippets filled in
         '''
 
+        requirements_prev = self.prompts[self.current_prompt_id].requirements
         requirements = self.prompts[prompt_id].requirements
         
         prompt = self.prompt_agent.compile_requirements(

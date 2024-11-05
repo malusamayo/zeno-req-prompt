@@ -22,35 +22,12 @@
 	} from "../stores";
 	import { mdiPlayOutline } from "@mdi/js";
 	import { ZenoService } from "../zenoservice";
-	import { runPrompt } from "../api/prompt";
+	import { compilePrompt } from "../api/prompt";
 
 	let confirmRunPrompt = false;
 
 	$: exludeModels = $models.filter((m) => m !== $model);
 	$: promptIds = Array.from($prompts.keys());
-
-	function compilePrompt() {
-		promptUpdating.set(true);
-		suggestedRequirements.set({});
-		status.update((s) => {
-			s.status = "Compiling requirements";
-			return s;
-		});
-		ZenoService.createNewPrompt({
-			text: "",
-			version: "",
-			requirements: $requirements,
-			task: $prompts.get($currentPromptId).task,
-		}).then((createdPrompts) => {
-			prompts.update((pts) => {
-				return pts.set(createdPrompts[0].version, createdPrompts[0]);
-			});
-			currentPromptId.set(createdPrompts[0].version);
-			promptUpdating.set(false);
-			promptToUpdate.set(false);
-			runPrompt($model, $currentPromptId);
-		});
-	}
 </script>
 
 <div class="inline">
@@ -77,7 +54,7 @@
 			</select>
 		</div> -->
 			<div>
-				<div class="options-header">Prompt</div>
+				<div class="options-header">Version</div>
 				<select bind:value={$currentPromptId}>
 					{#each promptIds as pid}
 						<option value={pid}>{pid}</option>
@@ -140,7 +117,10 @@
 			}}>
 			<Label>No</Label>
 		</Button>
-		<Button use={[InitialFocus]} on:click={() => compilePrompt()}>
+		<Button
+			use={[InitialFocus]}
+			on:click={() =>
+				compilePrompt($requirements, $prompts.get($currentPromptId).task)}>
 			<Label>Yes</Label>
 		</Button>
 	</Actions>

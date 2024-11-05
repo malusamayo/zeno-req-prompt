@@ -137,6 +137,21 @@ export class ZenoService {
 	}
 
 	/**
+	 * Update Current Prompt Version
+	 * @returns Report Successful Response
+	 * @throws ApiError
+	 */
+	public static updateCurrentPromptId(
+		requestBody: Array<string>
+	): CancelablePromise<any> {
+		return __request(OpenAPI, {
+			method: "POST",
+			body: requestBody,
+			url: "/prompt-version",
+		});
+	}
+
+	/**
 	 * Create New Prompt
 	 * @param requestBody
 	 * @returns any Successful Response

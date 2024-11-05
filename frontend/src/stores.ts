@@ -8,17 +8,18 @@ import {
 } from "svelte/store";
 import { folderWritable, reportWritable } from "./util/customStores";
 import { websocketStore } from "./util/websocketStore";
-import type {
-	FilterIds,
-	FilterPredicate,
-	FilterPredicateGroup,
-	Report,
-	Slice,
-	Tag,
-	ZenoColumn,
-	ZenoSettings,
-	Prompt,
-	Requirement,
+import {
+	type FilterIds,
+	type FilterPredicate,
+	type FilterPredicateGroup,
+	type Report,
+	type Slice,
+	type Tag,
+	type ZenoColumn,
+	type ZenoSettings,
+	type Prompt,
+	type Requirement,
+	ZenoService,
 } from "./zenoservice";
 interface WSResponse {
 	status: string;
@@ -95,12 +96,14 @@ export const requirements: Writable<{ [key: string]: Requirement }> = writable(
 	{}
 );
 export const task: Writable<string> = writable("");
-export const requirementAddedExample = writable<Array<{ 
-    req_id: string; 
-    example_id: string; 
-    prompt_id: string; 
-    feedback_type: 'positive' | 'negative'; 
-}>>([]);
+export const requirementAddedExample = writable<
+	Array<{
+		req_id: string;
+		example_id: string;
+		prompt_id: string;
+		feedback_type: "positive" | "negative";
+	}>
+>([]);
 export const suggestedRequirements: Writable<{ [key: string]: Requirement }> =
 	writable({});
 export const promptUpdating: Writable<boolean> = writable(false);
@@ -114,8 +117,8 @@ currentPromptId.subscribe(($currentPromptId) => {
 				JSON.stringify(get(prompts).get($currentPromptId).requirements)
 			)
 		);
-		// suggestedRequirements.set({});
 	}
+	ZenoService.updateCurrentPromptId([$currentPromptId]);
 });
 
 // The tag ids selected by the user.

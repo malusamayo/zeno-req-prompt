@@ -1,4 +1,13 @@
-import { status } from "../stores";
+import { get } from "svelte/store";
+import {
+	currentPromptId,
+	model,
+	prompts,
+	promptToUpdate,
+	promptUpdating,
+	status,
+	suggestedRequirements,
+} from "../stores";
 import { ZenoService } from "../zenoservice/";
 
 export async function runPrompt(model, promptId, filterIds?) {
@@ -31,5 +40,28 @@ export async function runPrompt(model, promptId, filterIds?) {
 				});
 			});
 		});
+	});
+}
+
+export async function compilePrompt(requirements, task) {
+	promptUpdating.set(true);
+	suggestedRequirements.set({});
+	status.update((s) => {
+		s.status = "Compiling requirements";
+		return s;
+	});
+	ZenoService.createNewPrompt({
+		text: "",
+		version: "",
+		requirements: requirements,
+		task: task,
+	}).then((createdPrompts) => {
+		prompts.update((pts) => {
+			return pts.set(createdPrompts[0].version, createdPrompts[0]);
+		});
+		currentPromptId.set(createdPrompts[0].version);
+		promptUpdating.set(false);
+		promptToUpdate.set(false);
+		runPrompt(get(model), get(currentPromptId));
 	});
 }
