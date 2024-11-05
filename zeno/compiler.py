@@ -53,6 +53,7 @@ Your task is to propose a prompt will lead a good language model to perform the 
     task_description = dspy.InputField(desc="Description of the task")
     requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
     hard_requirements = dspy.InputField(format=requirements2text, desc="A list of hard requirements that the prompt must include")
+    new_requirements = dspy.InputField(format=requirements2text, desc="A list of new requirements that the prompt should prioritize")
     good_examples = dspy.InputField(format=examples2text, desc="A list of good examples")
     bad_examples = dspy.InputField(format=examples2text, desc="A list of bad examples")
     input_variable = dspy.InputField(desc="The name of the input variable")
@@ -338,10 +339,11 @@ class PromptAgent:
 
         self.result_queue = queue.Queue()
 
-    def compile_requirements(
+    def _compile_requirements(
         self, 
         task_description, 
-        requirements: List[Requirement]
+        requirements: List[Requirement],
+        requirements_prev: Optional[List[Requirement]] = None,
     ) -> str:
         """Compile a prompt that satisfies the given requirements.
         Args:
@@ -356,35 +358,42 @@ class PromptAgent:
             if len(req.examples) > 0:
                 examples.extend(req.examples)
 
-        def compile_task_simple(task_description, requirements):
-            prompt = self.basic_compiler(
-                task_description=task_description,
-                requirements=requirements2text(requirements),
-                input_variable=self.input_variable,
-            ).prompt
-            self.result_queue.put(prompt)
+        diff_requirements = []
+        for req in requirements:
+            if requirements_prev is not None:
+                if req not in requirements_prev:
+                    diff_requirements.append(req)
+            else:
+                diff_requirements.append(req)
 
-        def compile_task(task_description, requirements, hard_requirements, examples):
+        if len(examples) > 0 or len(hard_requirements) > 0:
             prompt = self.compiler(
                 task_description=task_description,
                 requirements=requirements2text(requirements),
                 hard_requirements=requirements2text(hard_requirements),
+                new_requirements=requirements2text(diff_requirements),
                 good_examples=examples2text([example for example in examples if example.is_positive]),
                 bad_examples=examples2text([example for example in examples if not example.is_positive]),
                 input_variable=self.input_variable,
             ).prompt
-            self.result_queue.put(prompt)
-
-        if len(examples) > 0 or len(hard_requirements) > 0:
-            thread = threading.Thread(
-                target=compile_task,
-                args=(task_description, requirements, hard_requirements, examples)
-            )
         else:
-            thread = threading.Thread(
-                target=compile_task_simple,
-                args=(task_description, requirements)
-            )
+           prompt = self.basic_compiler(
+                task_description=task_description,
+                requirements=requirements2text(requirements),
+                input_variable=self.input_variable,
+            ).prompt        
+        self.result_queue.put(prompt)
+
+    def compile_requirements(
+        self, 
+        task_description, 
+        requirements: List[Requirement],
+        requirements_prev: Optional[List[Requirement]] = None,
+    ) -> str:
+        thread = threading.Thread(
+                target=self._compile_requirements,
+                args=(task_description, requirements, requirements_prev)
+        )
         thread.start()
         prompt = self.result_queue.get()
         return prompt

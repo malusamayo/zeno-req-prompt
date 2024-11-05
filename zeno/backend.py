@@ -710,7 +710,6 @@ class ZenoBackend(object):
         new_version = self.get_new_prompt_version()
         req.version = new_version
         self.prompts[new_version] = req
-        self.current_prompt_id = new_version
         update_req = True
         if req.text == "":
             self.compile_prompt(new_version)
@@ -727,6 +726,7 @@ class ZenoBackend(object):
                     current_requirements[rid] = res
                     r.implementationUpdateFlag = False
 
+        self.current_prompt_id = new_version
         self.add_tags_to_prompt(new_version)
         with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
             pickle.dump(self.prompts, f)
@@ -984,7 +984,8 @@ class ZenoBackend(object):
         
         prompt = self.prompt_agent.compile_requirements(
             task_description=self.task,
-            requirements=list(requirements.values())
+            requirements=list(requirements.values()),
+            requirements_prev=list(requirements_prev.values())
         )
         
         self.prompts[prompt_id].text = prompt
