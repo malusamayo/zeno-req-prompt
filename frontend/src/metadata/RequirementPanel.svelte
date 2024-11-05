@@ -138,17 +138,18 @@
 		);
 	}
 
-	function organizeRequirements(requirements: {
-		[key: string]: Requirement;
-	}): RequirementTree[] {
+	function organizeRequirements(
+		requirements: {
+			[key: string]: Requirement;
+		},
+		suggest_requirements: {
+			[key: string]: Requirement;
+		}
+	): RequirementTree[] {
 		const tree: Record<string, RequirementTree> = {};
 
-		Object.values(requirements).forEach((requirement) => {
+		function add_requirement(requirement, suggested) {
 			const feature = requirement.feature || "General"; // Default feature if not specified
-			const categoryColor = getCategoryColor(
-				requirement.category,
-				requirement.priority
-			); // Adjust color based on priority
 
 			if (!tree[feature]) {
 				tree[feature] = {
@@ -160,8 +161,16 @@
 
 			tree[feature].requirements.push({
 				requirement,
-				color: categoryColor, // Only the color is passed, without shade
+				suggested,
 			});
+		}
+
+		Object.values(requirements).forEach((requirement) => {
+			add_requirement(requirement, false);
+		});
+
+		Object.values(suggest_requirements).forEach((requirement) => {
+			add_requirement(requirement, true);
 		});
 
 		return Object.values(tree);
@@ -202,8 +211,10 @@
 		});
 	}
 
-	$: requirementTree = organizeRequirements($requirements);
-	$: suggestedrequirementTree = organizeRequirements($suggestedRequirements);
+	$: requirementTree = organizeRequirements(
+		$requirements,
+		$suggestedRequirements
+	);
 
 	// $: {
 	// 	$promptToUpdate;
@@ -307,11 +318,11 @@
 			add_circle
 		</TrailingIcon>
 
-		{#each featureGroup.requirements as { requirement, color }}
+		{#each featureGroup.requirements as { requirement, suggested }}
 			<RequirementCell
 				{requirement}
 				compare={$tab === "comparison"}
-				suggested={false} />
+				{suggested} />
 		{/each}
 
 		{#if featureGroup.showNewRequirement}
@@ -349,18 +360,6 @@
 		compare={$tab === "comparison"}
 		suggested={true} />
 {/each} -->
-
-{#each suggestedrequirementTree as featureGroup}
-	<div class="feature-node">
-		<h3 class="feature-title">{featureGroup.feature}</h3>
-		{#each featureGroup.requirements as { requirement, color }}
-			<RequirementCell
-				{requirement}
-				compare={$tab === "comparison"}
-				suggested={true} />
-		{/each}
-	</div>
-{/each}
 
 <!-- <div class="inline">
 	<input
