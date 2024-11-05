@@ -162,15 +162,35 @@ Requirements:
 REQUIREMENT_EVALUATION_PROMPT = """Given the prompt and requirement, determine if the model output fulfills the requirement. 
 Answer 1 for yes and 0 for no. Give a rationale to explain your answer.
 
-Prompt: '''${prompt}'''
-Requirement: '''${requirement}'''
-Model Input: '''${model_input}'''
-Model Output: '''${model_output} '''
+Prompt: '''{prompt}'''
+Requirement: '''{requirement}'''
+Model Input: '''{model_input}'''
+Model Output: '''{model_output} '''
 
 Provide a JSON response in the following format:
 {{
     "pass/fail": 0 or 1
     "rationale":
+}}
+"""
+
+REQUIREMENT_EVALUATION_BATCH_PROMPT = """Given the prompt and requirements, determine if the model output fulfills the requirements one by one. 
+Answer 1 for yes and 0 for no. Give a rationale to explain your answer.
+
+Prompt: '''{prompt}'''
+Requirements: '''{requirements}'''
+Model Input: '''{model_input}'''
+Model Output: '''{model_output} '''
+
+Provide a JSON response in the following format:
+{{
+    "requirements": [
+        {{
+            "requirement_id": requirement_id,
+            "pass/fail": 0 or 1
+            "rationale": rationale
+        }}
+    ]
 }}
 """
 

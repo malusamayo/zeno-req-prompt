@@ -30,7 +30,8 @@ def requirements2text(requirements: Union[str, List[Requirement]]) -> str:
     if isinstance(requirements, str):
         return requirements
     
-    return "\n".join([f"[{idx+1}] «{requirement2text(requirement)}»" for idx, requirement in enumerate(requirements)])
+    requirements = sorted(requirements, key=lambda x: x.id)
+    return "\n".join([f"[{requirement.id}] «{requirement2text(requirement)}»" for requirement in requirements])
 
 class BasicCompilePrompt(dspy.Signature):
     """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task. 

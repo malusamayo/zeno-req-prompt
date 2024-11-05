@@ -55,12 +55,12 @@ from zeno.prompt_templates import (
     REQUIREMENT_OPTIMIZER_PROMPT, 
     PROMPT_COMPILER_PROMPT, 
     REQUIREMENT_EXTRACTOR_PROMPT, 
-    REQUIREMENT_EVALUATION_PROMPT,
+    REQUIREMENT_EVALUATION_BATCH_PROMPT,
     REQUIREMENT_SUGGESTION_PROMPT,
     REQUIREMENT_UPDATE_PROMPT,
     REQUIREMENT_UPDATE_REQUEST_PROMPT
 )
-from zeno.compiler import PromptAgent
+from zeno.compiler import PromptAgent, requirements2text
 
 class ZenoBackend(object):
     def __init__(self, args: ZenoParameters):
@@ -553,13 +553,14 @@ class ZenoBackend(object):
                     self.complete_columns.append(rationale_col)
 
         if len(evaluations_to_run) > 0:
-            inference_outputs = []
-            for i, req in enumerate(evaluations_to_run):
-                (model_name, prompt_id, requirement_id, tag_ids) = (req.model, req.prompt_id, req.requirement_id, req.filter_ids)
+            (model_name, prompt_id, tag_ids) = (evaluations_to_run[0].model, evaluations_to_run[0].prompt_id,evaluations_to_run[0].filter_ids)
+            inference_outputs = self.evaluate_requirement_batch(model_name, prompt_id, tag_ids)
+            # for i, req in enumerate(evaluations_to_run):
+            #     (model_name, prompt_id, requirement_id, tag_ids) = (req.model, req.prompt_id, req.requirement_id, req.filter_ids)
 
-                inference_outputs.append(
-                    self.evaluate_requirement(model_name, prompt_id, requirement_id, tag_ids)
-                )
+            #     inference_outputs.append(
+            #         self.evaluate_requirement(model_name, prompt_id, requirement_id, tag_ids)
+            #     )
 
             self.__set_data_processing_returns(inference_outputs)
 
@@ -1076,6 +1077,98 @@ class ZenoBackend(object):
             DataProcessingReturn(column=score_col_obj, output=score_col),
             DataProcessingReturn(column=rationale_col_obj, output=rationale_col)
         ]
+
+    def evaluate_requirement_batch(self, model_name, prompt_id, to_predict_indices: Optional[FilterIds] = None,):
+
+
+        requirements_str = requirements2text(list(self.prompts[prompt_id].requirements.values()))
+        requirement_ids = list(self.prompts[prompt_id].requirements.keys())
+
+        requirement_ids_to_eval = {}
+        for requirement_id in requirement_ids:
+            score_col_obj = ZenoColumn(
+                column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}", model=model_name, prompt_id=prompt_id
+            )
+            rationale_col_obj = ZenoColumn(
+                column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}Rationale", model=model_name, prompt_id=prompt_id
+            )
+            score_hash = str(score_col_obj)
+            rationale_hash = str(rationale_col_obj)
+            score_col = self.df[score_hash].copy()
+            rationale_col = self.df[rationale_hash].copy()
+            requirement_ids_to_eval[requirement_id] = {
+                "score_col": score_col,
+                "rationale_col": rationale_col,
+                "score_col_obj": score_col_obj,
+                "rationale_col_obj": rationale_col_obj,
+                "score_hash": score_hash,
+                "rationale_hash": rationale_hash
+            }
+
+        if to_predict_indices is None:
+            to_predict_indices = score_col.loc[pd.isna(score_col)].index
+        else:
+            to_predict_indices = pd.Index(to_predict_indices.ids)
+
+        model_col_obj = ZenoColumn(
+            column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt_id
+        )
+        model_hash = str(model_col_obj)
+        model_col = self.df[model_hash].copy()
+        data_col = self.df[str(self.data_column)].copy()
+
+        client = OpenAIMultiClient(endpoint="chats", data_template={"model": model_name})
+
+
+        def chat_completion(indices):
+            for i in indices:
+                api_prompt = REQUIREMENT_EVALUATION_BATCH_PROMPT.format(
+                    prompt=self.prompts[prompt_id].text, 
+                    requirements=requirements_str,
+                    model_input=data_col[i],
+                    model_output=model_col[i]
+                )
+                client.request(
+                    data={
+                        "messages": [
+                            {"role": "system", "content": 'You are a helpful assistant. Please return the response as valid JSON.'},
+                            {"role": "user", "content": api_prompt}
+                        ],
+                        'response_format': {"type": "json_object"}  
+                    }, metadata={'num': i}, endpoint = "chat.completions"
+                )
+
+        client.run_request_function(chat_completion, to_predict_indices)
+        count = 0
+        for result in client:
+            num = result.metadata['num']
+            response = result.response.choices[0].message.content
+
+            evaluation_res = json.loads(response)["requirements"]
+
+            for res in evaluation_res:
+                requirement_id = str(res.get('requirement_id', ""))
+                str_score = int(res.get('pass/fail', '0'))
+                try:
+                    requirement_ids_to_eval[requirement_id]["score_col"][num] = str_score == 1
+                    requirement_ids_to_eval[requirement_id]["rationale_col"][num] = res.get('rationale', '')
+                except:
+                    print(f"Error updating requirement {requirement_id} for result {res}")
+
+            count += 1
+            if count == len(to_predict_indices):
+                break
+
+        for _, d in requirement_ids_to_eval.items():
+            d["score_col"].to_pickle(os.path.join(self.cache_path, d["score_hash"] + ".pickle"))
+            d["rationale_col"].to_pickle(os.path.join(self.cache_path, d["rationale_hash"] + ".pickle"))
+        
+        return [[
+            DataProcessingReturn(column=d["score_col_obj"], output=d["score_col"]),
+            DataProcessingReturn(column=d["rationale_col_obj"], output=d["rationale_col"])] 
+            for _, d in requirement_ids_to_eval.items()
+        ]
+        
 
     def update_evaluator(self, feedback: EvaluatorFeedback)-> Dict[str, Requirement]:
         # Your logic to modify the custom prompt
