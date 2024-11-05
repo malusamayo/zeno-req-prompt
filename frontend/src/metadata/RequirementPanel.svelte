@@ -286,7 +286,17 @@
 </div> -->
 
 {#each requirementTree as featureGroup}
-	<div class="feature-node">
+	<div
+		class="feature-node"
+		on:drop={(ev) => {
+			const data = ev.dataTransfer.getData("text/plain");
+			const requirement = JSON.parse(data);
+			requirements.update(($reqs) => {
+				let requirementToEdit = $reqs[Number(requirement.id)];
+				requirementToEdit.feature = featureGroup.feature;
+				return $reqs;
+			});
+		}}>
 		<span class="feature-title">{featureGroup.feature}</span>
 		<TrailingIcon
 			class="material-icons"
@@ -300,7 +310,6 @@
 		{#each featureGroup.requirements as { requirement, color }}
 			<RequirementCell
 				{requirement}
-				{color}
 				compare={$tab === "comparison"}
 				suggested={false} />
 		{/each}
@@ -315,10 +324,8 @@
 					evaluationMethod: "",
 					feature: featureGroup.feature,
 				}}
-				color={"white"}
 				compare={$tab === "comparison"}
-				suggested={false}
-				newRequirement={true} />
+				suggested={false} />
 		{/if}
 	</div>
 {/each}
@@ -349,7 +356,6 @@
 		{#each featureGroup.requirements as { requirement, color }}
 			<RequirementCell
 				{requirement}
-				{color}
 				compare={$tab === "comparison"}
 				suggested={true} />
 		{/each}

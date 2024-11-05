@@ -34,10 +34,8 @@
 	import CircularProgress from "@smui/circular-progress";
 
 	export let requirement: Requirement;
-	export let color: string;
 	export let compare;
 	export let suggested;
-	export let newRequirement: boolean = false;
 
 	let confirmDelete = false;
 	let relatedReports = 0;
@@ -54,6 +52,8 @@
 	let editingCategory = false;
 	const categories = ["content", "structure", "presentation"];
 
+	$: color = getCategoryColor(requirement.category, requirement.priority);
+
 	let isEditing = false;
 
 	function toggleEditingPriority() {
@@ -69,6 +69,10 @@
 		priority: string | undefined
 	): string {
 		let baseColor;
+
+		if (suggested) {
+			return "#f0f0f0"; // Grey for suggested requirements
+		}
 
 		if (category === "content") {
 			baseColor = priority === "soft" ? "#FFEFE2" : "#FFDDC1"; // Lighter and regular colors for content
@@ -123,7 +127,7 @@
 	style={suggested
 		? `cursor:default; background: #f0f0f0;`
 		: `cursor:default; background-color: ${color};`}
-	draggable="false"
+	draggable="true"
 	on:mouseover={() => (hovering = true)}
 	on:focus={() => (hovering = true)}
 	on:mouseleave={() => (hovering = false)}
@@ -131,6 +135,11 @@
 	on:dragenter={() => (dragOver = true)}
 	on:dragover={(ev) => ev.preventDefault()}
 	on:dragleave={() => (dragOver = false)}
+	on:dragstart={(ev) => {
+		let transferData = JSON.stringify(requirement);
+		ev.dataTransfer.setData("text/plain", transferData);
+		ev.dataTransfer.dropEffect = "copy";
+	}}
 	on:drop={(ev) => {
 		dragOver = false;
 		const data = ev.dataTransfer.getData("text/plain");
