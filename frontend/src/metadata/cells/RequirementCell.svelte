@@ -162,7 +162,10 @@
 			<div class="inline">
 				<div class="hori-group" style:color="var(--G1)">
 					{#if requirement.name !== ""}
-						<RequirementChip name={requirement.name} id={requirement.id} />
+						<RequirementChip
+							name={requirement.name}
+							id={requirement.id}
+							{color} />
 						<!-- <span class="category-tag">{requirement.category}</span> -->
 						{#if editingCategory}
 							<select

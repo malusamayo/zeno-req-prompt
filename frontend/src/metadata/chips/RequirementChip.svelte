@@ -17,6 +17,8 @@
 	// export let requirement: Requirement;
 	export let name; // = requirement.name;
 	export let id;
+	export let color = "a463f2";
+	color = "a463f2";
 	let requirement: Requirement;
 	let showOptions = false;
 	let menuX = 0;
@@ -29,7 +31,7 @@
 	$: srcLink = `https://img.shields.io/badge/${name.replaceAll(
 		"-",
 		"--"
-	)}-a463f2`;
+	)}-${color.replaceAll("#", "")}`;
 
 	function handleSpanClick(event) {
 		// const spanRect = event.target.getBoundingClientRect();

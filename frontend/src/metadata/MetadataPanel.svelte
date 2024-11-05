@@ -72,7 +72,7 @@
 	$: if ($currentPromptId) {
 		const prompt = $prompts.get($currentPromptId);
 		if (prompt) {
-			newTaskInput = (prompt.task || ""); 
+			newTaskInput = prompt.task || "";
 		}
 	}
 
@@ -81,7 +81,10 @@
 	}
 
 	function add_task() {
-		ZenoService.addTask({ task: newTaskInput, promptId: $currentPromptId }).then((new_task) => {
+		ZenoService.addTask({
+			task: newTaskInput,
+			promptId: $currentPromptId,
+		}).then((new_task) => {
 			prompts.update((currentPrompts) => {
 				const prompt = currentPrompts.get($currentPromptId);
 				if (prompt) {
