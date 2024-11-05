@@ -161,6 +161,7 @@ export function generateStackedBarChartSpec(data): VegaLiteSpec {
 		width: 70,
 		height: 15,
 		mark: { type: "bar", orient: "horizontal" }, // Use 'horizontal' for a horizontal stacked bar
+		background: "transparent",
 		encoding: {
 			x: {
 				field: "value", // The quantitative field to be stacked
@@ -195,6 +196,10 @@ export function generateStackedBarChartSpec(data): VegaLiteSpec {
 			},
 		},
 		config: {
+			view: {
+				stroke: "darkgrey", // Border color
+				strokeWidth: 2, // Border width
+			},
 			mark: {
 				cursor: "pointer", // Set the cursor style to pointer
 			},
