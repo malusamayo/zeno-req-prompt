@@ -37,6 +37,8 @@
 	let showRequirementModal = false;
 	let showExistingRequirementModal = false;
 
+	let isDraggable = true;
+
 	$: {
 		$model;
 		$currentPromptId;
@@ -137,9 +139,11 @@
 		let feedback;
 
 		if (feedbackThumbUp === true) {
-			feedback = "This is a positive example for this requirement affirmed by users";
+			feedback =
+				"This is a positive example for this requirement affirmed by users";
 		} else if (feedbackThumbUp === false) {
-			feedback = "This is a negative example for this requirement affirmed by users";
+			feedback =
+				"This is a negative example for this requirement affirmed by users";
 		}
 		let requirement = {
 			id: (get_max_requirement_id() + 1).toString(),
@@ -147,30 +151,32 @@
 			description: newRequirementInput,
 			promptSnippet: "",
 			evaluationMethod: "",
-			examples: [<Example>{
-			id: item[columnHash($settings.idColumn)],
-			input: item[columnHash($settings.dataColumn)],
-			output: modelColumn ? item[modelColumn] : "",
-			isPositive: feedbackThumbUp,
-			feedback: feedback,}],
+			examples: [
+				<Example>{
+					id: item[columnHash($settings.idColumn)],
+					input: item[columnHash($settings.dataColumn)],
+					output: modelColumn ? item[modelColumn] : "",
+					isPositive: feedbackThumbUp,
+					feedback: feedback,
+				},
+			],
 		};
 
 		requirementUpdating.set(true);
-		ZenoService.optimizeRequirement(
-			{promptId: $currentPromptId,
-			requirement: requirement}).then(
-			(optimizedRequirement) => {
-				requirement = optimizedRequirement;
-				requirements.update(($reqs) => {
-					$reqs[requirement.id] = requirement;
-					return $reqs;
-				});
-				newRequirementInput = "";
-				promptToUpdate.set(true);
-				requirementUpdating.set(false);
-				// showRequirementModal = false;
-			}
-		);
+		ZenoService.optimizeRequirement({
+			promptId: $currentPromptId,
+			requirement: requirement,
+		}).then((optimizedRequirement) => {
+			requirement = optimizedRequirement;
+			requirements.update(($reqs) => {
+				$reqs[requirement.id] = requirement;
+				return $reqs;
+			});
+			newRequirementInput = "";
+			promptToUpdate.set(true);
+			requirementUpdating.set(false);
+			// showRequirementModal = false;
+		});
 	}
 
 	// function feedbackToEvaluators(eval_res, reqId) {
@@ -194,38 +200,48 @@
 	// 	}
 	// }
 
-    let menuX = 0;
-    let menuY = 0;
+	let menuX = 0;
+	let menuY = 0;
 
+	function updateModalPosition(event) {
+		const iconRect = event.target.getBoundingClientRect();
+		menuX = iconRect.left + window.scrollX;
+		menuY = iconRect.bottom + window.scrollY;
+	}
 
-    function updateModalPosition(event) {
-        const iconRect = event.target.getBoundingClientRect();
-        menuX = iconRect.left + window.scrollX;
-        menuY = iconRect.bottom + window.scrollY;
-    }
-
-    function handleThumbUpClick(event) {
-        feedbackThumbUp = true;
-        // showExistingRequirementModal = true;
+	function handleThumbUpClick(event) {
+		feedbackThumbUp = true;
+		// showExistingRequirementModal = true;
 		showOptions = !showOptions;
-        updateModalPosition(event);
-    }
+		updateModalPosition(event);
+	}
 
-    function handleThumbDownClick(event) {
-        feedbackThumbUp = false;
+	function handleThumbDownClick(event) {
+		feedbackThumbUp = false;
 		showOptions = !showOptions;
-        updateModalPosition(event);
-    }
+		updateModalPosition(event);
+	}
 </script>
 
-<div
-	class="box svelte-ohpquu"
-	draggable="false"
-	on:dragstart={(ev) => {
-		let transferData = JSON.stringify(example);
-		ev.dataTransfer.setData("text/plain", transferData);
-		ev.dataTransfer.dropEffect = "copy";
-	}}>
+<div class="box svelte-ohpquu">
+	<!-- <LeadingIcon
+		class="material-icons"
+		style="margin-left: -4px; cursor:pointer"
+		draggable={isDraggable}
+		on:dragstart={(ev) => {
+			let transferData = JSON.stringify(example);
+			ev.dataTransfer.setData("text/plain", transferData);
+			ev.dataTransfer.dropEffect = "copy";
+		}}>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="1em"
+			height="1em"
+			viewBox="0 0 24 24"
+			><path
+				fill="currentColor"
+				d="M13 11h5l-1.5-1.5l1.42-1.42L21.84 12l-3.92 3.92l-1.42-1.42L18 13h-5v5l1.5-1.5l1.42 1.42L12 21.84l-3.92-3.92L9.5 16.5L11 18v-5H6l1.5 1.5l-1.42 1.42L2.16 12l3.92-3.92L7.5 9.5L6 11h5V6L9.5 7.5L8.08 6.08L12 2.16l3.92 3.92L14.5 7.5L13 6z" /></svg>
+	</LeadingIcon> -->
 	<span class="label svelte-ohpquu">input:</span>
 	<span class="value svelte-ohpquu">
 		{item[columnHash($settings.dataColumn)]}
@@ -249,49 +265,45 @@
 				class="material-icons thumb-up-icon"
 				style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; color: #97ca00;"
 				title="Add positive examples to existing requirements"
-				on:click={handleThumbUpClick}
-			>
+				on:click={handleThumbUpClick}>
 				thumb_up
 			</TrailingIcon>
 			<TrailingIcon
 				class="material-icons thumb-down-icon"
 				style="margin-bottom: 5px; margin-left: 3px; cursor: pointer; color: #e05d44;"
 				title="Add negative examples to existing requirements"
-				on:click={handleThumbDownClick}
-			>
+				on:click={handleThumbDownClick}>
 				thumb_down
 			</TrailingIcon>
 			{#if showOptions}
 				<div
-				class="modal"
-				style="position: fixed; top: {menuY}px; left: {menuX}px; z-index: 10;"
-				use:clickOutside
-				on:click_outside={() => (showOptions = false)}
-			>
-				<div class="modal-content">
-					<h3>Add a New Requirement if You Notice Something Missing</h3>
-					<textarea
-						bind:value={newRequirementInput}
-						placeholder="Type a description for the new requirement..." />
-					<div class="modal-actions">
-						<button on:click={() => add_requirement()}>Add Requirement</button>
-						<!-- <button on:click={closeModal}>Close</button> -->
-					</div>
-					<h3>OR Add Example To Related Requirements</h3>
-					<div class="requirement-list">
-						{#each Object.entries($requirements) as [id, req]}
-							<UpdateRequirementCell
-								requirement={req}
-								exampleId={item[columnHash($settings.idColumn)]}
-								feedbackPositive={feedbackThumbUp} />
-						{/each}
+					class="modal"
+					style="position: fixed; top: {menuY}px; left: {menuX}px; z-index: 10;"
+					use:clickOutside
+					on:click_outside={() => (showOptions = false)}>
+					<div class="modal-content">
+						<h3>Add a New Requirement if You Notice Something Missing</h3>
+						<textarea
+							bind:value={newRequirementInput}
+							placeholder="Type a description for the new requirement..." />
+						<div class="modal-actions">
+							<button on:click={() => add_requirement()}
+								>Add Requirement</button>
+							<!-- <button on:click={closeModal}>Close</button> -->
+						</div>
+						<h3>OR Add Example To Related Requirements</h3>
+						<div class="requirement-list">
+							{#each Object.entries($requirements) as [id, req]}
+								<UpdateRequirementCell
+									requirement={req}
+									exampleId={item[columnHash($settings.idColumn)]}
+									feedbackPositive={feedbackThumbUp} />
+							{/each}
+						</div>
 					</div>
 				</div>
-			</div>
-            {/if}
+			{/if}
 		</span>
-
-
 	{/if}
 	{#if Object.keys(evalColumns).length > 0}
 		<br />

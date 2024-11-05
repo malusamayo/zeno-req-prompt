@@ -54,14 +54,13 @@
 	let editingCategory = false;
 	const categories = ["content", "structure", "presentation"];
 
-
 	function toggleEditingPriority() {
-        editingPriority = !editingPriority;
-    }
+		editingPriority = !editingPriority;
+	}
 
 	function toggleEditingCategory() {
-        editingCategory = !editingCategory;
-    }
+		editingCategory = !editingCategory;
+	}
 
 	function getCategoryColor(
 		category: string | undefined,
@@ -82,21 +81,21 @@
 		return baseColor;
 	}
 
-    function handlePriorityChange(newPriority) {
-        if (requirement) {
-            requirement.priority = newPriority;
-            editingPriority = false; // Close the dropdown after selection
-			color = getCategoryColor(requirement.category,newPriority);
-        }
-    }
+	function handlePriorityChange(newPriority) {
+		if (requirement) {
+			requirement.priority = newPriority;
+			editingPriority = false; // Close the dropdown after selection
+			color = getCategoryColor(requirement.category, newPriority);
+		}
+	}
 
 	function handleCategoryChange(newCategory) {
-        if (requirement) {
-            requirement.category = newCategory;
-            editingCategory = false; // Close the dropdown after selection
-			color = getCategoryColor(newCategory,requirement.priority);
-        }
-    }
+		if (requirement) {
+			requirement.category = newCategory;
+			editingCategory = false; // Close the dropdown after selection
+			color = getCategoryColor(newCategory, requirement.priority);
+		}
+	}
 	let originalRequirement = JSON.parse(JSON.stringify(requirement));
 
 	$: selected = false;
@@ -112,7 +111,6 @@
 
 		promptToUpdate.set(true);
 	}
-
 </script>
 
 <div
@@ -160,17 +158,18 @@
 								class="dropdown"
 								use:clickOutside
 								on:click_outside={() => {
-									editingCategory= false;
+									editingCategory = false;
 								}}
 								bind:value={requirement.category}
-								on:change={(event) => handleCategoryChange(event.target.value)}
-							>
+								on:change={(event) => handleCategoryChange(event.target.value)}>
 								{#each categories as category}
 									<option value={category}>{category}</option>
 								{/each}
 							</select>
 						{:else}
-							<span class="category-tag" on:click={() => toggleEditingCategory()}>
+							<span
+								class="category-tag"
+								on:click={() => toggleEditingCategory()}>
 								{requirement.category}
 							</span>
 						{/if}
@@ -183,14 +182,15 @@
 									editingPriority = false;
 								}}
 								bind:value={requirement.priority}
-								on:change={(event) => handlePriorityChange(event.target.value)}
-							>
+								on:change={(event) => handlePriorityChange(event.target.value)}>
 								{#each priorities as priority}
 									<option value={priority}>{priority}</option>
 								{/each}
 							</select>
 						{:else}
-							<span class="priority-tag" on:click={() => toggleEditingPriority()}>
+							<span
+								class="priority-tag"
+								on:click={() => toggleEditingPriority()}>
 								{requirement.priority}
 							</span>
 						{/if}
@@ -511,11 +511,12 @@
 		border-radius: 3px;
 		font-size: 0.8em;
 	}
-	.category-tag, .priority-tag {
-        padding: 4px 8px;
-        cursor: pointer;
-    }
-    .dropdown {
-        padding: 4px 8px;
-    }
+	.category-tag,
+	.priority-tag {
+		padding: 4px 8px;
+		cursor: pointer;
+	}
+	.dropdown {
+		padding: 4px 8px;
+	}
 </style>
