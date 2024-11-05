@@ -44,7 +44,7 @@ Your task is to propose a prompt will lead a good language model to perform the 
 
 class CompilePrompt(dspy.Signature):
     """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task.
-There are some hard requirements that the model must satisfy, and some soft requirements that the model should satisfy if possible.
+There are some hard requirements that the model must satisfy, and some soft requirements that the model should satisfy if possible. Make sure to include these requirements in your prompt.
 I will also provide you with some positive ``examples`` of the expected inputs and outputs for this task, as well as some negative ``examples`` that the model should avoid. You can incorporate these examples in your prompt.
 
 Your task is to propose a prompt will lead a good language model to perform the task well and meet all the requirements. Don't be afraid to be creative."""
@@ -358,7 +358,7 @@ class PromptAgent:
         def compile_task_simple(task_description, requirements):
             prompt = self.basic_compiler(
                 task_description=task_description,
-                requirements=requirements,
+                requirements=requirements2text(requirements),
                 input_variable=self.input_variable,
             ).prompt
             self.result_queue.put(prompt)
@@ -366,10 +366,10 @@ class PromptAgent:
         def compile_task(task_description, requirements, hard_requirements, examples):
             prompt = self.compiler(
                 task_description=task_description,
-                requirements=requirements,
-                hard_requirements=hard_requirements,
-                good_examples=[example for example in examples if example.is_positive],
-                bad_examples=[example for example in examples if not example.is_positive],
+                requirements=requirements2text(requirements),
+                hard_requirements=requirements2text(hard_requirements),
+                good_examples=examples2text([example for example in examples if example.is_positive]),
+                bad_examples=examples2text([example for example in examples if not example.is_positive]),
                 input_variable=self.input_variable,
             ).prompt
             self.result_queue.put(prompt)
@@ -409,4 +409,4 @@ if __name__ == '__main__':
     )
 
     print(prompt)
-    # turbo.inspect_history(n=10)
+    # dspy.inspect_history(n=1)
