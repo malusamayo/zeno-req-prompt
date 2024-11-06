@@ -166,6 +166,7 @@
 								on:keydown={() => {}}>
 								{requirement.category}
 							</span>
+<<<<<<< HEAD
 							<div
 								class="group"
 								use:clickOutside
@@ -208,6 +209,12 @@
 							</span>
 							<div
 								class="group"
+=======
+						{/if}
+						{#if editingPriority}
+							<select
+								class="dropdown"
+>>>>>>> 2a0db41 (new data)
 								use:clickOutside
 								on:click_outside={() => {
 									editingPriority = false;
@@ -586,4 +593,23 @@
 		position: absolute;
 		margin-top: 18px;
 	}
+<<<<<<< HEAD
+=======
+	.category-tag, .priority-tag {
+        padding: 4px 8px;
+        cursor: pointer;
+    }
+    .dropdown {
+        padding: 4px 8px;
+        border-radius: 3px;
+        border: 1px solid #ddd;
+        background-color: #ffffff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+>>>>>>> 2a0db41 (new data)
 </style>

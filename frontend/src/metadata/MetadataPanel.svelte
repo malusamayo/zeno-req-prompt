@@ -67,24 +67,48 @@
 	let metadataHistograms: InternMap<ZenoColumn, HistogramEntry[]> =
 		new InternMap([], columnHash);
 
-	let newTaskInput = $prompts.get($currentPromptId).task;
-
-	$: if ($currentPromptId) {
+	// let newTaskInput = $prompts.get($currentPromptId).task;
+	// let newTaskInput = "";
+	let previousPromptId = null; // Track the previous prompt ID
+	let newTaskInput = "";
+	$: if ($currentPromptId !== previousPromptId) {
+		previousPromptId = $currentPromptId; // Update the previous ID
 		const prompt = $prompts.get($currentPromptId);
 		if (prompt) {
+<<<<<<< HEAD
 			newTaskInput = prompt.task || "";
+=======
+			newTaskInput = prompt.task || ""; 
+>>>>>>> 2a0db41 (new data)
 		}
 	}
+	// $: if ($currentPromptId) {
+	// 	const prompt = $prompts.get($currentPromptId);
+	// 	if (prompt) {
+	// 		newTaskInput = (prompt.task || ""); 
+	// 	}
+	// }
+	// $: if ($currentPromptId && newTaskInput != "") {
+	// 	const prompt = $prompts.get($currentPromptId);
+	// 	if (prompt) {
+	// 		newTaskInput = prompt.task || ""; 
+	// 	}
+	// }
 
 	$: {
 		$prompts.get($currentPromptId).task;
 	}
 
 	function add_task() {
+<<<<<<< HEAD
 		ZenoService.addTask({
 			task: newTaskInput,
 			promptId: $currentPromptId,
 		}).then((new_task) => {
+=======
+		console.log("add-task");
+		ZenoService.addTask({ task: newTaskInput, promptId: $currentPromptId }).then((new_task) => {
+>>>>>>> 2a0db41 (new data)
 			prompts.update((currentPrompts) => {
 				const prompt = currentPrompts.get($currentPromptId);
 				if (prompt) {
@@ -295,6 +319,18 @@
 			});
 		});
 	});
+
+	// function saveTask() {
+	// 	const prompt = $prompts.get($currentPromptId);
+	// 	if (prompt) {
+	// 		// Directly modify the $prompts Map and reassign to trigger reactivity
+	// 		$prompts.set($currentPromptId, {
+	// 			...prompt,
+	// 			task: newTaskInput
+	// 		});
+	// 		$prompts = new Map($prompts); // Reassign to trigger reactivity
+	// 	}
+	// }
 </script>
 
 <div class="side-container">
@@ -304,6 +340,10 @@
 		<h4>Task description</h4>
 	</div>
 	<div class="inline">
+		<!-- <textarea
+			placeholder="Write the task description here."
+			bind:value={newTaskInput}
+			on:change={add_task} /> -->
 		<textarea
 			placeholder="Write the task description here."
 			bind:value={newTaskInput}
