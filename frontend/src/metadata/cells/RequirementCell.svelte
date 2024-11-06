@@ -118,7 +118,7 @@
 	{compare && compareButton ? '' : 'pointer'}"
 	style={suggested
 		? `cursor:default; background: #f0f0f0;`
-		: `cursor:default; background-color: ${color};`}
+		: `cursor:default; `}
 	draggable="true"
 	on:mouseover={() => (hovering = true)}
 	on:focus={() => (hovering = true)}
@@ -159,6 +159,7 @@
 						<div class="dropdown-container">
 							<span
 								class="category-tag"
+								style="background-color:{color}"
 								on:click={() => {
 									editingCategory = !editingCategory;
 								}}
@@ -198,6 +199,7 @@
 						<div class="dropdown-container">
 							<span
 								class="priority-tag"
+								style="background-color:{color}"
 								on:click={() => {
 									editingPriority = !editingPriority;
 								}}
@@ -279,7 +281,6 @@
 
 					<div
 						class="description"
-						style="background-color: {isEditing ? 'white' : color}"
 						contenteditable={true}
 						use:clickOutside
 						on:click={() => {

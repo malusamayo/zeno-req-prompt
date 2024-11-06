@@ -47,7 +47,7 @@ export async function compilePrompt(requirements, task, compileOnly?: boolean) {
 	promptUpdating.set(true);
 	suggestedRequirements.set({});
 	status.update((s) => {
-		s.status = "Compiling requirements";
+		s.status = "Synthesizing prompt";
 		return s;
 	});
 	ZenoService.createNewPrompt({
