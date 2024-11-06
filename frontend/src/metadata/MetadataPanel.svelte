@@ -75,11 +75,7 @@
 		previousPromptId = $currentPromptId; // Update the previous ID
 		const prompt = $prompts.get($currentPromptId);
 		if (prompt) {
-<<<<<<< HEAD
-			newTaskInput = prompt.task || "";
-=======
 			newTaskInput = prompt.task || ""; 
->>>>>>> 2a0db41 (new data)
 		}
 	}
 	// $: if ($currentPromptId) {
@@ -100,15 +96,8 @@
 	}
 
 	function add_task() {
-<<<<<<< HEAD
-		ZenoService.addTask({
-			task: newTaskInput,
-			promptId: $currentPromptId,
-		}).then((new_task) => {
-=======
 		console.log("add-task");
 		ZenoService.addTask({ task: newTaskInput, promptId: $currentPromptId }).then((new_task) => {
->>>>>>> 2a0db41 (new data)
 			prompts.update((currentPrompts) => {
 				const prompt = currentPrompts.get($currentPromptId);
 				if (prompt) {
