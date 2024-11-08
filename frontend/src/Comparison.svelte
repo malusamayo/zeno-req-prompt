@@ -2,6 +2,7 @@
 	import InstanceView from "./instance-views/InstanceView.svelte";
 	import MetadataPanel from "./metadata/MetadataPanel.svelte";
 	import NewFolderPopup from "./metadata/popups/NewFolderPopup.svelte";
+	import NewGoalPopup from "./metadata/popups/NewGoalPopup.svelte";
 	import NewSlicePopup from "./metadata/popups/NewSlicePopup.svelte";
 	import SliceFinderPopup from "./metadata/popups/SliceFinderPopup.svelte";
 	import {
@@ -10,6 +11,7 @@
 		showSliceFinder,
 		showNewSlice,
 		showNewFolder,
+		showNewGoal,
 	} from "./stores";
 </script>
 
@@ -22,6 +24,9 @@
 	{/if}
 	{#if $showNewFolder}
 		<NewFolderPopup />
+	{/if}
+	{#if $showNewGoal}
+		<NewGoalPopup />
 	{/if}
 	<div class="container">
 		<MetadataPanel />

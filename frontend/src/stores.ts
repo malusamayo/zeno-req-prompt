@@ -95,6 +95,7 @@ export const currentPromptId: Writable<string> = writable("");
 export const requirements: Writable<{ [key: string]: Requirement }> = writable(
 	{}
 );
+export const goals: Writable<string[]> = writable();
 export const task: Writable<string> = writable("");
 export const requirementAddedExample = writable<
 	Array<{
@@ -117,6 +118,9 @@ currentPromptId.subscribe(($currentPromptId) => {
 				JSON.stringify(get(prompts).get($currentPromptId).requirements)
 			)
 		);
+		goals.set([
+			...new Set(Object.values(get(requirements)).map((r) => r.feature)),
+		]);
 	}
 	ZenoService.updateCurrentPromptId([$currentPromptId]);
 });
@@ -185,6 +189,7 @@ export const showNewFolder: Writable<boolean> = writable(false);
 export const showNewSlice: Writable<boolean> = writable(false);
 export const showNewTag: Writable<boolean> = writable(false);
 export const showNewRequirement: Writable<boolean> = writable(false);
+export const showNewGoal: Writable<boolean> = writable(false);
 export const sliceToEdit: Writable<Slice> = writable(null);
 export const folderToEdit: Writable<string> = writable(null);
 export const requirementToEdit: Writable<Requirement> = writable(null);

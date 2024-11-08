@@ -23,6 +23,8 @@
 		requirements,
 		promptToUpdate,
 		suggestedRequirements,
+		showNewGoal,
+		goals,
 	} from "../stores";
 	import { ZenoService, type Requirement } from "../zenoservice";
 	import RequirementCell from "./cells/RequirementCell.svelte";
@@ -103,6 +105,12 @@
 				$reqs[requirement.id] = requirement;
 				return $reqs;
 			});
+			goals.update(($goals) => {
+				if (!$goals.includes(feature)) {
+					$goals.push(feature);
+				}
+				return $goals;
+			});
 			promptToUpdate.set(true);
 			newRequirementInput = "";
 			requirementUpdating.set(false);
@@ -145,7 +153,9 @@
 		suggest_requirements: {
 			[key: string]: Requirement;
 		}
-	): RequirementTree[] {
+	): {
+		[key: string]: RequirementTree;
+	} {
 		const tree: Record<string, RequirementTree> = {};
 
 		function add_requirement(requirement, suggested) {
@@ -173,7 +183,7 @@
 			add_requirement(requirement, true);
 		});
 
-		return Object.values(tree);
+		return tree;
 	}
 
 	// Adjust `getCategoryColor` to handle priority-based color adjustment
@@ -250,6 +260,25 @@
 				<Icon class="material-icons" style="color: #efb118">lightbulb_2</Icon>
 			</IconButton>
 		</div>
+		<div
+			use:tooltip={{
+				content: "Create a new goal.",
+				position: "left",
+				theme: "zeno-tooltip",
+			}}>
+			<IconButton
+				on:click={(e) => {
+					e.stopPropagation();
+					showNewSlice.set(false);
+					showNewFolder.set(false);
+					showSliceFinder.set(false);
+					showSliceFinder.set(false);
+					showNewGoal.update((d) => !d);
+				}}
+				style="cursor:pointer; margin-top:-5px">
+				<Icon class="material-icons" style="color: lightgrey">add_circle</Icon>
+			</IconButton>
+		</div>
 		<!-- <div
 			use:tooltip={{
 				content: "Compile to prompt.",
@@ -296,7 +325,8 @@
     {/each}
 </div> -->
 
-{#each requirementTree as featureGroup}
+{#each $goals as goal}
+	{@const featureGroup = requirementTree[goal]}
 	<div
 		class="feature-node"
 		on:drop={(ev) => {
@@ -304,43 +334,33 @@
 			const requirement = JSON.parse(data);
 			requirements.update(($reqs) => {
 				let requirementToEdit = $reqs[Number(requirement.id)];
-				requirementToEdit.feature = featureGroup.feature;
+				requirementToEdit.feature = goal;
 				return $reqs;
 			});
 		}}>
-		<span class="feature-title">{featureGroup.feature}</span>
-		<TrailingIcon
+		<span class="feature-title">{goal}</span>
+		<!-- <TrailingIcon
 			class="material-icons"
 			style="margin-bottom: 4px; color: lightgrey; cursor: pointer;"
 			on:click={() => {
 				featureGroup.showNewRequirement = !featureGroup.showNewRequirement;
 			}}>
 			add_circle
-		</TrailingIcon>
+		</TrailingIcon> -->
 
-		{#each featureGroup.requirements as { requirement, suggested }}
-			<RequirementCell
-				{requirement}
-				compare={$tab === "comparison"}
-				{suggested} />
-		{/each}
-
-		{#if featureGroup.showNewRequirement}
-			<RequirementCell
-				requirement={{
-					id: (get_max_requirement_id() + 1).toString(),
-					name: "",
-					description: "Write new requirements here...",
-					promptSnippet: "",
-					evaluationMethod: "",
-					feature: featureGroup.feature,
-				}}
-				compare={$tab === "comparison"}
-				suggested={false} />
+		{#if featureGroup}
+			{#each featureGroup.requirements as { requirement, suggested }}
+				<RequirementCell
+					{requirement}
+					compare={$tab === "comparison"}
+					{suggested} />
+			{/each}
 		{/if}
+
+		<!-- {#if featureGroup.showNewRequirement}{/if} -->
 	</div>
 {/each}
-<div class="feature-node">
+<!-- <div class="feature-node">
 	<input
 		class="new-feature-title"
 		placeholder="New goals..."
@@ -352,7 +372,19 @@
 				newGoalInput = "";
 			}
 		}} />
-</div>
+</div> -->
+
+<!-- <RequirementCell
+	requirement={{
+		id: (get_max_requirement_id() + 1).toString(),
+		name: "",
+		description: "Write new requirements here...",
+		promptSnippet: "",
+		evaluationMethod: "",
+		feature: "uncategorized",
+	}}
+	compare={$tab === "comparison"}
+	suggested={false} /> -->
 
 <!-- {#each Object.entries($suggestedRequirements) as [id, req]}
 	<RequirementCell
@@ -361,16 +393,18 @@
 		suggested={true} />
 {/each} -->
 
-<!-- <div class="inline">
+<div class="inline">
 	<input
-		placeholder="Add a new goal here. ⌘ + Enter to submit."
+		placeholder="Write a new requirement here. Enter to submit."
 		bind:value={newRequirementInput}
 		on:keydown={(e) => {
-			if (e.metaKey && e.key === "Enter") {
+			if (e.key === "Enter") {
 				e.preventDefault();
+				add_requirement("uncategorized");
+				newRequirementInput = "";
 			}
 		}} />
-	<span>
+	<!-- <span>
 		<IconButton
 			on:click={() => {
 				if (inputChanged) {
@@ -385,8 +419,8 @@
 				{/if}
 			</Icon>
 		</IconButton>
-	</span>
-</div> -->
+	</span> -->
+</div>
 
 <style>
 	#requirement-header {
@@ -400,7 +434,7 @@
 		align-items: center;
 		justify-content: space-between;
 	}
-	/* input {
+	input {
 		position: relative;
 		overflow: visible;
 		border: 0.5px solid var(--G4);
@@ -413,7 +447,7 @@
 		width: 85%;
 		font-size: small;
 		font-weight: lighter;
-	} */
+	}
 
 	.feature-node {
 		margin-bottom: 20px;
@@ -426,13 +460,13 @@
 		color: var(--G1);
 	}
 
-	input {
+	/* input {
 		font-weight: bold;
 		margin-bottom: 10px;
-		font-size: 14px; /* Set to any smaller size you prefer */
+		font-size: 14px; 
 		border: 1px solid var(--G4);
 		border-radius: 4px;
 		padding: 3px;
 		color: var(--G1);
-	}
+	} */
 </style>

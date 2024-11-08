@@ -13,10 +13,12 @@
 		showNewTag,
 		status,
 		showNewRequirement,
+		showNewGoal,
 	} from "./stores";
 	import NewRequirementPopup from "./metadata/popups/NewRequirementPopup.svelte";
 	import RequirementPanel from "./metadata/RequirementPanel.svelte";
 	import TaskView from "./metadata/TaskView.svelte";
+	import NewGoalPopup from "./metadata/popups/NewGoalPopup.svelte";
 </script>
 
 {#if $ready && $status.completeColumns.length > 0}
@@ -35,6 +37,9 @@
 	{/if}
 	{#if $showNewRequirement}
 		<NewRequirementPopup />
+	{/if}
+	{#if $showNewGoal}
+		<NewGoalPopup />
 	{/if}
 	<div class="container">
 		<!-- <MetadataPanel /> -->
