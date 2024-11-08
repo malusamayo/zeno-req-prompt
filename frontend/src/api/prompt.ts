@@ -1,5 +1,6 @@
 import { get } from "svelte/store";
 import {
+	allIds,
 	currentPromptId,
 	model,
 	prompts,
@@ -63,6 +64,11 @@ export async function compilePrompt(requirements, task, compileOnly?: boolean) {
 		promptUpdating.set(false);
 		promptToUpdate.set(false);
 		if (!compileOnly) {
+			// let ids = get(allIds).ids;
+			// while (ids.length > 0) {
+			// 	let idsToSend = ids.splice(0, 1);
+			// 	runPrompt(get(model), get(currentPromptId), { ids: idsToSend });
+			// }
 			runPrompt(get(model), get(currentPromptId));
 		} else {
 			ZenoService.getCompleteColumns().then((cols) => {

@@ -125,6 +125,8 @@ currentPromptId.subscribe(($currentPromptId) => {
 	ZenoService.updateCurrentPromptId([$currentPromptId]);
 });
 
+export const allIds: Writable<FilterIds> = writable({ ids: [] });
+
 // The tag ids selected by the user.
 export const tagIds: Writable<FilterIds> = writable({ ids: [] });
 

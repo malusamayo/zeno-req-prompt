@@ -17,9 +17,10 @@
 		status,
 		tagIds,
 		currentPromptId,
+		allIds,
 	} from "../stores";
 	import { columnHash } from "../util/util";
-	import { ZenoColumnType } from "../zenoservice";
+	import { ZenoColumnType, type FilterIds } from "../zenoservice";
 	import type { ViewRenderFunction } from "./instance-views";
 	import ItemView from "./ItemView.svelte";
 
@@ -94,7 +95,13 @@
 			$tagIds,
 			$selectionIds,
 			$selections.tags
-		).then((res) => (table = res));
+		).then((res) => {
+			table = res;
+			let indices: FilterIds = {
+				ids: Object.values(table).map((x) => x[columnHash($settings.idColumn)]),
+			};
+			allIds.set(indices);
+		});
 	}
 
 	async function drawInstances() {
