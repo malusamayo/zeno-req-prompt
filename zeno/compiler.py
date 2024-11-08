@@ -327,7 +327,7 @@ class PromptAgent:
 
     def __init__(self, input_variable="input"):
         super().__init__()
-        turbo = dspy.LM(model='gpt-4o-mini', max_tokens=4096)
+        turbo = dspy.LM(model='gpt-4o', max_tokens=4096)
         dspy.settings.configure(lm=turbo)
 
         self.input_variable = input_variable
@@ -357,6 +357,12 @@ class PromptAgent:
         for req in requirements:
             if len(req.examples) > 0:
                 examples.extend(req.examples)
+        
+        examples_prev = []
+        if requirements_prev is not None:
+            for req in requirements_prev:
+                if len(req.examples) > 0:
+                    examples_prev.extend(req.examples)
 
         diff_requirements = []
         for req in requirements:
@@ -365,6 +371,11 @@ class PromptAgent:
                     diff_requirements.append(req)
             else:
                 diff_requirements.append(req)
+        
+        diff_examples = []
+        for example in examples:
+            if example not in examples_prev:
+                diff_examples.append(example)
 
         if len(examples) > 0 or len(hard_requirements) > 0:
             prompt = self.compiler(
@@ -381,7 +392,8 @@ class PromptAgent:
                 task_description=task_description,
                 requirements=requirements2text(requirements),
                 input_variable=self.input_variable,
-            ).prompt        
+            ).prompt
+        dspy.inspect_history(n=1)     
         self.result_queue.put(prompt)
 
     def compile_requirements(

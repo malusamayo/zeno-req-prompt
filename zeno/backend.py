@@ -792,7 +792,7 @@ class ZenoBackend(object):
         api_prompt = REQUIREMENT_EXTRACTOR_PROMPT.format(prompt=prompt)
 
         payload = {
-            'model': 'gpt-4-turbo',
+            'model': 'gpt-4o',
             'messages': [
                 {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
                 {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
@@ -854,7 +854,7 @@ class ZenoBackend(object):
         )
 
         payload = {
-            'model': 'gpt-4-turbo',
+            'model': 'gpt-4o',
             'messages': [
                 {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
                 {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
@@ -915,7 +915,7 @@ class ZenoBackend(object):
         )
 
         payload = {
-            'model': 'gpt-4-turbo',
+            'model': 'gpt-4o',
             'messages': [
                 {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
                 {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
