@@ -436,6 +436,7 @@ suggested={false} />
                 type="text"
                 value={goal}
                 class="feature-title"
+                size={goal.length || 1}
                 on:focus={() => startEditingGoal(goal)}
             on:blur={(event) => updateGoal(previousGoal, goal)} />
 
@@ -444,7 +445,7 @@ suggested={false} />
         </button>
     </div>
     {:else}
-    <span class="feature-title">{goal}</span>
+    <span class="feature-title-uncategorized">{goal}</span>
     {/if}
 
 </div>
@@ -582,6 +583,7 @@ style={inputChanged ? "cursor:pointer" : "cursor:default"}>
     top: -10px;
     z-index: 3;
     background-color: var(--Y2);
+    margin-bottom: -10px;
 }
 
 .inline {
@@ -595,7 +597,7 @@ input {
     overflow: visible;
     border: 0.5px solid var(--G4);
     border-radius: 4px;
-    margin-top: 5px;
+    margin-top: 8px;
     display: flex;
     padding-left: 10px;
     padding-right: 10px;
@@ -606,31 +608,35 @@ input {
 }
 
 .feature-node {
-    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
 }
 
 input.feature-title {
     font-weight: bold;
     font-size: 14px;
-    color: var(--G1);
     border: none;
     background-color: transparent;
-    outline: none; /* Remove default outline */
-    transition: background-color 0.3s ease, border 0.3s ease;
+    color: var(--G1);
+    outline: none; 
+    margin-bottom: -6px;
+    padding: -10px;
 }
 
 input.feature-title:focus {
 	background-color: #f0f0f0; /* Light grey background to indicate editing */
-    border: 1px solid #f0f0f0; /* Light grey border for emphasis */
-    border-radius: 4px; /* Optional rounded corners */
-    padding: 2px 3px;
 }
 
-.feature-title {
+.feature-title-uncategorized {
     font-weight: bold;
     font-size: 14px;
-    /* Set to any smaller size you prefer */
+    border: none;
+    background-color: transparent;
     color: var(--G1);
+    outline: none; 
+    margin-top: 18px; 
+    margin-left: 7px; 
+    margin-bottom: 7px; 
 }
 
 .goal-input-container {
@@ -644,9 +650,9 @@ input.feature-title:focus {
         cursor: pointer;
         color: grey;
         font-size: 14px; /* Smaller size for the "X" */
-        margin-left: 4px; /* Minimal space between title and "X" */
-        display: flex;
-        align-items: center;
+        margin-left: -5px; /* Minimal space between title and "X" */
+        margin-bottom: -15px;
+
 }
 .goal-title {
         display: flex;
