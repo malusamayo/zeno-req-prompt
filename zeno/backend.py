@@ -1183,12 +1183,19 @@ class ZenoBackend(object):
         requirement = self.prompts[feedback.prompt_id].requirements[feedback.requirement_id]
         corrected_eval = feedback.corrected_eval
 
+        score_col_obj = ZenoColumn(
+            column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{feedback.requirement_id}", model=feedback.model, prompt_id=feedback.prompt_id
+        )
+        score_hash = str(score_col_obj)
+        score_col = self.df[score_hash].copy() 
+        corrected_eval = not score_col[int(feedback.example_id)]
+
         new_example = Example(
                             id=feedback.example_id,
                             input=data_col.at[int(feedback.example_id)],
                             output=model_col.at[int(feedback.example_id)],
                             is_positive=corrected_eval,
-                            feedback=f'''The evaluation should return "{corrected_eval}" based on the requirement.''',
+                            feedback=f'''The evaluation should return "{corrected_eval}" for this requirement.''',
                         )
 
         for ex in requirement.examples:

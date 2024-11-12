@@ -36,7 +36,7 @@ def openai_inference(model_name, prompt):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='config.yaml')
+    parser.add_argument('--config', type=str, default='travel_config.yaml')
     args = parser.parse_args()
     
     with open(args.config, 'r') as f:

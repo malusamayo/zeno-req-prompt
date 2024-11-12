@@ -85,7 +85,7 @@
 		requirementIds = Object.keys($requirements);
 
 		example = <Example>{
-			id: item[columnHash($settings.idColumn)],
+			id: String(item[columnHash($settings.idColumn)]),
 			input: item[columnHash($settings.dataColumn)],
 			output: modelColumn ? item[modelColumn] : "",
 			isPositive: true,

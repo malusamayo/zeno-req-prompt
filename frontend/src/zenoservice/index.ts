@@ -42,6 +42,7 @@ export { ZenoColumnType } from "./models/ZenoColumnType";
 export type { ZenoSettings } from "./models/ZenoSettings";
 export type { ZenoVariables } from "./models/ZenoVariables";
 export type { Requirement } from "./models/prompt";
+export type { Example } from "./models/prompt";
 export type { Prompt } from "./models/prompt";
 export type { RequirementTree } from "./models/RequirementTree";
 
