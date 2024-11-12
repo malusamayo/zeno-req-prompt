@@ -430,21 +430,23 @@ suggested={false} />
     });
     }}>
     <div class="goal-input-container">
-	{#if goal !== "uncategorized"}
-        <input
-            type="text"
-            value={goal}
-            class="feature-title"
-            on:focus={() => startEditingGoal(goal)}
-        on:blur={() => updateGoal(previousGoal, goal)} />
+        {#if goal !== "uncategorized"}
+        <div class="goal-title">
+            <input
+                type="text"
+                value={goal}
+                class="feature-title"
+                on:focus={() => startEditingGoal(goal)}
+            on:blur={(event) => updateGoal(previousGoal, goal)} />
 
-    <button type="button" class="delete-icon" on:click={() => deleteGoal(goal)}>
-        <span class="material-icons">delete</span>
-    </button>
-	{:else}
-		<span class="feature-title">{goal}</span>
+        <button type="button" class="delete-icon" on:click={() => deleteGoal(goal)}>
+            ✕ 
+        </button>
+    </div>
+    {:else}
+    <span class="feature-title">{goal}</span>
     {/if}
-	
+
 </div>
 
 <!-- <TrailingIcon
@@ -604,33 +606,32 @@ input {
 }
 
 .feature-node {
-    margin-bottom: 20px;
+    margin-bottom: 8px;
 }
 
 input.feature-title {
     font-weight: bold;
     font-size: 14px;
-    /* Adjust size as needed */
     color: var(--G1);
-    margin-bottom: 10px;
-
-    /* Remove the box appearance */
-    padding: 4px 0;
-    /* Minimal padding for text alignment */
     border: none;
-    /* No border */
     background-color: transparent;
-    /* Transparent background */
-    outline: none;
-    /* Remove focus outline */
+    outline: none; /* Remove default outline */
+    transition: background-color 0.3s ease, border 0.3s ease;
+}
+
+input.feature-title:focus {
+	background-color: #f0f0f0; /* Light grey background to indicate editing */
+    border: 1px solid #f0f0f0; /* Light grey border for emphasis */
+    border-radius: 4px; /* Optional rounded corners */
+    padding: 2px 3px;
 }
 
 .feature-title {
-		font-weight: bold;
-		margin-bottom: 10px;
-		font-size: 14px; /* Set to any smaller size you prefer */
-		color: var(--G1);
-	}
+    font-weight: bold;
+    font-size: 14px;
+    /* Set to any smaller size you prefer */
+    color: var(--G1);
+}
 
 .goal-input-container {
     display: flex;
@@ -639,27 +640,21 @@ input.feature-title {
 
 .delete-icon {
     background: none;
-    border: none;
-    /* Remove border */
-    cursor: pointer;
-    color: red;
-    /* Make the icon red */
-    display: flex;
-    align-items: center;
-    font-size: 18px;
-    /* Smaller size for the delete icon */
-    margin-left: 8px;
-    /* Space between input and delete icon */
+        border: none;
+        cursor: pointer;
+        color: grey;
+        font-size: 14px; /* Smaller size for the "X" */
+        margin-left: 4px; /* Minimal space between title and "X" */
+        display: flex;
+        align-items: center;
 }
-
-.material-icons {
-    font-size: inherit;
-    /* Use the font-size from the button */
-}
-
+.goal-title {
+        display: flex;
+        align-items: center;
+    }
 .delete-icon:hover {
-    color: darkred;
-    /* Darker color on hover */
+    color: darkgrey;
+    /* Darker grey on hover */
 }
 
 /* input {
