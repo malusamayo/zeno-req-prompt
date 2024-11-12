@@ -8,6 +8,7 @@
 		settings,
 		status,
 		suggestedRequirements,
+		requirementToEdit,
 	} from "../stores";
 	import { ZenoColumnType, ZenoService } from "../zenoservice";
 	import { clickOutside } from "../util/clickOutside";
@@ -17,8 +18,24 @@
 	import { Icon } from "@smui/button";
 	import { InitialFocus } from "@smui/dialog";
 	import type { Example } from "../zenoservice/models/prompt";
+	import { createEventDispatcher } from 'svelte';
 
 	export let example: Example;
+	export let requirementId;
+	const dispatch = createEventDispatcher();
+	function removeExample() {
+        requirementUpdating.set(true);
+        ZenoService.removeExample({
+            promptId: $currentPromptId,
+            exampleId: String(example.id),
+            requirementId: requirementId,
+        }).then((newRequirements) => {
+            requirements.set(newRequirements);
+            requirementUpdating.set(false);
+        });
+		dispatch('deleteExample', example.id);
+
+    }
 </script>
 
 <div class="box svelte-ohpquu">
@@ -47,6 +64,10 @@
 			thumb_down
 		{/if}
 	</TrailingIcon>
+	<br />
+	<button class="delete-button svelte-ohpquu" on:click={removeExample}>
+		<Icon>delete</Icon>
+	</button>
 </div>
 
 <style>
@@ -64,4 +85,5 @@
 		border: 0.5px solid rgb(224, 224, 224);
 		margin: 1px;
 	}
+
 </style>

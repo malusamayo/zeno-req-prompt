@@ -114,20 +114,20 @@
 		promptToUpdate.set(true);
 	}
 
-	// function feedbackToRequirements(feedbackPositive) {
-    //     requirementUpdating.set(true);
-    //     ZenoService.updateReqFeedback({
-    //         model: $model,
-    //         promptId: $currentPromptId,
-    //         exampleId: String(draggedexample.id),
-    //         isPositive: feedbackPositive,
-    //         feedback: '',
-    //         requirementId: requirement.id,
-    //     }).then((newRequirements) => {
-    //         requirements.set(newRequirements);
-    //         requirementUpdating.set(false);
-    //     })
-    // }
+	function feedbackToRequirements(feedbackPositive, feedback) {
+        requirementUpdating.set(true);
+        ZenoService.updateReqFeedback({
+            model: $model,
+            promptId: $currentPromptId,
+            exampleId: String(draggedexample.id),
+            isPositive: feedbackPositive,
+            feedback: feedback,
+            requirementId: requirement.id,
+        }).then((newRequirements) => {
+            requirements.set(newRequirements);
+            requirementUpdating.set(false);
+        })
+    }
 
 	function feedbackToEvaluators() {
 		requirementUpdating.set(true);
@@ -148,13 +148,14 @@
 			feedbackToEvaluators();
 		}
 		else{
-			draggedexample.isPositive = isPositive;
+			// draggedexample.isPositive = isPositive;
 			let feedbackPositive = 'negative';
 			if (isPositive){
 				feedbackPositive = 'positive';
 			}
-			draggedexample.feedback = `This is a '${feedbackPositive}' example affirmed by users.`;
-			requirement.examples.push(draggedexample);
+			let feedback = `This is a '${feedbackPositive}' example affirmed by users.`;
+			// requirement.examples.push(draggedexample);
+			feedbackToRequirements(isPositive, feedback);
 		}
 		showdraggingoptions = false;
 	}

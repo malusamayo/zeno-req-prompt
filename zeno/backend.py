@@ -1314,13 +1314,16 @@ class ZenoBackend(object):
         )
         rationale_hash = str(rationale_col_obj)
         rationale_col = self.df[rationale_hash].copy()
-
+        if req.feedback == '':
+            feedback = rationale_col.at[int(req.example_id)]
+        else:
+            feedback = req.feedback
         new_example = Example(
                             id=req.example_id,
                             input=data_col.at[int(req.example_id)],
                             output=model_col.at[int(req.example_id)],
                             is_positive=is_positive,
-                            feedback=rationale_col.at[int(req.example_id)],
+                            feedback=feedback,
                     )
 
         for ex in requirement.examples:

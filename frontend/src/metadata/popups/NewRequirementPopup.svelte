@@ -54,6 +54,11 @@
 			requirement = optimizedRequirement;
 		});
 	}
+
+	function handleDeleteExample(exampleId) {
+		// Filter out the example by ID and create a new requirement object
+		requirement = { ...requirement, examples: requirement.examples.filter((ex) => ex.id !== exampleId) };
+	}
 </script>
 
 <div
@@ -95,7 +100,11 @@
 		{#if requirement.examples && requirement.examples.length > 0}
 			<label>Examples</label>
 			{#each requirement.examples as example}
-				<HistoryItemView {example} />
+				<HistoryItemView 
+				example={example} 
+				requirementId={requirement.id} 
+				on:deleteExample={(event) => handleDeleteExample(event.detail)}
+			/>
 			{/each}
 		{/if}
 
