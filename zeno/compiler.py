@@ -377,6 +377,8 @@ class PromptAgent:
             if example not in examples_prev:
                 diff_examples.append(example)
 
+        # print("Requirements: ", requirements)
+
         if len(examples) > 0 or len(hard_requirements) > 0:
             prompt = self.compiler(
                 task_description=task_description,
@@ -407,6 +409,7 @@ class PromptAgent:
                 args=(task_description, requirements, requirements_prev)
         )
         thread.start()
+        thread.join()
         prompt = self.result_queue.get()
         return prompt
     
