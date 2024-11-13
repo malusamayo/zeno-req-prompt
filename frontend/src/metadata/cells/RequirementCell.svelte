@@ -120,18 +120,30 @@
 	}
 
 	function feedbackToRequirements(feedbackPositive, feedback) {
-		requirementUpdating.set(true);
-		ZenoService.updateReqFeedback({
-			model: $model,
-			promptId: $currentPromptId,
-			exampleId: String(draggedexample.id),
-			isPositive: feedbackPositive,
-			feedback: feedback,
-			requirementId: requirement.id,
-		}).then((newRequirements) => {
-			requirements.set(newRequirements);
-			requirementUpdating.set(false);
+		requirements.update((reqs) => {
+			if (requirement.id in reqs) {
+				reqs[requirement.id].examples.push({
+					id: draggedexample.id,
+					input: draggedexample.input,
+					output: draggedexample.output,
+					isPositive: feedbackPositive,
+					feedback: feedback,
+				});
+			}
+			return reqs;
 		});
+		// requirementUpdating.set(true);
+		// ZenoService.updateReqFeedback({
+		// 	model: $model,
+		// 	promptId: $currentPromptId,
+		// 	exampleId: String(draggedexample.id),
+		// 	isPositive: feedbackPositive,
+		// 	feedback: feedback,
+		// 	requirementId: requirement.id,
+		// }).then((newRequirements) => {
+		// 	requirements.set(newRequirements);
+		// 	requirementUpdating.set(false);
+		// });
 	}
 
 	function feedbackToEvaluators() {

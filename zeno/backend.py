@@ -898,7 +898,7 @@ class ZenoBackend(object):
 
         return req
 
-    def optimize_requirement(self, req: List[Requirement]):
+    def optimize_requirement(self, req: OptimizeRequirement):
         '''Use LLM to optimize local requirements
 
         Input: requirement, with description field filled in
@@ -1279,24 +1279,6 @@ class ZenoBackend(object):
                 rid = str(int(rid)+1)
             break
 
-        # # use REQUIREMENT_SUGGESTION_PROMPT for implementation
-        # ## MOCKUP CODE
-        # suggested_requirements = {
-        #     "100": Requirement(
-        #         id = "100",
-        #         name = "new-requirement",
-        #         description = "This is a new requirement",
-        #         prompt_snippet = "",
-        #         evaluation_method = "",
-        #     ),
-        #     "101": Requirement(
-        #         id = "101",
-        #         name = "new-requirement-v2",
-        #         description = "This is also a new requirement",
-        #         prompt_snippet = "",
-        #         evaluation_method = "",
-        #     )
-        # }
         return suggested_requirements
 
     def update_requirement_feedback(self, req: FeedbackRequest) -> Dict[str, Requirement]:

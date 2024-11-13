@@ -415,6 +415,9 @@ suggested={false} />
 			ev.preventDefault();
 			const data = ev.dataTransfer.getData("text/plain");
 			const requirement = JSON.parse(data);
+			if (requirement.feature === undefined) {
+				return;
+			}
 			requirements.update(($reqs) => {
 				let requirementToEdit = $reqs[Number(requirement.id)];
 				requirementToEdit.feature = goal;
@@ -650,6 +653,10 @@ style={inputChanged ? "cursor:pointer" : "cursor:default"}>
 		display: flex;
 		align-items: center;
 	}
+	.goal-title {
+		display: flex;
+		align-items: center;
+	}
 
 	.delete-icon {
 		background: none;
@@ -659,10 +666,6 @@ style={inputChanged ? "cursor:pointer" : "cursor:default"}>
 		font-size: 10px; /* Smaller size for the "X" */
 		margin-left: -5px; /* Minimal space between title and "X" */
 		margin-bottom: -5px;
-	}
-	.goal-title {
-		display: flex;
-		align-items: center;
 	}
 	.delete-icon:hover {
 		color: darkgrey;

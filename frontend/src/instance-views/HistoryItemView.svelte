@@ -18,27 +18,38 @@
 	import { Icon } from "@smui/button";
 	import { InitialFocus } from "@smui/dialog";
 	import type { Example } from "../zenoservice/models/prompt";
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher } from "svelte";
 
 	export let example: Example;
 	export let requirementId;
 	const dispatch = createEventDispatcher();
 	function removeExample() {
-        requirementUpdating.set(true);
-        ZenoService.removeExample({
-            promptId: $currentPromptId,
-            exampleId: String(example.id),
-            requirementId: requirementId,
-        }).then((newRequirements) => {
-            requirements.set(newRequirements);
-            requirementUpdating.set(false);
-        });
-		dispatch('deleteExample', example.id);
-
-    }
+		// requirementUpdating.set(true);
+		// ZenoService.removeExample({
+		//     promptId: $currentPromptId,
+		//     exampleId: String(example.id),
+		//     requirementId: requirementId,
+		// }).then((newRequirements) => {
+		//     requirements.set(newRequirements);
+		//     requirementUpdating.set(false);
+		// });
+		requirements.update((reqs) => {
+			if (!reqs[requirementId]) {
+				return reqs;
+			}
+			reqs[requirementId].examples = reqs[requirementId].examples.filter(
+				(ex) => ex.id !== example.id
+			);
+			return reqs;
+		});
+		dispatch("deleteExample", example.id);
+	}
 </script>
 
 <div class="box svelte-ohpquu">
+	<button type="button" class="delete-icon" on:click={removeExample}>
+		✕
+	</button>
 	<span class="label svelte-ohpquu">input:</span>
 	<span class="value svelte-ohpquu">
 		{example.input}
@@ -65,9 +76,6 @@
 		{/if}
 	</TrailingIcon>
 	<br />
-	<button class="delete-button svelte-ohpquu" on:click={removeExample}>
-		<Icon>delete</Icon>
-	</button>
 </div>
 
 <style>
@@ -86,4 +94,17 @@
 		margin: 1px;
 	}
 
+	.delete-icon {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: grey;
+		font-size: 10px; /* Smaller size for the "X" */
+		margin-left: -5px; /* Minimal space between title and "X" */
+		margin-bottom: -5px;
+	}
+	.delete-icon:hover {
+		color: darkgrey;
+		/* Darker grey on hover */
+	}
 </style>
