@@ -95,6 +95,11 @@
 			feature: feature,
 		};
 
+		requirements.update(($reqs) => {
+			$reqs[requirement.id] = requirement;
+			return $reqs;
+		});
+
 		requirementUpdating.set(true);
 
 		ZenoService.optimizeRequirement({

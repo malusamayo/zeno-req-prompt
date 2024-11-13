@@ -25,10 +25,15 @@
 		promptToUpdate,
 		suggestedRequirements,
 		currentPromptId,
-		requirementUpdating
+		requirementUpdating,
 	} from "../../stores";
 	import { clickOutside } from "../../util/clickOutside";
-	import { ZenoService, type Slice, type Requirement, type Example} from "../../zenoservice";
+	import {
+		ZenoService,
+		type Slice,
+		type Requirement,
+		type Example,
+	} from "../../zenoservice";
 	import RequirementCellResult from "./RequirementCellResult.svelte";
 	import RequirementChip from "../chips/RequirementChip.svelte";
 	import { TrailingIcon } from "@smui/chips";
@@ -46,7 +51,7 @@
 	let dragOver = false;
 
 	let compareButton = false;
-	let currentRequirementUpdating = false;
+	$: currentRequirementUpdating = requirement.name === "";
 
 	let editingPriority = false;
 	const priorities = ["soft", "hard"];
@@ -115,19 +120,19 @@
 	}
 
 	function feedbackToRequirements(feedbackPositive, feedback) {
-        requirementUpdating.set(true);
-        ZenoService.updateReqFeedback({
-            model: $model,
-            promptId: $currentPromptId,
-            exampleId: String(draggedexample.id),
-            isPositive: feedbackPositive,
-            feedback: feedback,
-            requirementId: requirement.id,
-        }).then((newRequirements) => {
-            requirements.set(newRequirements);
-            requirementUpdating.set(false);
-        })
-    }
+		requirementUpdating.set(true);
+		ZenoService.updateReqFeedback({
+			model: $model,
+			promptId: $currentPromptId,
+			exampleId: String(draggedexample.id),
+			isPositive: feedbackPositive,
+			feedback: feedback,
+			requirementId: requirement.id,
+		}).then((newRequirements) => {
+			requirements.set(newRequirements);
+			requirementUpdating.set(false);
+		});
+	}
 
 	function feedbackToEvaluators() {
 		requirementUpdating.set(true);
@@ -143,15 +148,14 @@
 		});
 	}
 
-	function handlexampledrag(isFix, isPositive){
+	function handlexampledrag(isFix, isPositive) {
 		if (isFix) {
 			feedbackToEvaluators();
-		}
-		else{
+		} else {
 			// draggedexample.isPositive = isPositive;
-			let feedbackPositive = 'negative';
-			if (isPositive){
-				feedbackPositive = 'positive';
+			let feedbackPositive = "negative";
+			if (isPositive) {
+				feedbackPositive = "positive";
 			}
 			let feedback = `This is a '${feedbackPositive}' example affirmed by users.`;
 			// requirement.examples.push(draggedexample);
@@ -162,13 +166,13 @@
 
 	function isExample(obj: any): obj is Example {
 		return (
-			typeof obj === 'object' &&
+			typeof obj === "object" &&
 			obj !== null &&
-			typeof obj.id === 'string' &&
-			typeof obj.input === 'string' &&
-			typeof obj.output === 'string' &&
-			typeof obj.isPositive === 'boolean' &&
-			typeof obj.feedback === 'string'
+			typeof obj.id === "string" &&
+			typeof obj.input === "string" &&
+			typeof obj.output === "string" &&
+			typeof obj.isPositive === "boolean" &&
+			typeof obj.feedback === "string"
 		);
 	}
 </script>
@@ -197,23 +201,21 @@
 	on:drop={(ev) => {
 		ev.preventDefault();
 		dragOver = false;
-		
+
 		const data = ev.dataTransfer.getData("text/plain");
 		const example = JSON.parse(data);
 
 		if (isExample(example)) {
 			const exampleIds = requirement.examples.map((x) => x.id);
-		
+
 			if (!exampleIds.includes(example.id)) {
 				draggedexample = example;
 				showdraggingoptions = true;
 			}
-		}
-		else{
+		} else {
 			console.log(example);
 		}
 	}}>
-	
 	<!-- {#if showTooltip}
 		<div class="tooltip-container">
 			<div class="tooltip">
@@ -229,25 +231,37 @@
 					{#if requirement.name !== ""}
 						<RequirementChip name={requirement.name} id={requirement.id} />
 						{#if showdraggingoptions}
-							<div class="modal" 
-							use:clickOutside
-							on:click_outside={() => (showdraggingoptions = false)}>
+							<div
+								class="modal"
+								use:clickOutside
+								on:click_outside={() => (showdraggingoptions = false)}>
 								<div class="modal-content">
 									<div class="icon-container">
 										<div class="icon-item">
-											<span class="material-icons" style="color: green;"on:click={() => handlexampledrag(false,true)}> thumb_up</span>
+											<span
+												class="material-icons"
+												style="color: green;"
+												on:click={() => handlexampledrag(false, true)}>
+												thumb_up</span>
 											<p class="caption">Positive example</p>
 										</div>
 										<div class="icon-item">
-											<span class="material-icons" style="color: red;"on:click={() => handlexampledrag(false,false)}>thumb_down</span>
+											<span
+												class="material-icons"
+												style="color: red;"
+												on:click={() => handlexampledrag(false, false)}
+												>thumb_down</span>
 											<p class="caption">Negative example</p>
 										</div>
 										<div class="icon-item">
-											<span class="material-icons" style="color: black;"on:click={() => handlexampledrag(true,true)}>build</span>
+											<span
+												class="material-icons"
+												style="color: black;"
+												on:click={() => handlexampledrag(true, true)}
+												>build</span>
 											<p class="caption">Fix evaluator</p>
 										</div>
 									</div>
-									
 								</div>
 							</div>
 						{/if}
