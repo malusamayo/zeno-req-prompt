@@ -257,22 +257,24 @@
 	}
 
 	function deleteGoal(goal) {
-		if (!$goals.includes("uncategorized")) {
-			$goals.push("uncategorized");
-			requirementTree["uncategorized"] = requirementTree[goal];
-		} else {
-			requirementTree["uncategorized"].requirements = requirementTree[
-				"uncategorized"
-			].requirements.concat(requirementTree[goal].requirements);
-		}
-		requirementTree["uncategorized"].requirements.forEach((reqObj) => {
-			reqObj.requirement.feature = "uncategorized";
-			requirements.update(($reqs) => {
-				$reqs[reqObj.requirement.id].feature = "uncategorized";
-				return $reqs;
+		if (requirementTree[goal] !== undefined) {
+			if (!$goals.includes("uncategorized")) {
+				$goals.push("uncategorized");
+				requirementTree["uncategorized"] = requirementTree[goal];
+			} else {
+				requirementTree["uncategorized"].requirements = requirementTree[
+					"uncategorized"
+				].requirements.concat(requirementTree[goal].requirements);
+			}
+			requirementTree["uncategorized"].requirements.forEach((reqObj) => {
+				reqObj.requirement.feature = "uncategorized";
+				requirements.update(($reqs) => {
+					$reqs[reqObj.requirement.id].feature = "uncategorized";
+					return $reqs;
+				});
 			});
-		});
-		delete requirementTree[goal];
+			delete requirementTree[goal];
+		}
 		goals.update(($goals) => $goals.filter((g) => g !== goal));
 	}
 
@@ -429,7 +431,6 @@ suggested={false} />
 						}}>
 						{goal}
 					</div>
-
 					<button
 						type="button"
 						class="delete-icon"
