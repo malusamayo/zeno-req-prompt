@@ -415,27 +415,31 @@ suggested={false} />
 		}}>
 		<div class="goal-input-container">
 			<div class="goal-title">
-				<div
-					contenteditable="true"
-					class="feature-title"
-					on:focus={() => startEditingGoal(goal)}
-					on:blur={() => updateGoal(previousGoal, goal)}
-					on:keydown={(e) => {
-						if (e.key === "Enter") {
-							e.preventDefault();
-							e.target.blur();
-						}
-					}}>
-					{goal}
-				</div>
-
 				{#if goal !== "uncategorized"}
+					<div
+						contenteditable="true"
+						class="feature-title"
+						on:focus={() => startEditingGoal(goal)}
+						on:blur={() => updateGoal(previousGoal, goal)}
+						on:keydown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								e.target.blur();
+							}
+						}}>
+						{goal}
+					</div>
+
 					<button
 						type="button"
 						class="delete-icon"
 						on:click={() => deleteGoal(goal)}>
 						✕
 					</button>
+				{:else}
+					<div class="feature-title">
+						{goal}
+					</div>
 				{/if}
 			</div>
 		</div>
