@@ -121,6 +121,9 @@ currentPromptId.subscribe(($currentPromptId) => {
 		goals.set([
 			...new Set(Object.values(get(requirements)).map((r) => r.feature)),
 		]);
+		goals.update((gs) => {
+			return [...gs.filter((g) => g !== "uncategorized"), "uncategorized"];
+		});
 	}
 	ZenoService.updateCurrentPromptId([$currentPromptId]);
 });

@@ -412,6 +412,7 @@ suggested={false} />
 	<div
 		class="feature-node"
 		on:drop={(ev) => {
+			ev.preventDefault();
 			const data = ev.dataTransfer.getData("text/plain");
 			const requirement = JSON.parse(data);
 			requirements.update(($reqs) => {
@@ -538,6 +539,9 @@ suggested={true} />
 	<input
 		placeholder="Write a new requirement here. Enter to submit."
 		bind:value={newRequirementInput}
+		on:drop={(ev) => {
+			ev.preventDefault();
+		}}
 		on:keydown={(e) => {
 			if (e.key === "Enter") {
 				e.preventDefault();

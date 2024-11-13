@@ -53,7 +53,15 @@
 			folderToEdit.set(undefined);
 		} else {
 			goals.update((f) => {
-				f.push(goalName);
+				if (!f.includes(goalName)) {
+					if (f[f.length - 1] === "uncategorized") {
+						f.pop();
+						f.push(goalName);
+						f.push("uncategorized");
+					} else {
+						f.push(goalName);
+					}
+				}
 				return [...f];
 			});
 		}
