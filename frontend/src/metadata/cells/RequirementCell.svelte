@@ -71,10 +71,6 @@
 	): string {
 		let baseColor;
 
-		if (suggested) {
-			return "#f0f0f0"; // Grey for suggested requirements
-		}
-
 		if (category === "content") {
 			baseColor = priority === "soft" ? "#FFEFE2" : "#FFDDC1"; // Lighter and regular colors for content
 		} else if (category === "structure") {
