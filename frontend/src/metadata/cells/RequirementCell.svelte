@@ -665,6 +665,11 @@
 		padding-right: 5px;
 	}
 
+	.description:focus {
+		border-radius: 4px;
+		background-color: #ffffff;
+	}
+
 	.tag {
 		cursor: default;
 		margin-right: 2px;

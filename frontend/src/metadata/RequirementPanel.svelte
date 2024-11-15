@@ -6,6 +6,7 @@
 	import IconButton, { Icon } from "@smui/icon-button";
 	import { tooltip } from "@svelte-plugins/tooltips";
 	import {
+		status,
 		selectionPredicates,
 		selections,
 		showNewFolder,
@@ -142,6 +143,10 @@
 	}
 
 	function suggest_requirements(prompt_id, model) {
+		status.update((s) => {
+			s.status = "Brainstorming requirements";
+			return s;
+		});
 		suggestedRequirements.set({});
 		requirementUpdating.set(true);
 		ZenoService.suggestRequirements({
@@ -150,6 +155,10 @@
 		}).then(($suggestedRequirements) => {
 			suggestedRequirements.set($suggestedRequirements);
 			requirementUpdating.set(false);
+			status.update((s) => {
+				s.status = "Done processing";
+				return s;
+			});
 		});
 	}
 
@@ -157,7 +166,7 @@
 		requirements: {
 			[key: string]: Requirement;
 		},
-		suggest_requirements: {
+		suggestRequirements: {
 			[key: string]: Requirement;
 		}
 	): {
@@ -166,7 +175,10 @@
 		const tree: Record<string, RequirementTree> = {};
 
 		function add_requirement(requirement, suggested) {
-			const feature = requirement.feature || "General"; // Default feature if not specified
+			if (!requirement.feature) {
+				requirement.feature = "uncategorized";
+			}
+			const feature = requirement.feature;
 
 			if (!tree[feature]) {
 				tree[feature] = {
@@ -186,7 +198,7 @@
 			add_requirement(requirement, false);
 		});
 
-		Object.values(suggest_requirements).forEach((requirement) => {
+		Object.values(suggestRequirements).forEach((requirement) => {
 			add_requirement(requirement, true);
 		});
 
