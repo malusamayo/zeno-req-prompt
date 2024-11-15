@@ -1,16 +1,20 @@
 import pandas as pd
+import os
 import yaml
 import argparse
-from zeno.runner import zeno
+import litellm
+from zeno.runner import run_zeno
 from zeno.api import model
 from zeno.api import ZenoParameters, ZenoOptions, ModelReturn
 from zeno.classes.classes import Prompt, Requirement
-from zeno.openai_client import OpenAIMultiClient
 
+
+litellm.api_key = os.environ.get("LITELLM_API_KEY")
+litellm.api_base = "https://cmu-aiinfra.litellm-prod.ai/"
+litellm.verbose = True
 
 @model
 def openai_inference(model_name, prompt):
-    client = OpenAIMultiClient(endpoint="chats", data_template={"model": model_name})
     def chat_completion(inputs):
         for i, x in enumerate(inputs):
             client.request(
@@ -23,13 +27,14 @@ def openai_inference(model_name, prompt):
             )
 
     def pred(df, ops: ZenoOptions):
-        client.run_request_function(chat_completion, list(df[ops.data_column]))
-        out = {}
-        for result in client:
-            num = result.metadata['num']
-            response = result.response.choices[0].message.content
-            out[num] = response
-        out = [item[1] for item in sorted(out.items())]
+        results = litellm.batch_completion(
+            model=f"openai/{model_name}",
+            messages=[[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": x}
+            ] for x in df[ops.data_column]],
+        )
+        out = [result.choices[0].message.content for result in results]
         return ModelReturn(model_output=out)
 
     return pred
@@ -71,4 +76,4 @@ if __name__ == '__main__':
         host=config["settings"]["host"],
         port=config["settings"]["port"],
     )
-    zeno(params)
+    run_zeno(params)

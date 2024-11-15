@@ -15,8 +15,8 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union, Tuple
 from pydantic import BaseModel
-from openai import OpenAI
 import random
+import litellm
 
 import pandas as pd
 from pandas import DataFrame
@@ -30,7 +30,6 @@ from zeno.api import (
     ZenoParameters,
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
-from zeno.openai_client import OpenAIMultiClient
 from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest, RemoveExampleFeedback, OptimizeRequirement
 from zeno.classes.report import Report
 from zeno.classes.slice import FilterIds, FilterPredicateGroup, GroupMetric, Slice
@@ -50,16 +49,7 @@ from zeno.util import (
     read_pickle,
     requirements_to_str,
 )
-from zeno.prompt_templates import (
-    REQUIREMENT_CREATOR_PROMPT, 
-    REQUIREMENT_OPTIMIZER_PROMPT, 
-    PROMPT_COMPILER_PROMPT, 
-    REQUIREMENT_EXTRACTOR_PROMPT, 
-    REQUIREMENT_EVALUATION_BATCH_PROMPT,
-    REQUIREMENT_SUGGESTION_PROMPT,
-    REQUIREMENT_UPDATE_PROMPT,
-    REQUIREMENT_UPDATE_REQUEST_PROMPT
-)
+from zeno.prompt_templates import *
 from zeno.compiler import PromptAgent, requirements2text
 
 class ZenoBackend(object):
@@ -791,33 +781,21 @@ class ZenoBackend(object):
         
         api_prompt = REQUIREMENT_EXTRACTOR_PROMPT.format(prompt=prompt)
 
-        payload = {
-            'model': 'gpt-4o',
-            'messages': [
+        results = litellm.completion(
+            model=f"openai/gpt-4o-2024-08-06",
+            messages=[
                 {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
                 {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
             ],
-            'temperature': 0.7,
-            'max_tokens': 2048,
-            'top_p': 1.0,
-            'frequency_penalty': 0.0,
-            'presence_penalty': 0.0,
-            'response_format': {"type": "json_object"}  
-        }
-
-        client = OpenAIMultiClient()
-
-        client.request(
-            data=payload,
-            endpoint="chat.completions"
+            response_format={"type": "json_object"}
         )
     
-        for response in client:
+        for response in results:
             if response.failed:
                 print("Error generating response")
                 return
 
-            output_text = response.response.choices[0].message.content
+            output_text = response.choices[0].message.content
 
             try:
                 # Parse the JSON response
@@ -845,58 +823,7 @@ class ZenoBackend(object):
         self.prompts[prompt_id].text = prompt
 
     def update_req(self, req : Requirement) -> Requirement:
-
-        api_prompt = REQUIREMENT_UPDATE_REQUEST_PROMPT.format(
-            requirement_name=req.name,
-            requirement_description = req.description,
-            requirement_evaluation_method = req.evaluation_method,
-            requirement_prompt_snippet = req.prompt_snippet
-        )
-
-        payload = {
-            'model': 'gpt-4o',
-            'messages': [
-                {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
-                {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
-            ],
-            'temperature': 0.7,
-            'max_tokens': 2048,
-            'top_p': 1.0,
-            'frequency_penalty': 0.0,
-            'presence_penalty': 0.0,
-            'response_format': {"type": "json_object"}  
-        }
-
-        client = OpenAIMultiClient()
-
-        client.request(
-            data=payload,
-            endpoint="chat.completions"
-        )
-
-        for response in client:
-            if response.failed:
-                print("Error generating response")
-                return
-
-            output_text = response.response.choices[0].message.content
-
-            try:
-            # Parse the JSON response
-                updated_req = json.loads(output_text)
-            except json.JSONDecodeError:
-                print("Failed to parse the response as JSON.")
-                return
-            
-            need_update = updated_req.get('need_update', "")
-            if int(need_update):
-                updated_r = updated_req.get('updated_requirement', "")
-                req.name = updated_r.get('name',"")
-                req.description = updated_r.get('description',"")
-                req.evaluation_method = updated_r.get('evaluation_method',"")
-            break
-
-        return req
+        assert False, "Update requirement is deprecated"
 
     def optimize_requirement(self, req: OptimizeRequirement):
         '''Use LLM to optimize local requirements
@@ -904,70 +831,7 @@ class ZenoBackend(object):
         Input: requirement, with description field filled in
         Output: requirement, with description optimized (if needed) and other fields filled in
         '''
-        
-        requirement = req.requirement
-        prompt_id = req.prompt_id
-
-        other_requirements = self.prompts[prompt_id].requirements
-        api_prompt = REQUIREMENT_CREATOR_PROMPT.format(
-            user_input=requirement.description, 
-            existing_requirements=other_requirements,
-        )
-
-        payload = {
-            'model': 'gpt-4o',
-            'messages': [
-                {'role': 'system', 'content': 'You are a helpful assistant. Please return the response as valid JSON.'},
-                {'role': 'user', 'content': api_prompt}  # Pass the complete prompt with instructions
-            ],
-            'temperature': 0.7,
-            'max_tokens': 2048,
-            'top_p': 1.0,
-            'frequency_penalty': 0.0,
-            'presence_penalty': 0.0,
-            'response_format': {"type": "json_object"}  
-        }
-
-        client = OpenAIMultiClient()
-
-        client.request(
-            data=payload,
-            endpoint="chat.completions"
-        )
-
-        for response in client:
-            if response.failed:
-                print("Error generating response")
-                return
-
-            output_text = response.response.choices[0].message.content
-
-            try:
-            # Parse the JSON response
-                optimize_req = json.loads(output_text)
-            except json.JSONDecodeError:
-                print("Failed to parse the response as JSON.")
-                return
-            
-            name = optimize_req.get('name', "")
-            description = optimize_req.get('description', "")
-            evaluation_method = optimize_req.get('evaluation_method', "")
-            priority = optimize_req.get('priority', "")
-            category = optimize_req.get('category', "")
-            feature = optimize_req.get('feature', "")
-            if isinstance(evaluation_method, list):
-                evaluation_method = "\n".join(evaluation_method)  # Join list elements into a single string
-
-            if requirement.name == "":
-                requirement.name = name
-            # requirement.description = description
-            requirement.evaluation_method = evaluation_method
-            requirement.prompt_snippet = ""
-            requirement.priority = priority
-            requirement.category = category
-            if requirement.feature == "":
-                requirement.feature = feature
-            break
+        requirement = self.prompt_agent.complete_requirements(req.requirement)
         return requirement
 
     def compile_prompt(self, prompt_id):
@@ -992,93 +856,7 @@ class ZenoBackend(object):
 
 
     def evaluate_requirement(self, model_name, prompt_id, requirement_id, to_predict_indices: Optional[FilterIds] = None,):
-        ''' Use LLM to evaluate prompt outputs based on requirements
-
-        Input: model_name, prompt_id, requirement_id, to_predict_indices
-        Output: 
-        - A pd.Series of 0/1 evaluation scores to indicate whether the requirement is met
-        - A pd.Series of rationale for the evaluation
-        '''
-        # print(f"Evaluating requirement {requirement_id} for prompt {prompt_id}")
-    
-
-
-        # evaluate prompt outputs based on requirements, on to_predict_indices only
-        # refer to data_proceesing.py/run_inference to see how to select indices for prediction
-
-
-        score_col_obj = ZenoColumn(
-            column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}", model=model_name, prompt_id=prompt_id
-        )
-        rationale_col_obj = ZenoColumn(
-            column_type=ZenoColumnType.POSTDISTILL, name=f"evalR{requirement_id}Rationale", model=model_name, prompt_id=prompt_id
-        )
-        score_hash = str(score_col_obj)
-        rationale_hash = str(rationale_col_obj)
-        score_col = self.df[score_hash].copy()
-        rationale_col = self.df[rationale_hash].copy()
-
-        if to_predict_indices is None:
-            to_predict_indices = score_col.loc[pd.isna(score_col)].index
-        else:
-            to_predict_indices = pd.Index(to_predict_indices.ids)
-
-        requirement = self.prompts[prompt_id].requirements[requirement_id]
-
-        model_col_obj = ZenoColumn(
-            column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt_id
-        )
-        model_hash = str(model_col_obj)
-        model_col = self.df[model_hash].copy()
-        data_col = self.df[str(self.data_column)].copy()
-
-        client = OpenAIMultiClient(endpoint="chats", data_template={"model": model_name})
-
-        def chat_completion(indices):
-            for i in indices:
-                model_ouput = model_col[i]
-                api_prompt = REQUIREMENT_EVALUATION_PROMPT.format(
-                    prompt=self.prompts[prompt_id].text, 
-                    requirement = requirement.description,
-                    model_input=data_col[i],
-                    model_output=model_ouput
-                )
-                client.request(
-                    data={
-                        "messages": [
-                            {"role": "system", "content": 'You are a helpful assistant. Please return the response as valid JSON.'},
-                            {"role": "user", "content": api_prompt}
-                        ],
-                        'response_format': {"type": "json_object"}  
-                    }, metadata={'num': i}, endpoint = "chat.completions"
-                )
-
-        client.run_request_function(chat_completion,to_predict_indices)
-        count = 0
-        for result in client:
-            num = result.metadata['num']
-            response = result.response.choices[0].message.content
-
-            evaluation_res = json.loads(response)
-
-            str_score = int(evaluation_res.get('pass/fail', '0'))
-            if str_score == 1:
-                score_col[num] = True
-            else:
-                score_col[num] = False
-
-            rationale_col[num] = evaluation_res.get('rationale', '')
-            count += 1
-            if count == len(to_predict_indices):
-                break
-
-        score_col.to_pickle(os.path.join(self.cache_path, score_hash + ".pickle"))
-        rationale_col.to_pickle(os.path.join(self.cache_path, rationale_hash + ".pickle"))
-                        
-        return [
-            DataProcessingReturn(column=score_col_obj, output=score_col),
-            DataProcessingReturn(column=rationale_col_obj, output=rationale_col)
-        ]
+        assert False, "evaluate_requirement is deprecated, use evaluate_requirement_batch instead"
 
     def evaluate_requirement_batch(self, model_name, prompt_id, to_predict_indices: Optional[FilterIds] = None,):
 
@@ -1119,32 +897,22 @@ class ZenoBackend(object):
         model_col = self.df[model_hash].copy()
         data_col = self.df[str(self.data_column)].copy()
 
-        client = OpenAIMultiClient(endpoint="chats", data_template={"model": model_name})
-
-
-        def chat_completion(indices):
-            for i in indices:
-                api_prompt = REQUIREMENT_EVALUATION_BATCH_PROMPT.format(
-                    prompt=self.prompts[prompt_id].text, 
-                    requirements=requirements_str,
-                    model_input=data_col[i],
-                    model_output=model_col[i]
-                )
-                client.request(
-                    data={
-                        "messages": [
-                            {"role": "system", "content": 'You are a helpful assistant. Please return the response as valid JSON.'},
-                            {"role": "user", "content": api_prompt}
-                        ],
-                        'response_format': {"type": "json_object"}  
-                    }, metadata={'num': i}, endpoint = "chat.completions"
-                )
-
-        client.run_request_function(chat_completion, to_predict_indices)
-        count = 0
-        for result in client:
-            num = result.metadata['num']
-            response = result.response.choices[0].message.content
+        results = litellm.batch_completion(
+            model=f"openai/gpt-4o-mini-2024-07-18",
+            messages=[[
+                    {"role": "system", "content": 'You are a helpful assistant. Please return the response as valid JSON.'},
+                    {"role": "user", "content": REQUIREMENT_EVALUATION_BATCH_PROMPT.format(
+                        prompt=self.prompts[prompt_id].text, 
+                        requirements=requirements_str,
+                        model_input=data_col[i],
+                        model_output=model_col[i]
+                    )}
+            ] for i in to_predict_indices],
+            response_format={"type": "json_object"}
+        )
+        
+        for (num, result) in zip(to_predict_indices, results):
+            response = result.choices[0].message.content
 
             evaluation_res = json.loads(response)["requirements"]
 
@@ -1156,10 +924,6 @@ class ZenoBackend(object):
                     requirement_ids_to_eval[requirement_id]["rationale_col"][num] = res.get('rationale', '')
                 except:
                     print(f"Error updating requirement {requirement_id} for result {res}")
-
-            count += 1
-            if count == len(to_predict_indices):
-                break
 
         for _, d in requirement_ids_to_eval.items():
             d["score_col"].to_pickle(os.path.join(self.cache_path, d["score_hash"] + ".pickle"))
@@ -1219,66 +983,27 @@ class ZenoBackend(object):
             column_type=ZenoColumnType.OUTPUT, name="output", model=cur_info.model, prompt_id=cur_info.prompt_id
         )
         model_col = self.df[str(model_col_obj)]
-        requirements = self.prompts[cur_info.prompt_id].requirements
+        requirements = list(self.prompts[cur_info.prompt_id].requirements.values())
+        max_id = max([int(x) for x in self.prompts[cur_info.prompt_id].requirements.keys()])
 
-        input_data = []
-        output_data = []
+        examples = []
         random_indices = list(random.sample(range(len(data_col)), 5))
         for i in random_indices:
-            input_data.append(data_col.at[i])
-            output_data.append(model_col.at[i])
+            examples.append(Example(
+                id=i,
+                input=data_col.at[i],
+                output=model_col.at[i],
+                is_positive=True,
+                feedback="",
+            ))
+        
+        suggested_requirement_list = self.prompt_agent.suggest_requirements(requirements, examples)
 
-        api_prompt = REQUIREMENT_SUGGESTION_PROMPT.format(prompt=self.prompts[cur_info.prompt_id].text, current_requirements = requirements,input_data=input_data, model_output=output_data)
-
-        client = OpenAIMultiClient(endpoint="chats", data_template={"model": cur_info.model})
-
-        def chat_completion():
-            client.request(
-                data={
-                    "messages": [
-                        {"role": "system", "content": "You are an experienced requirement engineer for an LLM application. Please return the response as valid JSON."},
-                        {"role": "user", "content": api_prompt}
-                    ],
-                    'response_format': {"type": "json_object"}
-                }
-            )
-
-        client.run_request_function(chat_completion)
-
-        suggested_requirements ={}
-        rid = str(len(self.prompts[cur_info.prompt_id].requirements)+1)
-
-        for result in client:
-            response = result.response.choices[0].message.content
-            new_reqs = json.loads(response).get("new_reqs", [])
-            for new_req in new_reqs:
-                example_data = new_req.get("example", {})
-                example_id = random_indices[int(example_data.get("id", ""))]
-                example_input = data_col.at[example_id]
-                example_output = str(model_col.at[example_id])
-                example_is_positive = example_data.get("isPositive", False)
-                example_feedback = example_data.get("feedback", "")
-                
-                example = Example(
-                    id=str(example_id),
-                    input=example_input,
-                    output=example_output,
-                    isPositive=example_is_positive,
-                    feedback=example_feedback
-                )
-                suggested_requirements[rid] = Requirement(
-                    id = rid,
-                    name = new_req["name"],
-                    description = new_req["description"],
-                    prompt_snippet = "",
-                    evaluation_method = new_req["evaluation_method"],
-                    priority = new_req["priority"],
-                    category = new_req["category"],
-                    feature = new_req["feature"],
-                    examples = [example])
-                rid = str(int(rid)+1)
-            break
-
+        for i, req in enumerate(suggested_requirement_list):
+            req.id = str(max_id + i + 1)
+            suggested_requirement_list[i] = self.prompt_agent.complete_requirements(req)
+        
+        suggested_requirements = {req.id: req for req in suggested_requirement_list}
         return suggested_requirements
 
     def update_requirement_feedback(self, req: FeedbackRequest) -> Dict[str, Requirement]:
@@ -1378,28 +1103,21 @@ class ZenoBackend(object):
             input_data=data_col.at[int(req.example_id)],
             model_output=model_col.at[int(req.example_id)],
             feedback=req.feedback
-        )
-
-        # Send the API request to OpenAI
-        client = OpenAIMultiClient(endpoint="chats", data_template={"model": req.model})
-
-        def chat_completion():
-            client.request(
-                data={
-                    "messages": [
-                        {"role": "system", "content": "You are an experienced requirement engineer for an LLM application. Given user feedback on an example, update the requirements."},
-                        {"role": "user", "content": api_prompt}
-                    ],
-                    'response_format': {"type": "json_object"}
-                }
-            )
-
-        client.run_request_function(chat_completion)
+        )       
 
         new_requirements = copy.copy(self.prompts[req.prompt_id].requirements)
 
-        for result in client:
-            response = result.response.choices[0].message.content
+        results = litellm.completion(
+            model=f"openai/gpt-4o-2024-08-06",
+            messages=[
+                {'role': 'system', 'content': 'You are an experienced requirement engineer for an LLM application. Given user feedback on an example, update the requirements.'},
+                {'role': 'user', 'content': api_prompt}
+            ],
+            response_format={"type": "json_object"}
+        )
+    
+        for result in results:
+            response = result.choices[0].message.content
             actions = json.loads(response).get("actions", [])
 
             # Handle actions: update, delete, add

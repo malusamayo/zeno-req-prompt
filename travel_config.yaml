@@ -9,7 +9,7 @@ data:
   data_column: "input"
 
 models:
-  - "gpt-4o-mini"
+  - "gpt-4o-mini-2024-07-18"
 
 prompt:
   task_description: "Create travel plan sketches based on user-provided constraints and preferences."

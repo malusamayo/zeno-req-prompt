@@ -9,7 +9,7 @@ data:
   data_column: "question"
 
 models:
-  - "gpt-4o-mini"
+  - "gpt-4o-mini-2024-07-18"
 
 prompt:
   task_description: "Write quiz answer options for the following question."

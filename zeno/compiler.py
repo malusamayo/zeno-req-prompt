@@ -1,17 +1,24 @@
 from typing import Callable, Dict, List, Optional, Union, Tuple
 import random
+import os
+import re
 import dsp
 import dspy
+import litellm
 from dspy import LabeledFewShot
 import threading
 import queue
 
 from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest, RemoveExampleFeedback
+from zeno.signatures import *
+
+litellm.api_key = os.environ.get("LITELLM_API_KEY")
+litellm.api_base = "https://cmu-aiinfra.litellm-prod.ai/"
 
 def example2text(example: Example) -> str:
 
     if example.is_positive:
-        return f"Input: {example.input}\nExpected Output: {example.output}"
+        return f"Input: {example.input}\nOutput: {example.output}"
     else:
         return f"Input: {example.input}\nIncorrect Output: {example.output}\nFeedback: {example.feedback}"
 
@@ -33,80 +40,31 @@ def requirements2text(requirements: Union[str, List[Requirement]]) -> str:
     requirements = sorted(requirements, key=lambda x: x.id)
     return "\n".join([f"[{requirement.id}] «{requirement2text(requirement)}»" for requirement in requirements])
 
-class BasicCompilePrompt(dspy.Signature):
-    """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task. 
-    
-Your task is to propose a prompt will lead a good language model to perform the task well and meet all the requirements. Don't be afraid to be creative."""
+def text2requirement(text: str) -> Requirement:
+    pattern = r"\[(\d+)\] «(.+): (.+)»"
+    match = re.search(pattern, text)
+    if match:
+        req_name = match.group(2)
+        req_description = match.group(3)
+        new_req = Requirement(
+            id="-1",
+            name=req_name,
+            description=req_description,
+            prompt_snippet="",
+            evaluation_method="",
+        )
+        return new_req
+    else:
+        return None
 
-    task_description = dspy.InputField(desc="Description of the task")
-    requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
-    input_variable = dspy.InputField(desc="The name of the input variable")
-    prompt = dspy.OutputField(desc="The proposed prompt")
-
-class CompilePrompt(dspy.Signature):
-    """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task.
-There are some hard requirements that the model must satisfy, and some soft requirements that the model should satisfy if possible. Make sure to include these requirements in your prompt.
-I will also provide you with some positive ``examples`` of the expected inputs and outputs for this task, as well as some negative ``examples`` that the model should avoid. You can incorporate these examples in your prompt.
-
-Your task is to propose a prompt will lead a good language model to perform the task well and meet all the requirements. Don't be afraid to be creative."""
-
-    task_description = dspy.InputField(desc="Description of the task")
-    requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
-    hard_requirements = dspy.InputField(format=requirements2text, desc="A list of hard requirements that the prompt must include")
-    new_requirements = dspy.InputField(format=requirements2text, desc="A list of new requirements that the prompt should prioritize")
-    good_examples = dspy.InputField(format=examples2text, desc="A list of good examples")
-    bad_examples = dspy.InputField(format=examples2text, desc="A list of bad examples")
-    input_variable = dspy.InputField(desc="The name of the input variable")
-    prompt = dspy.OutputField(desc="The proposed prompt")
-
-class BasicCompilePromptWithExamples(dspy.Signature):
-    """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task.
-I will also provide you with some positive ``examples`` of the expected inputs and outputs for this task, as well as some negative ``examples`` that the model should avoid. You can incorporate these examples in your prompt.
-
-Your task is to propose a prompt will lead a good language model to perform the task well and meet all the requirements. Don't be afraid to be creative."""
-
-    task_description = dspy.InputField(desc="Description of the task")
-    requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
-    incorrect_examples = dspy.InputField(format=examples2text, desc="A list of incorrect examples")
-    prompt = dspy.OutputField(desc="The proposed prompt")
-
-class RefinePromptWithFeedback(dspy.Signature):
-    """You are a prompt re-writer for large language models. I will give you a task description, a list of requirements that the large language model must satisfy when performing the task, and a prompt that was previously used for the task. I will also provide you with some feedback on the previous prompt.
-
-Your task is to propose a new prompt will lead a good language model to perform the task well, meet all the requirements, and incorporate the feedback. Don't be afraid to be creative."""
-
-    task_description = dspy.InputField(desc="Description of the task")
-    requirements = dspy.InputField(format=requirements2text, desc="A list of requirements that the prompt should include")
-    previous_prompt = dspy.InputField(desc="The previous prompt")
-    past_input = dspy.InputField(desc="The input that was used with the previous prompt")
-    past_output = dspy.InputField(desc="The output that was generated with the previous prompt")
-    feedback = dspy.InputField(desc="Feedback on the previous prompt")
-    prompt = dspy.OutputField(desc="The proposed prompt")
-
-
-class GenerateFieldDescription(dspy.Signature):
-    """Generate a concise and informative description for a given field based on the provided name and task description. This description should be no longer than 10 words and should be in simple english."""
-
-    task_description = dspy.InputField(
-        prefix="Task Description:",
-        desc="Description of the task the field is an input to.",
-    )
-    field_name = dspy.InputField(
-        prefix="Field Name:",
-        desc="Name of the field to generate synthetic data for.",
-    )
-    field_description = dspy.OutputField(
-        prefix="Field Description:",
-        desc="Description of the field.",
-    )
-
-class ConvertFeedbackToRequirement(dspy.Signature):
-    """Convert user feedback to a new requirement that an LLM should satisfy."""
-
-    task_description = dspy.InputField(desc="Description of the task")
-    existing_requirements = dspy.InputField(format=dsp.passages2text, desc="A list of existing requirements")
-    feedback = dspy.InputField(desc="User feedback on concrete model observations")
-    requirement = dspy.OutputField(desc="A new requirement for the prompt.")
+def text2requirements(text: str) -> List[Requirement]:
+    lines = text.split("\n")
+    requirements = []
+    for line in lines:
+        requirement = text2requirement(line)
+        if requirement is not None:
+            requirements.append(requirement)
+    return requirements
 
 class TaskProgram(dspy.Signature):
     pass
@@ -327,8 +285,9 @@ class PromptAgent:
 
     def __init__(self, input_variable="input"):
         super().__init__()
-        turbo = dspy.LM(model='gpt-4o', max_tokens=4096)
-        dspy.settings.configure(lm=turbo)
+        self.turbo = dspy.LM(model='openai/gpt-4o-2024-08-06')
+        self.mini = dspy.LM(model='openai/gpt-4o-mini-2024-07-18')        
+        dspy.settings.configure(lm=self.turbo)
 
         self.input_variable = input_variable
         self.basic_compiler = dspy.Predict(BasicCompilePrompt)
@@ -336,6 +295,9 @@ class PromptAgent:
 
         self.prompt_refiner = dspy.Predict(RefinePromptWithFeedback)
         self.feedback_converter = dspy.Predict(ConvertFeedbackToRequirement)
+
+        self.requirement_suggester = dspy.Predict(SuggestRequirements)
+        self.requirement_completer = dspy.Predict(CompleteRequirements)
 
         self.result_queue = queue.Queue()
 
@@ -413,10 +375,49 @@ class PromptAgent:
         prompt = self.result_queue.get()
         return prompt
     
+    def complete_requirements(
+        self, 
+        requirement: Requirement,
+    ) -> Requirement:
+        """Complete the requirements with additional fields.
+        Args:
+            requirement (Requirement): The requirement to complete.
+        Returns:
+            Requirement: The completed requirement.
+        """
+        requirement_description = requirement.description
+        with dspy.context(lm=self.mini):
+            result = self.requirement_completer(requirement_description=requirement_description)
+        requirement.name = result.requirement_name
+        requirement.evaluation_method = result.evaluation_method
+        requirement.priority = result.priority
+        requirement.category = result.category
+        
+        return requirement
+
+    def suggest_requirements(
+        self,
+        requirements: List[Requirement],
+        examples: List[Example],
+    ):
+        """Suggest new requirements.
+        Args:
+            requirements (List[Requirement]): The current requirements for the prompt.
+        Returns:
+            List[Requirement]: The suggested new requirements.
+        """
+        with dspy.context(lm=self.mini):
+            requirement_texts = self.requirement_suggester(
+                current_requirements=requirements2text(requirements),
+                current_output=examples2text(examples),
+                new_requirements="",
+            ).new_requirements
+        requirements = text2requirements(requirement_texts)
+        return requirements
 
 
 if __name__ == '__main__':
-    turbo = dspy.LM(model='gpt-4o-mini', max_tokens=4096)
+    turbo = dspy.LM(model='openai/gpt-4o-2024-08-06')
     dspy.settings.configure(lm=turbo)
 
     task_description = "Classify the sentiment of a tweet"
@@ -426,8 +427,19 @@ if __name__ == '__main__':
         Requirement(id="1", name="sarcasm-sentiment", description="The model should be able to detect sentiment in sarcasm", prompt_snippet="", evaluation_method=""),
         Requirement(id="2", name="emoji-sentiment", description="The model should be able to detect sentiment in emojis", prompt_snippet="", evaluation_method=""),
     ]
-
+    examples=[
+        Example(id="0", input="I love this movie", output="positive", is_positive=True),
+    ]
     optimizer = PromptAgent(input_variable=input_variable)
+    result = optimizer.suggest_requirements(
+        requirements,
+        examples,
+    )
+    dspy.inspect_history(n=1)
+    result = optimizer.complete_requirements(
+        requirements[1],
+    )
+    dspy.inspect_history(n=1)
     prompt = optimizer.compile_requirements(
         task_description=task_description,
         requirements=requirements,
