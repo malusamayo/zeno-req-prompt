@@ -72,8 +72,6 @@ class ZenoBackend(object):
         self.calculate_histogram_metrics = self.params.calculate_histogram_metrics
         self.model_names = self.params.models
 
-        self.prompt_agent = PromptAgent(input_variable=self.params.data_column)
-
         self.df = read_metadata(self.metadata)
         self.tests = read_functions(self.functions)
 
@@ -110,6 +108,7 @@ class ZenoBackend(object):
         )
         self.current_prompt_id = list(self.prompts.keys())[-1]
         self.task = self.params.task_description
+        self.prompt_agent = PromptAgent(task_description=self.task, input_variable=self.params.data_column)
 
         # for pid, prompt in self.prompts.items():
         #     if len(prompt.requirements) == 0:
@@ -847,7 +846,6 @@ class ZenoBackend(object):
         requirements = self.prompts[prompt_id].requirements
         
         prompt = self.prompt_agent.compile_requirements(
-            task_description=self.task,
             requirements=list(requirements.values()),
             requirements_prev=list(requirements_prev.values())
         )

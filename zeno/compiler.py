@@ -284,13 +284,21 @@ class ReqHITLPromptOptimizer:
 
 class PromptAgent:
 
-    def __init__(self, input_variable="input"):
+    def __init__(self, task_description, input_variable="input"):
         super().__init__()
         self.turbo = dspy.LM(model='openai/gpt-4o-2024-08-06')
         self.mini = dspy.LM(model='openai/gpt-4o-mini-2024-07-18')        
         dspy.settings.configure(lm=self.turbo)
 
         self.input_variable = input_variable
+        self.task_description = task_description
+        self.task_program = construct_task_program(
+            task_description=self.task_description,
+            input_variable=self.input_variable,
+            output_variable="output",
+            prompt="",
+        )
+
         self.basic_compiler = dspy.Predict(BasicCompilePrompt)
         self.compiler = dspy.Predict(CompilePrompt)
 
@@ -303,7 +311,6 @@ class PromptAgent:
 
     def optimize_prompt(
         self,
-        task_description: str,
         prompt: str,
         requirements: List[Requirement],
     ):
@@ -314,13 +321,8 @@ class PromptAgent:
         Returns:
             str: The optimized prompt.
         """
-        task_program = construct_task_program(
-            task_description=task_description,
-            input_variable=self.input_variable,
-            output_variable="output",
-            prompt=prompt,
-        )
-        task_program_predictor = dspy.Predict(task_program)
+        self.task_program.__doc__ = prompt
+        task_program_predictor = dspy.Predict(self.task_program)
 
         for requirement in requirements:
             examples = requirement.examples
@@ -344,14 +346,14 @@ class PromptAgent:
             while not result.meets_requirement and rounds < max_rounds:
                 # Refine the prompt
                 prompt = self.prompt_refiner(
-                    task_description=task_description,
+                    task_description=self.task_description,
                     requirements=requirements2text(requirements),
                     previous_prompt=prompt,
                     past_input=example.input,
                     past_output=output,
                     feedback=result.reasoning
                 ).prompt
-                task_program.__doc__ = prompt
+                self.task_program.__doc__ = prompt
                 task_program_predictor = dspy.Predict(task_program)
                 
                 # Evaluate the requirement again
@@ -371,7 +373,6 @@ class PromptAgent:
 
     def compile_requirements(
         self, 
-        task_description, 
         requirements: List[Requirement],
         requirements_prev: Optional[List[Requirement]] = None,
     ) -> str:
@@ -411,7 +412,7 @@ class PromptAgent:
 
         if len(examples) > 0 or len(hard_requirements) > 0:
             prompt = self.compiler(
-                task_description=task_description,
+                task_description=self.task_description,
                 requirements=requirements2text(requirements),
                 hard_requirements=requirements2text(hard_requirements),
                 new_requirements=requirements2text(diff_requirements),
@@ -421,13 +422,12 @@ class PromptAgent:
             ).prompt
         else:
            prompt = self.basic_compiler(
-                task_description=task_description,
+                task_description=self.task_description,
                 requirements=requirements2text(requirements),
                 input_variable=self.input_variable,
             ).prompt
 
         prompt = self.optimize_prompt(
-            task_description=task_description, 
             prompt=prompt,
             requirements=requirements,
         )
@@ -546,10 +546,10 @@ if __name__ == '__main__':
             examples=[Example(id="3", input="I'm feeling great 😭", output="negative", is_positive=False)]),
     ]
 
-    optimizer = PromptAgent(input_variable=input_variable)
+    optimizer = PromptAgent(task_description=task_description, input_variable=input_variable)
     result = optimizer.suggest_requirements(
         requirements,
-        examples,
+        [requirements[1].examples[0]],
     )
     dspy.inspect_history(n=1)
     result = optimizer.complete_requirements(
@@ -557,7 +557,6 @@ if __name__ == '__main__':
     )
     dspy.inspect_history(n=1)
     prompt = optimizer.compile_requirements(
-        task_description=task_description,
         requirements=requirements,
     )
 
