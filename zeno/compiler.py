@@ -1,4 +1,5 @@
 from typing import Callable, Dict, List, Optional, Union, Tuple
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import random
 import os
 import re
@@ -302,6 +303,7 @@ class PromptAgent:
 
     def optimize_prompt(
         self,
+        task_description: str,
         prompt: str,
         requirements: List[Requirement],
     ):
@@ -314,7 +316,7 @@ class PromptAgent:
         """
         task_program = construct_task_program(
             task_description=task_description,
-            input_variable=input_variable,
+            input_variable=self.input_variable,
             output_variable="output",
             prompt=prompt,
         )
@@ -328,7 +330,7 @@ class PromptAgent:
             example = random.choice(examples)
 
             output = task_program_predictor(
-                **{input_variable: example.input},
+                **{self.input_variable: example.input},
             ).output
             result = self.requirement_evaluator(
                 model_input=example.input,
@@ -354,7 +356,7 @@ class PromptAgent:
                 
                 # Evaluate the requirement again
                 output = task_program_predictor(
-                    **{input_variable: example.output},
+                    **{self.input_variable: example.output},
                 ).output
                 result = self.requirement_evaluator(
                     model_input=example.input,
@@ -425,6 +427,7 @@ class PromptAgent:
             ).prompt
 
         prompt = self.optimize_prompt(
+            task_description=task_description, 
             prompt=prompt,
             requirements=requirements,
         )
@@ -468,6 +471,49 @@ class PromptAgent:
             ).new_requirements
         requirements = text2requirements(requirement_texts)
         return requirements
+
+    def evaluate_requirements(
+        self,
+        requirements: List[Requirement],
+        examples: List[Example],
+    ):
+        """Evaluate the requirements.
+        Args:
+            requirements (List[Requirement]): The requirements to evaluate.
+            examples (List[Example]): The examples to evaluate.
+        Returns:
+            List[bool]: The evaluation results.
+        """
+        completions = []
+        results = []
+
+        with dspy.context(lm=self.mini):
+            with ThreadPoolExecutor(max_workers=100) as executor:
+                for example in examples:
+                    for requirement in requirements:
+                        future = executor.submit(
+                            self.requirement_evaluator,
+                            model_input=example.input,
+                            model_output=example.output, 
+                            requirement=requirement2text(requirement),
+                            evaluation_method=requirement.evaluation_method,
+                        )
+                        completions.append((requirement.id, example.id, future))
+
+        for (requirement.id, example.id, future) in completions:
+            try:
+                result = future.result()
+                results.append(
+                    {
+                        "requirement_id": requirement.id,
+                        "example_id": example.id,
+                        "score": result.meets_requirement,
+                        "rationale": result.reasoning,
+                    }
+                )
+            except Exception as exc:
+                results.append(exc)
+        return results
 
 
 if __name__ == '__main__':
@@ -516,4 +562,17 @@ if __name__ == '__main__':
     )
 
     print(prompt)
+
+    all_examples = [
+        Example(id="0", input="I'm feeling great 😊", output="positive", is_positive=True),
+        Example(id="1", input="I'm feeling terrible 😭", output="negative", is_positive=True),
+        Example(id="2", input="Feeling great lol", output="negative", is_positive=False),
+        Example(id="3", input="I'm feeling great 😭", output="negative", is_positive=False),
+    ]
+    results = optimizer.evaluate_requirements(
+        requirements=requirements,
+        examples=all_examples,
+    )
+    print(results)
+
     dspy.inspect_history(n=10)

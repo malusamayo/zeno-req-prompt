@@ -897,33 +897,53 @@ class ZenoBackend(object):
         model_col = self.df[model_hash].copy()
         data_col = self.df[str(self.data_column)].copy()
 
-        results = litellm.batch_completion(
-            model=f"openai/gpt-4o-mini-2024-07-18",
-            messages=[[
-                    {"role": "system", "content": 'You are a helpful assistant. Please return the response as valid JSON.'},
-                    {"role": "user", "content": REQUIREMENT_EVALUATION_BATCH_PROMPT.format(
-                        prompt=self.prompts[prompt_id].text, 
-                        requirements=requirements_str,
-                        model_input=data_col[i],
-                        model_output=model_col[i]
-                    )}
-            ] for i in to_predict_indices],
-            response_format={"type": "json_object"}
+        results = self.prompt_agent.evaluate_requirements(
+            requirements=list(self.prompts[prompt_id].requirements.values()),
+            examples=[Example(
+                id=i,
+                input=data_col.at[i],
+                output=model_col.at[i],
+                is_positive=True,
+                feedback="",
+            ) for i in to_predict_indices]
         )
+
+        for result in results:
+            requirement_id = result.get('requirement_id', None)
+            example_id = result.get('example_id', None)
+            score = result.get('score', 0)
+            rationale = result.get('rationale', '')
+            requirement_ids_to_eval[requirement_id]["score_col"][example_id] = score
+            requirement_ids_to_eval[requirement_id]["rationale_col"][example_id] = rationale
+
+
+        # results = litellm.batch_completion(
+        #     model=f"openai/gpt-4o-mini-2024-07-18",
+        #     messages=[[
+        #             {"role": "system", "content": 'You are a helpful assistant. Please return the response as valid JSON.'},
+        #             {"role": "user", "content": REQUIREMENT_EVALUATION_BATCH_PROMPT.format(
+        #                 prompt=self.prompts[prompt_id].text, 
+        #                 requirements=requirements_str,
+        #                 model_input=data_col[i],
+        #                 model_output=model_col[i]
+        #             )}
+        #     ] for i in to_predict_indices],
+        #     response_format={"type": "json_object"}
+        # )
         
-        for (num, result) in zip(to_predict_indices, results):
-            response = result.choices[0].message.content
+        # for (num, result) in zip(to_predict_indices, results):
+        #     response = result.choices[0].message.content
 
-            evaluation_res = json.loads(response)["requirements"]
+        #     evaluation_res = json.loads(response)["requirements"]
 
-            for res in evaluation_res:
-                requirement_id = str(res.get('requirement_id', ""))
-                str_score = int(res.get('pass/fail', '0'))
-                try:
-                    requirement_ids_to_eval[requirement_id]["score_col"][num] = str_score == 1
-                    requirement_ids_to_eval[requirement_id]["rationale_col"][num] = res.get('rationale', '')
-                except:
-                    print(f"Error updating requirement {requirement_id} for result {res}")
+        #     for res in evaluation_res:
+        #         requirement_id = str(res.get('requirement_id', ""))
+        #         str_score = int(res.get('pass/fail', '0'))
+        #         try:
+        #             requirement_ids_to_eval[requirement_id]["score_col"][num] = str_score == 1
+        #             requirement_ids_to_eval[requirement_id]["rationale_col"][num] = res.get('rationale', '')
+        #         except:
+        #             print(f"Error updating requirement {requirement_id} for result {res}")
 
         for _, d in requirement_ids_to_eval.items():
             d["score_col"].to_pickle(os.path.join(self.cache_path, d["score_hash"] + ".pickle"))
