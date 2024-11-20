@@ -296,12 +296,78 @@ class PromptAgent:
         self.prompt_refiner = dspy.Predict(RefinePromptWithFeedback)
         self.feedback_converter = dspy.Predict(ConvertFeedbackToRequirement)
 
-        self.requirement_suggester = dspy.Predict(SuggestRequirements)
+        self.requirement_suggester = dspy.ChainOfThought(SuggestRequirements)
         self.requirement_completer = dspy.Predict(CompleteRequirements)
+        self.requirement_evaluator = dspy.ChainOfThought(EvaluateRequirement)
 
-        self.result_queue = queue.Queue()
+    def optimize_prompt(
+        self,
+        prompt: str,
+        requirements: List[Requirement],
+    ):
+        """Optimize the prompt to satisfy the given requirements.
+        Args:
+            prompt (str): The prompt to optimize.
+            requirements (List[Requirement]): The requirements that the prompt should satisfy.
+        Returns:
+            str: The optimized prompt.
+        """
+        task_program = construct_task_program(
+            task_description=task_description,
+            input_variable=input_variable,
+            output_variable="output",
+            prompt=prompt,
+        )
+        task_program_predictor = dspy.Predict(task_program)
 
-    def _compile_requirements(
+        for requirement in requirements:
+            examples = requirement.examples
+            if len(examples) == 0:
+                continue
+
+            example = random.choice(examples)
+
+            output = task_program_predictor(
+                **{input_variable: example.input},
+            ).output
+            result = self.requirement_evaluator(
+                model_input=example.input,
+                model_output=output, 
+                requirement=requirement2text(requirement),
+                evaluation_method=requirement.evaluation_method,
+            )
+
+            max_rounds = 3
+            rounds = 0
+            while not result.meets_requirement and rounds < max_rounds:
+                # Refine the prompt
+                prompt = self.prompt_refiner(
+                    task_description=task_description,
+                    requirements=requirements2text(requirements),
+                    previous_prompt=prompt,
+                    past_input=example.input,
+                    past_output=output,
+                    feedback=result.reasoning
+                ).prompt
+                task_program.__doc__ = prompt
+                task_program_predictor = dspy.Predict(task_program)
+                
+                # Evaluate the requirement again
+                output = task_program_predictor(
+                    **{input_variable: example.output},
+                ).output
+                result = self.requirement_evaluator(
+                    model_input=example.input,
+                    model_output=output, 
+                    requirement=requirement2text(requirement),
+                    evaluation_method=requirement.evaluation_method,
+                )
+                rounds += 1
+
+        return prompt
+
+
+    def compile_requirements(
         self, 
         task_description, 
         requirements: List[Requirement],
@@ -347,8 +413,8 @@ class PromptAgent:
                 requirements=requirements2text(requirements),
                 hard_requirements=requirements2text(hard_requirements),
                 new_requirements=requirements2text(diff_requirements),
-                good_examples=examples2text([example for example in examples if example.is_positive]),
-                bad_examples=examples2text([example for example in examples if not example.is_positive]),
+                # good_examples=examples2text([example for example in examples if example.is_positive]),
+                # bad_examples=examples2text([example for example in examples if not example.is_positive]),
                 input_variable=self.input_variable,
             ).prompt
         else:
@@ -357,22 +423,11 @@ class PromptAgent:
                 requirements=requirements2text(requirements),
                 input_variable=self.input_variable,
             ).prompt
-        dspy.inspect_history(n=1)     
-        self.result_queue.put(prompt)
 
-    def compile_requirements(
-        self, 
-        task_description, 
-        requirements: List[Requirement],
-        requirements_prev: Optional[List[Requirement]] = None,
-    ) -> str:
-        thread = threading.Thread(
-                target=self._compile_requirements,
-                args=(task_description, requirements, requirements_prev)
+        prompt = self.optimize_prompt(
+            prompt=prompt,
+            requirements=requirements,
         )
-        thread.start()
-        thread.join()
-        prompt = self.result_queue.get()
         return prompt
     
     def complete_requirements(
@@ -410,7 +465,6 @@ class PromptAgent:
             requirement_texts = self.requirement_suggester(
                 current_requirements=requirements2text(requirements),
                 current_output=examples2text(examples),
-                new_requirements="",
             ).new_requirements
         requirements = text2requirements(requirement_texts)
         return requirements
@@ -423,13 +477,29 @@ if __name__ == '__main__':
     task_description = "Classify the sentiment of a tweet"
     input_variable = "tweet"
     requirements=[
-        Requirement(id="0", name="classification-result", description="The classification result must be one of 'positive', 'negative', or 'neutral", prompt_snippet="", evaluation_method=""),
-        Requirement(id="1", name="sarcasm-sentiment", description="The model should be able to detect sentiment in sarcasm", prompt_snippet="", evaluation_method=""),
-        Requirement(id="2", name="emoji-sentiment", description="The model should be able to detect sentiment in emojis", prompt_snippet="", evaluation_method=""),
+        Requirement(
+            id="0", 
+            name="classification-result", 
+            description="The classification result must be one of 'positive', 'negative', or 'neutral", 
+            prompt_snippet="", 
+            evaluation_method="", 
+            examples=[Example(id="0", input="I'm feeling great 😊", output="positive", is_positive=True), Example(id="1", input="I'm feeling terrible 😭", output="negative", is_positive=True)]),
+        Requirement(
+            id="1", 
+            name="sarcasm-sentiment", 
+            description="The model should be able to detect sentiment in sarcasm", 
+            prompt_snippet="", 
+            evaluation_method="",
+            examples=[Example(id="2", input="Feeling great lol", output="negative", is_positive=False)]),
+        Requirement(
+            id="2",
+            name="emoji-sentiment", 
+            description="The model should be able to detect sentiment in emojis", 
+            prompt_snippet="", 
+            evaluation_method="",
+            examples=[Example(id="3", input="I'm feeling great 😭", output="negative", is_positive=False)]),
     ]
-    examples=[
-        Example(id="0", input="I love this movie", output="positive", is_positive=True),
-    ]
+
     optimizer = PromptAgent(input_variable=input_variable)
     result = optimizer.suggest_requirements(
         requirements,
@@ -446,4 +516,4 @@ if __name__ == '__main__':
     )
 
     print(prompt)
-    # dspy.inspect_history(n=1)
+    dspy.inspect_history(n=10)

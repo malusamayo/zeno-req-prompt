@@ -15,6 +15,15 @@ class SuggestRequirements(dspy.Signature):
     current_output = dspy.InputField(desc="Sampled current model inputs and outputs")
     new_requirements = dspy.OutputField(desc="Suggested new requirements for the LLM")
 
+class EvaluateRequirement(dspy.Signature):
+    """Given the requirement and evaluation criteria, determine if the model output meets the requirement. Answer yes or no."""
+    
+    model_input = dspy.InputField(desc="The model input")
+    model_output = dspy.InputField(desc="The model output")
+    requirement = dspy.InputField(desc="The requirement")
+    evaluation_method = dspy.InputField(desc="The evaluation method")
+    meets_requirement: bool = dspy.OutputField(desc="Whether the model output meets the requirement")
+
 class BasicCompilePrompt(dspy.Signature):
     """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task. 
     
@@ -27,8 +36,8 @@ Your task is to propose a prompt will lead a good language model to perform the 
 
 class CompilePrompt(dspy.Signature):
     """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task.
-There are some hard requirements that the model must satisfy, and some soft requirements that the model should satisfy if possible. Make sure to include these requirements in your prompt.
-I will also provide you with some positive ``examples`` of the expected inputs and outputs for this task, as well as some negative ``examples`` that the model should avoid. You can incorporate these examples in your prompt.
+There are some hard requirements that the model must satisfy, and some soft requirements that the model should satisfy if possible. Make sure to include these requirements in your prompt.\
+Some new requirements may also provided, which you should prioritize in your prompt.
 
 Your task is to propose a prompt will lead a good language model to perform the task well and meet all the requirements. Don't be afraid to be creative."""
 
@@ -36,8 +45,8 @@ Your task is to propose a prompt will lead a good language model to perform the 
     requirements = dspy.InputField(desc="A list of requirements that the prompt should include")
     hard_requirements = dspy.InputField(desc="A list of hard requirements that the prompt must include")
     new_requirements = dspy.InputField(desc="A list of new requirements that the prompt should prioritize")
-    good_examples = dspy.InputField(desc="A list of good examples")
-    bad_examples = dspy.InputField(desc="A list of bad examples")
+    # good_examples = dspy.InputField(desc="A list of good examples")
+    # bad_examples = dspy.InputField(desc="A list of bad examples")
     input_variable = dspy.InputField(desc="The name of the input variable")
     prompt = dspy.OutputField(desc="The proposed prompt")
 
