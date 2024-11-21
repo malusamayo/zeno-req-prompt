@@ -165,18 +165,16 @@
 		});
 	}
 
-	function handlexampledrag(isFix, isPositive) {
+	function handlexampledrag(isFix) {
 		if (isFix) {
 			feedbackToEvaluators();
 		} else {
-			// draggedexample.isPositive = isPositive;
-			let feedbackPositive = "negative";
-			if (isPositive) {
-				feedbackPositive = "positive";
-			}
+			let feedbackPositive = draggedexample.isPositive
+				? "positive"
+				: "negative";
 			let feedback = `This is a '${feedbackPositive}' example affirmed by users.`;
 			// requirement.examples.push(draggedexample);
-			feedbackToRequirements(isPositive, feedback);
+			feedbackToRequirements(draggedexample.isPositive, feedback);
 		}
 		showdraggingoptions = false;
 	}
@@ -257,25 +255,18 @@
 										<div class="icon-item">
 											<span
 												class="material-icons"
-												style="color: green;"
-												on:click={() => handlexampledrag(false, true)}>
-												thumb_up</span>
-											<p class="caption">Positive example</p>
+												style="color: darkgrey;"
+												on:click={() => handlexampledrag(false)}
+												on:keydown={() => {}}>
+												smart_toy</span>
+											<p class="caption">Fix requirement</p>
 										</div>
 										<div class="icon-item">
 											<span
 												class="material-icons"
-												style="color: red;"
-												on:click={() => handlexampledrag(false, false)}
-												>thumb_down</span>
-											<p class="caption">Negative example</p>
-										</div>
-										<div class="icon-item">
-											<span
-												class="material-icons"
-												style="color: black;"
-												on:click={() => handlexampledrag(true, true)}
-												>build</span>
+												style="color: darkgrey;"
+												on:click={() => handlexampledrag(true)}
+												on:keydown={() => {}}>bug_report</span>
 											<p class="caption">Fix evaluator</p>
 										</div>
 									</div>
@@ -723,11 +714,12 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		width: 300px;
+		width: 180px;
 		padding: 20px;
 		background-color: white;
 		border: 1px solid #ccc;
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+		padding: 10px 0px 0px 10px;
 		z-index: 100;
 	}
 
