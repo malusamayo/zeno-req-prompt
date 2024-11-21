@@ -13,7 +13,7 @@ class SuggestRequirements(dspy.Signature):
 
     current_requirements = dspy.InputField(desc="The current requirements for the LLM")
     current_output = dspy.InputField(desc="Sampled current model inputs and outputs")
-    new_requirements = dspy.OutputField(desc="Suggested new requirements for the LLM")
+    new_requirements = dspy.OutputField(desc="Suggested additional requirements for the LLM")
 
 class EvaluateRequirement(dspy.Signature):
     """Given the requirement and evaluation criteria, determine if the model output meets the requirement. Answer yes or no."""
@@ -57,6 +57,7 @@ Your task is to propose a prompt will lead a good language model to perform the 
     # good_examples = dspy.InputField(desc="A list of good examples")
     # bad_examples = dspy.InputField(desc="A list of bad examples")
     input_variable = dspy.InputField(desc="The name of the input variable")
+    previous_prompt = dspy.InputField(desc="The previous prompt")
     prompt = dspy.OutputField(desc="The proposed prompt")
 
 class BasicCompilePromptWithExamples(dspy.Signature):
