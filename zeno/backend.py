@@ -28,6 +28,7 @@ from zeno.api import (
     ModelReturn,
     ZenoOptions,
     ZenoParameters,
+    model,
 )
 from zeno.classes.base import DataProcessingReturn, MetadataType, ZenoColumnType
 from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest, RemoveExampleFeedback, OptimizeRequirement
@@ -108,8 +109,22 @@ class ZenoBackend(object):
         )
         self.current_prompt_id = list(self.prompts.keys())[-1]
         self.task = self.params.task_description
-        self.prompt_agent = PromptAgent(task_description=self.task, input_variable=self.params.data_column)
+        self.prompt_agent = PromptAgent(
+            model=self.model_names[0],
+            task_description=self.task, 
+            input_variable=self.params.data_column
+        )
 
+        @model
+        def model_inference(model_name, prompt):
+            def pred(df, ops: ZenoOptions):
+                out = self.prompt_agent.run_inference(
+                    prompt, 
+                    list(df[ops.data_column])
+                )
+                return ModelReturn(model_output=out)
+            return pred
+        self.predict_function = model_inference
         # for pid, prompt in self.prompts.items():
         #     if len(prompt.requirements) == 0:
         #         self.extract_requirements(pid)

@@ -284,8 +284,9 @@ class ReqHITLPromptOptimizer:
 
 class PromptAgent:
 
-    def __init__(self, task_description, input_variable="input"):
+    def __init__(self, model, task_description, input_variable="input"):
         super().__init__()
+        self.pred_model = dspy.LM(model=f'openai/{model}')
         self.turbo = dspy.LM(model='openai/gpt-4o-2024-08-06')
         self.mini = dspy.LM(model='openai/gpt-4o-mini-2024-07-18')        
         dspy.settings.configure(lm=self.turbo)
@@ -332,9 +333,10 @@ class PromptAgent:
 
             example = random.choice(examples)
 
-            output = task_program_predictor(
-                **{self.input_variable: example.input},
-            ).output
+            with dspy.context(lm=self.pred_model):
+                output = task_program_predictor(
+                    **{self.input_variable: example.input},
+                ).output
             result = self.requirement_evaluator(
                 model_input=example.input,
                 model_output=output, 
@@ -355,12 +357,13 @@ class PromptAgent:
                     feedback=result.reasoning
                 ).prompt
                 self.task_program.__doc__ = prompt
-                task_program_predictor = dspy.Predict(task_program)
+                task_program_predictor = dspy.Predict(self.task_program)
                 
                 # Evaluate the requirement again
-                output = task_program_predictor(
-                    **{self.input_variable: example.output},
-                ).output
+                with dspy.context(lm=self.pred_model):
+                    output = task_program_predictor(
+                        **{self.input_variable: example.output},
+                    ).output
                 result = self.requirement_evaluator(
                     model_input=example.input,
                     model_output=output, 
@@ -472,6 +475,35 @@ class PromptAgent:
             ).new_requirements
         requirements = text2requirements(requirement_texts)
         return requirements
+
+    def run_inference(
+        self,
+        prompt: str,
+        example_inputs: List[str],
+    ):
+        """Run inference on the examples.
+        Args:
+            examples (List[Example]): The examples to run inference on.
+        Returns:
+            List[Example]: The results of the inference.
+        """
+        completions = []
+        results = []
+        self.task_program.__doc__ = prompt
+        task_program_predictor = dspy.Predict(self.task_program)
+
+        with dspy.context(lm=self.pred_model):
+            with ThreadPoolExecutor(max_workers=100) as executor:
+                for example_input in example_inputs:
+                    future = executor.submit(
+                        task_program_predictor,
+                        **{self.input_variable: example_input},
+                    )
+                    completions.append(future)
+        for completion in completions:
+            result = completion.result()
+            results.append(result.output)
+        return results
 
     def evaluate_requirements(
         self,

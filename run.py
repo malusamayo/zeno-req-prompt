@@ -7,41 +7,16 @@ from zeno.runner import run_zeno
 from zeno.api import model
 from zeno.api import ZenoParameters, ZenoOptions, ModelReturn
 from zeno.classes.classes import Prompt, Requirement
+from zeno.util import read_config
 
 
 litellm.api_key = os.environ.get("LITELLM_API_KEY")
 litellm.api_base = "https://cmu-aiinfra.litellm-prod.ai/"
 litellm.verbose = True
 
-@model
-def openai_inference(model_name, prompt):
-    def chat_completion(inputs):
-        for i, x in enumerate(inputs):
-            client.request(
-                data={
-                    "messages": [
-                        {"role": "system", "content": prompt},
-                        {"role": "user", "content": x}
-                    ],
-                }, metadata={'num': i}
-            )
-
-    def pred(df, ops: ZenoOptions):
-        results = litellm.batch_completion(
-            model=f"openai/{model_name}",
-            messages=[[
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": x}
-            ] for x in df[ops.data_column]],
-        )
-        out = [result.choices[0].message.content for result in results]
-        return ModelReturn(model_output=out)
-
-    return pred
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='travel_config.yaml')
+    parser.add_argument('--config', type=str, default='config.yaml')
     args = parser.parse_args()
     
     with open(args.config, 'r') as f:
@@ -65,7 +40,6 @@ if __name__ == '__main__':
 
     params = ZenoParameters(
         metadata=data,
-        functions=[openai_inference],
         models=config["models"],
         prompts={'v1': Prompt(text=prompt, version='v1', requirements=requirements, task=config["prompt"]["task_description"])},
         view='text-classification',
@@ -76,4 +50,5 @@ if __name__ == '__main__':
         host=config["settings"]["host"],
         port=config["settings"]["port"],
     )
+    params = read_config(params)
     run_zeno(params)
