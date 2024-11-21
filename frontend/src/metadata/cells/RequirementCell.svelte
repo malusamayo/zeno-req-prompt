@@ -26,6 +26,7 @@
 		suggestedRequirements,
 		currentPromptId,
 		requirementUpdating,
+		status,
 	} from "../../stores";
 	import { clickOutside } from "../../util/clickOutside";
 	import {
@@ -144,6 +145,10 @@
 
 	function feedbackToEvaluators() {
 		requirementUpdating.set(true);
+		status.update((s) => {
+			s.status = "Aligning evaluators";
+			return s;
+		});
 		ZenoService.evaluatorUpdates({
 			model: $model,
 			promptId: $currentPromptId,
@@ -153,6 +158,10 @@
 		}).then((newRequirements) => {
 			requirements.set(newRequirements);
 			requirementUpdating.set(false);
+			status.update((s) => {
+				s.status = "Done processing";
+				return s;
+			});
 		});
 	}
 

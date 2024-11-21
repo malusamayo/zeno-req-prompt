@@ -308,6 +308,7 @@ class PromptAgent:
         self.requirement_suggester = dspy.ChainOfThought(SuggestRequirements)
         self.requirement_completer = dspy.Predict(CompleteRequirements)
         self.requirement_evaluator = dspy.ChainOfThought(EvaluateRequirement)
+        self.requirement_updater = dspy.Predict(UpdateEvaluationMethod)
 
     def optimize_prompt(
         self,
@@ -515,6 +516,45 @@ class PromptAgent:
                 results.append(exc)
         return results
 
+    def align_evaluators(
+        self,
+        requirements: List[Requirement],
+    ):
+        """Align the evaluators with the requirements and examples.
+        Args:
+            requirements (List[Requirement]): The requirements to evaluate.
+            examples (List[Example]): The examples to evaluate.
+        Returns:
+            List[Tuple[Requirement, Example]]: The aligned requirements and examples.
+        """
+        for requirement in requirements:
+            for example in requirement.examples:
+                with dspy.context(lm=self.mini):
+                    result = self.requirement_evaluator(
+                        model_input=example.input,
+                        model_output=example.output, 
+                        requirement=requirement2text(requirement),
+                        evaluation_method=requirement.evaluation_method,
+                    )
+                rounds = 0
+                max_rounds = 3
+                while result.meets_requirement != example.is_positive and rounds < max_rounds:
+                    requirement.evaluation_method = self.requirement_updater(  
+                        model_input=example.input,
+                        model_output=example.output,
+                        expected_evaluation_result=example.is_positive,
+                        previous_evaluation_method=requirement.evaluation_method,
+                    ).updated_evaluation_method
+                    with dspy.context(lm=self.mini):
+                        result = self.requirement_evaluator(
+                            model_input=example.input,
+                            model_output=example.output, 
+                            requirement=requirement2text(requirement),
+                            evaluation_method=requirement.evaluation_method,
+                        )
+                    rounds += 1
+        return requirements
+
 
 if __name__ == '__main__':
     turbo = dspy.LM(model='openai/gpt-4o-2024-08-06')
@@ -546,6 +586,13 @@ if __name__ == '__main__':
             examples=[Example(id="3", input="I'm feeling great 😭", output="negative", is_positive=False)]),
     ]
 
+    all_examples = [
+        Example(id="0", input="I'm feeling great 😊", output="positive", is_positive=True),
+        Example(id="1", input="I'm feeling terrible 😭", output="negative", is_positive=True),
+        Example(id="2", input="Feeling great lol", output="negative", is_positive=False),
+        Example(id="3", input="I'm feeling great 😭", output="negative", is_positive=False),
+    ]
+
     optimizer = PromptAgent(task_description=task_description, input_variable=input_variable)
     result = optimizer.suggest_requirements(
         requirements,
@@ -562,16 +609,23 @@ if __name__ == '__main__':
 
     print(prompt)
 
-    all_examples = [
-        Example(id="0", input="I'm feeling great 😊", output="positive", is_positive=True),
-        Example(id="1", input="I'm feeling terrible 😭", output="negative", is_positive=True),
-        Example(id="2", input="Feeling great lol", output="negative", is_positive=False),
-        Example(id="3", input="I'm feeling great 😭", output="negative", is_positive=False),
-    ]
     results = optimizer.evaluate_requirements(
         requirements=requirements,
         examples=all_examples,
     )
     print(results)
+
+    requirements = optimizer.align_evaluators(
+        requirements=[
+            Requirement(
+            id="1", 
+            name="sarcasm-sentiment", 
+            description="The model should be able to detect sentiment in sarcasm", 
+            prompt_snippet="", 
+            evaluation_method="",
+            examples=[Example(id="2", input="Feeling great lol", output="neutral", is_positive=False)]),
+        ],
+    )
+    print(requirements)
 
     dspy.inspect_history(n=10)

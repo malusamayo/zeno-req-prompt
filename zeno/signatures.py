@@ -24,6 +24,15 @@ class EvaluateRequirement(dspy.Signature):
     evaluation_method = dspy.InputField(desc="The evaluation method")
     meets_requirement: bool = dspy.OutputField(desc="Whether the model output meets the requirement")
 
+class UpdateEvaluationMethod(dspy.Signature):
+    """Given an example, update the evaluation method to produce the expected evaluation result."""
+    
+    model_input = dspy.InputField(desc="The model input")
+    model_output = dspy.InputField(desc="The model output")
+    expected_evaluation_result = dspy.InputField(desc="The expected evaluation result")
+    previous_evaluation_method = dspy.InputField(desc="The previous evaluation method")
+    updated_evaluation_method = dspy.OutputField(desc="The updated evaluation method")
+
 class BasicCompilePrompt(dspy.Signature):
     """You are a prompt writer for large language models. I will give you a task description, and a list of requirements that the large language model must satisfy when performing the task. 
     

@@ -543,14 +543,7 @@ class ZenoBackend(object):
 
         if len(evaluations_to_run) > 0:
             (model_name, prompt_id, tag_ids) = (evaluations_to_run[0].model, evaluations_to_run[0].prompt_id,evaluations_to_run[0].filter_ids)
-            inference_outputs = self.evaluate_requirement_batch(model_name, prompt_id, tag_ids)
-            # for i, req in enumerate(evaluations_to_run):
-            #     (model_name, prompt_id, requirement_id, tag_ids) = (req.model, req.prompt_id, req.requirement_id, req.filter_ids)
-
-            #     inference_outputs.append(
-            #         self.evaluate_requirement(model_name, prompt_id, requirement_id, tag_ids)
-            #     )
-
+            inference_outputs = self.evaluate_requirement(model_name, prompt_id, tag_ids)
             self.__set_data_processing_returns(inference_outputs)
 
     def get_metrics_for_slices(
@@ -853,14 +846,16 @@ class ZenoBackend(object):
         self.prompts[prompt_id].text = prompt
 
 
-    def evaluate_requirement(self, model_name, prompt_id, requirement_id, to_predict_indices: Optional[FilterIds] = None,):
-        assert False, "evaluate_requirement is deprecated, use evaluate_requirement_batch instead"
+    def evaluate_requirement(self, 
+        model_name, 
+        prompt_id, 
+        to_predict_indices: Optional[FilterIds] = None,
+        requirement_ids: Optional[List[str]] = None,
+    ):
+        '''Use LLM to evaluate whether model outputs satisfy requirements. '''
 
-    def evaluate_requirement_batch(self, model_name, prompt_id, to_predict_indices: Optional[FilterIds] = None,):
-
-
-        requirements_str = requirements2text(list(self.prompts[prompt_id].requirements.values()))
-        requirement_ids = list(self.prompts[prompt_id].requirements.keys())
+        if requirement_ids is None:
+            requirement_ids = list(self.prompts[prompt_id].requirements.keys())
 
         requirement_ids_to_eval = {}
         for requirement_id in requirement_ids:
@@ -908,40 +903,11 @@ class ZenoBackend(object):
 
         for result in results:
             requirement_id = result.get('requirement_id', None)
-            example_id = result.get('example_id', None)
+            example_id = int(result.get('example_id', None))
             score = result.get('score', 0)
             rationale = result.get('rationale', '')
             requirement_ids_to_eval[requirement_id]["score_col"][example_id] = score
             requirement_ids_to_eval[requirement_id]["rationale_col"][example_id] = rationale
-
-
-        # results = litellm.batch_completion(
-        #     model=f"openai/gpt-4o-mini-2024-07-18",
-        #     messages=[[
-        #             {"role": "system", "content": 'You are a helpful assistant. Please return the response as valid JSON.'},
-        #             {"role": "user", "content": REQUIREMENT_EVALUATION_BATCH_PROMPT.format(
-        #                 prompt=self.prompts[prompt_id].text, 
-        #                 requirements=requirements_str,
-        #                 model_input=data_col[i],
-        #                 model_output=model_col[i]
-        #             )}
-        #     ] for i in to_predict_indices],
-        #     response_format={"type": "json_object"}
-        # )
-        
-        # for (num, result) in zip(to_predict_indices, results):
-        #     response = result.choices[0].message.content
-
-        #     evaluation_res = json.loads(response)["requirements"]
-
-        #     for res in evaluation_res:
-        #         requirement_id = str(res.get('requirement_id', ""))
-        #         str_score = int(res.get('pass/fail', '0'))
-        #         try:
-        #             requirement_ids_to_eval[requirement_id]["score_col"][num] = str_score == 1
-        #             requirement_ids_to_eval[requirement_id]["rationale_col"][num] = res.get('rationale', '')
-        #         except:
-        #             print(f"Error updating requirement {requirement_id} for result {res}")
 
         for _, d in requirement_ids_to_eval.items():
             d["score_col"].to_pickle(os.path.join(self.cache_path, d["score_hash"] + ".pickle"))
@@ -956,7 +922,7 @@ class ZenoBackend(object):
 
     def update_evaluator(self, feedback: EvaluatorFeedback)-> Dict[str, Requirement]:
         # Your logic to modify the custom prompt
-        print("update evaluator feedback")
+        print("updating evaluator feedback")
         data_col = self.df[str(self.data_column)]
         model_col_obj = ZenoColumn(
             column_type=ZenoColumnType.OUTPUT, name="output", model=feedback.model, prompt_id=feedback.prompt_id
@@ -973,19 +939,29 @@ class ZenoBackend(object):
         corrected_eval = not score_col[int(feedback.example_id)]
 
         new_example = Example(
-                            id=feedback.example_id,
-                            input=data_col.at[int(feedback.example_id)],
-                            output=model_col.at[int(feedback.example_id)],
-                            is_positive=corrected_eval,
-                            feedback=f'''The evaluation should return "{corrected_eval}" for this requirement.''',
-                        )
+            id=feedback.example_id,
+            input=data_col.at[int(feedback.example_id)],
+            output=model_col.at[int(feedback.example_id)],
+            is_positive=corrected_eval,
+            feedback=f'''The evaluation should return "{corrected_eval}" for this requirement.''',
+        )
 
         for ex in requirement.examples:
             if ex.id == new_example.id and ex.input == new_example.input and ex.output == new_example.output and ex.is_positive == new_example.is_positive and ex.feedback == new_example.feedback:
-                return self.prompts[feedback.prompt_id].requirements
-        
-        requirement.examples.append(new_example)
-        print("example added")
+                break
+        else:
+            requirement.examples.append(new_example)
+            requirement = self.prompt_agent.align_evaluators([requirement])[0]
+            self.prompts[feedback.prompt_id].requirements[feedback.requirement_id] = requirement
+            print("evaluator aligned")
+
+            self.evaluate_requirement(
+                feedback.model, 
+                feedback.prompt_id, 
+                FilterIds(ids=list(self.df.index)), 
+                [feedback.requirement_id]
+            )
+            print("evaluator re-evaluated")
         new_requirements = copy.copy(self.prompts[feedback.prompt_id].requirements)
 
         return new_requirements
