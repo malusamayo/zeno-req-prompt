@@ -106,12 +106,13 @@ export async function getMetricsForSlices(
 	const results = [];
 	for (let i = 0; i < metricKeys.length; i++) {
 		const metricKeyHash = JSON.stringify(metricKeys[i]);
-		if (metricKeyCache.has(metricKeyHash)) {
-			results[i] = metricKeyCache.get(metricKeyHash);
-		} else {
-			keysToRequest.push(metricKeys[i]);
-			requestIndices.push(i);
-		}
+		// disable caching for now
+		// if (metricKeyCache.has(metricKeyHash)) {
+		// 	results[i] = metricKeyCache.get(metricKeyHash);
+		// } else {
+		keysToRequest.push(metricKeys[i]);
+		requestIndices.push(i);
+		// }
 	}
 	if (keysToRequest.length > 0) {
 		const res = await ZenoService.getMetricsForSlices({

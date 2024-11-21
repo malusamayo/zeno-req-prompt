@@ -53,7 +53,7 @@
 	$: {
 		currentPage;
 		$rowsPerPage;
-		$status.completeColumns;
+		$status;
 		$selections.tags;
 		$model;
 		$sort;
