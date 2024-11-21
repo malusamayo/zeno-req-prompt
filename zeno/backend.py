@@ -891,7 +891,7 @@ class ZenoBackend(object):
         data_col = self.df[str(self.data_column)].copy()
 
         results = self.prompt_agent.evaluate_requirements(
-            requirements=list(self.prompts[prompt_id].requirements.values()),
+            requirements=[self.prompts[prompt_id].requirements[i] for i in requirement_ids],
             examples=[Example(
                 id=i,
                 input=data_col.at[i],
@@ -955,12 +955,13 @@ class ZenoBackend(object):
             self.prompts[feedback.prompt_id].requirements[feedback.requirement_id] = requirement
             print("evaluator aligned")
 
-            self.evaluate_requirement(
+            inference_outputs = self.evaluate_requirement(
                 feedback.model, 
                 feedback.prompt_id, 
                 FilterIds(ids=list(self.df.index)), 
                 [feedback.requirement_id]
             )
+            self.__set_data_processing_returns(inference_outputs)
             print("evaluator re-evaluated")
         new_requirements = copy.copy(self.prompts[feedback.prompt_id].requirements)
 
