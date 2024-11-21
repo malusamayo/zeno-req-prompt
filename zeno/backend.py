@@ -252,10 +252,10 @@ class ZenoBackend(object):
     def start_processing(self):
         """Parse testing files, distill, and run inference."""
 
-        if not self.tests:
-            self.done_running_inference = True
-            self.status = "Done processing"
-            return
+        # if not self.tests:
+        #     self.done_running_inference = True
+        #     self.status = "Done processing"
+        #     return
 
         for fn in self.predistill_functions.values():
             self.columns.append(
