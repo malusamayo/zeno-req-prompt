@@ -422,6 +422,7 @@ class PromptAgent:
                 new_requirements=requirements2text(diff_requirements),
                 # good_examples=examples2text([example for example in examples if example.is_positive]),
                 # bad_examples=examples2text([example for example in examples if not example.is_positive]),
+                previous_prompt=self.task_program.__doc__,
                 input_variable=self.input_variable,
             ).prompt
         else:
@@ -430,6 +431,8 @@ class PromptAgent:
                 requirements=requirements2text(requirements),
                 input_variable=self.input_variable,
             ).prompt
+        
+        self.task_program.__doc__ = prompt
 
         prompt = self.optimize_prompt(
             prompt=prompt,
