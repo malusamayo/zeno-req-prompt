@@ -92,6 +92,7 @@ export const tags: Writable<Map<string, Tag>> = writable(new Map());
 export const reports: Writable<Report[]> = reportWritable();
 export const prompts: Writable<Map<string, Prompt>> = writable(new Map());
 export const currentPromptId: Writable<string> = writable("");
+export const comparePromptId: Writable<string> = writable("");
 export const requirements: Writable<{ [key: string]: Requirement }> = writable(
 	{}
 );

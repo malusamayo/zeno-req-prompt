@@ -14,6 +14,7 @@
 		tab,
 		prompts,
 		currentPromptId,
+		comparePromptId,
 		status,
 		promptUpdating,
 		suggestedRequirements,
@@ -53,9 +54,17 @@
 				{/each}
 			</select>
 		</div> -->
-			<div>
+			<div style="margin-right: 10px;">
 				<div class="options-header">Version</div>
 				<select bind:value={$currentPromptId}>
+					{#each promptIds as pid}
+						<option value={pid}>{pid}</option>
+					{/each}
+				</select>
+			</div>
+			<div>
+				<div class="options-header">Version_To_Compare</div>
+				<select bind:value={$comparePromptId}>
 					{#each promptIds as pid}
 						<option value={pid}>{pid}</option>
 					{/each}
@@ -133,7 +142,7 @@
 		justify-content: space-between;
 	}
 	select {
-		width: 167px;
+		width: 140px;
 		height: 35px;
 		border: 1px solid var(--G4);
 		border-radius: 4px;

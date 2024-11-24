@@ -2,6 +2,7 @@
 	import { columnHash } from "../util/util";
 	import {
 		currentPromptId,
+		comparePromptId,
 		model,
 		requirements,
 		requirementUpdating,
@@ -21,9 +22,12 @@
 	import RequirementCell from "../metadata/cells/RequirementCell.svelte";
 	import UpdateRequirementCell from "../metadata/cells/UpdateRequirementCell.svelte";
 	import { runPrompt } from "../api/prompt";
+	import { onMount } from "svelte";
 
 	export let item;
+	export let item_compare;
 	let modelColumn;
+	let modelColumn_compare;
 	let evalColumns;
 	let rationaleColumns;
 	let example: Example;
@@ -44,6 +48,7 @@
 		$model;
 		$currentPromptId;
 		$status;
+		$comparePromptId;
 
 		let obj = $status.completeColumns.find((c) => {
 			return (
@@ -52,7 +57,17 @@
 				c.promptId === $currentPromptId
 			);
 		});
+
+		let obj_compare = $status.completeColumns.find((c) => {
+			return (
+				c.columnType === ZenoColumnType.OUTPUT &&
+				c.model === $model &&
+				c.promptId === $comparePromptId
+			);
+		});
+
 		modelColumn = obj ? columnHash(obj) : "";
+		modelColumn_compare = obj_compare ? columnHash(obj_compare) : "";
 
 		evalColumns = $status.completeColumns
 			.filter((c) => {
@@ -202,6 +217,29 @@
 		showOptions = !showOptions;
 		updateModalPosition(event);
 	}
+
+	let differences = []; // Store precomputed differences
+
+	// Function to precompute differences
+	function computeDifferences(value1, value2) {
+		const result = [];
+		const maxLength = Math.max(value1.length, value2.length);
+
+		for (let i = 0; i < maxLength; i++) {
+		result.push(value1[i] !== value2[i]); // true if characters differ
+		}
+
+		return result;
+	}
+
+	// Reactive statement to recompute differences when inputs change
+	$: if (modelColumn_compare && item && item_compare) {
+		differences = computeDifferences(
+		item[modelColumn] || "",
+		item_compare[modelColumn_compare] || ""
+		);
+	}
+
 </script>
 
 <div class="box svelte-ohpquu">
@@ -240,9 +278,38 @@
 	{#if modelColumn !== "" && item[modelColumn] !== null}
 		<br />
 		<span class="label svelte-ohpquu">output:</span>
-		<span class="value svelte-ohpquu">
+		<!-- <span class="value svelte-ohpquu"> -->
+			<!-- {#if modelColumn_compare && item != item_compare}
+				{item[modelColumn]}
+			{:else}
+				{item[modelColumn]}
+			{/if} -->
+
+			<div style="display: flex; justify-content: space-between; gap: 1rem; align-items: baseline;">
+				{#if modelColumn_compare && item != item_compare}
+				  <span class="value svelte-ohpquu">
+					{item[modelColumn]}
+				  </span>
+				  <span class="value svelte-ohpquu">
+					{item_compare[modelColumn_compare]}
+				  </span>
+				{:else}
+				  <span class="value svelte-ohpquu">
+					{item[modelColumn]}
+				  </span>
+				{/if}
+			  </div>
+
+			<!-- {#if modelColumn_compare && item != item_compare}
+			{#each item[modelColumn].split('') as char, idx}
+				<span class="{differences[idx] ? 'highlighted' : ''}">
+				{char}
+				</span>
+			{/each}
+			{:else}
 			{item[modelColumn]}
-		</span>
+			{/if} -->
+		<!-- </span> -->
 		<span style="position:relative">
 			<TrailingIcon
 				class="material-icons thumb-up-icon"
@@ -313,6 +380,7 @@
 	.value.svelte-ohpquu {
 		font-size: 12px;
 		white-space: pre-wrap;
+		line-height: 1.5; 
 	}
 	.box.svelte-ohpquu {
 		padding: 10px;
@@ -379,4 +447,5 @@
 		overflow-y: auto;
 		margin-bottom: 10px;
 	}
+	
 </style>

@@ -18,17 +18,20 @@
 		tagIds,
 		currentPromptId,
 		allIds,
+		comparePromptId,
 	} from "../stores";
 	import { columnHash } from "../util/util";
 	import { ZenoColumnType, type FilterIds } from "../zenoservice";
 	import type { ViewRenderFunction } from "./instance-views";
 	import ItemView from "./ItemView.svelte";
+	import { loop_guard} from "svelte/internal";
 
 	export let currentResult;
 	export let viewFunction: ViewRenderFunction;
 	export let viewOptions;
 
 	let table;
+	let table_compare;
 	let viewDivs = {};
 
 	let currentPage = 0;
@@ -60,6 +63,7 @@
 		$tagIds;
 		$selectionIds;
 		$currentPromptId;
+		$comparePromptId;
 		updateTable();
 	}
 
@@ -68,6 +72,12 @@
 		$sort;
 		viewOptions;
 		drawInstances();
+	}
+
+	$: if (comparePromptId) {
+		if ($comparePromptId != ''){
+			getComparedTable();
+		}
 	}
 
 	// reset page on selection change
@@ -104,6 +114,28 @@
 		});
 	}
 
+	function getComparedTable()
+	{
+			getFilteredTable(
+					$status.completeColumns,
+					[$model],
+					[$comparePromptId],
+					undefined,
+					setModelForFilterPredicateGroup($selectionPredicates, $model),
+					[start, end],
+					$sort,
+					$tagIds,
+					$selectionIds,
+					$selections.tags
+				).then((res) => {
+					table_compare = res;
+					let indices: FilterIds = {
+						ids: Object.values(table_compare).map((x) => x[columnHash($settings.idColumn)]),
+					};
+					allIds.set(indices);
+				});
+	}
+	
 	async function drawInstances() {
 		if (!table) {
 			return;
@@ -116,7 +148,16 @@
 				c.promptId === $currentPromptId
 			);
 		});
+
+		let obj_compare = $status.completeColumns.find((c) => {
+			return (
+				c.columnType === ZenoColumnType.OUTPUT &&
+				c.model === $model &&
+				c.promptId === $comparePromptId
+			);
+		});
 		let modelColumn = obj ? columnHash(obj) : "";
+		let modelColumn_compare = obj_compare ? columnHash(obj_compare) : "";
 
 		await tick();
 
@@ -142,7 +183,11 @@
 		{#each table as inst, i (inst[idHash])}
 			<!-- <div class="instance" bind:this={viewDivs[i]} /> -->
 			{#if table[i]}
-				<ItemView item={inst} />
+				{#if table_compare && table_compare.length > i}
+					<ItemView item={inst} item_compare={table_compare[i]}/>
+				{:else}
+					<ItemView item={inst} item_compare={inst}/>
+				{/if}
 			{/if}
 		{/each}
 	</div>
