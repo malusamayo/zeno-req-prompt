@@ -23,12 +23,14 @@
 	import UpdateRequirementCell from "../metadata/cells/UpdateRequirementCell.svelte";
 	import { runPrompt } from "../api/prompt";
 	import { onMount } from "svelte";
+	import { loop_guard } from "svelte/internal";
 
 	export let item;
 	export let item_compare;
 	let modelColumn;
 	let modelColumn_compare;
 	let evalColumns;
+	let evalColumns_compare;
 	let rationaleColumns;
 	let example: Example;
 
@@ -75,6 +77,20 @@
 					c.columnType === ZenoColumnType.POSTDISTILL &&
 					c.model === $model &&
 					c.promptId === $currentPromptId &&
+					!c.name.includes("Rationale")
+				);
+			})
+			.reduce((acc, col) => {
+				let reqId = col.name.replace("evalR", "");
+				return { ...acc, [reqId]: columnHash(col) };
+			}, {});
+
+		evalColumns_compare = $status.completeColumns
+			.filter((c) => {
+				return (
+					c.columnType === ZenoColumnType.POSTDISTILL &&
+					c.model === $model &&
+					c.promptId === $comparePromptId &&
 					!c.name.includes("Rationale")
 				);
 			})
@@ -218,28 +234,6 @@
 		updateModalPosition(event);
 	}
 
-	let differences = []; // Store precomputed differences
-
-	// Function to precompute differences
-	function computeDifferences(value1, value2) {
-		const result = [];
-		const maxLength = Math.max(value1.length, value2.length);
-
-		for (let i = 0; i < maxLength; i++) {
-		result.push(value1[i] !== value2[i]); // true if characters differ
-		}
-
-		return result;
-	}
-
-	// Reactive statement to recompute differences when inputs change
-	$: if (modelColumn_compare && item && item_compare) {
-		differences = computeDifferences(
-		item[modelColumn] || "",
-		item_compare[modelColumn_compare] || ""
-		);
-	}
-
 </script>
 
 <div class="box svelte-ohpquu">
@@ -278,12 +272,6 @@
 	{#if modelColumn !== "" && item[modelColumn] !== null}
 		<br />
 		<span class="label svelte-ohpquu">output:</span>
-		<!-- <span class="value svelte-ohpquu"> -->
-			<!-- {#if modelColumn_compare && item != item_compare}
-				{item[modelColumn]}
-			{:else}
-				{item[modelColumn]}
-			{/if} -->
 
 			<div style="display: flex; justify-content: space-between; gap: 1rem; align-items: baseline;">
 				{#if modelColumn_compare && item != item_compare}
@@ -299,17 +287,6 @@
 				  </span>
 				{/if}
 			  </div>
-
-			<!-- {#if modelColumn_compare && item != item_compare}
-			{#each item[modelColumn].split('') as char, idx}
-				<span class="{differences[idx] ? 'highlighted' : ''}">
-				{char}
-				</span>
-			{/each}
-			{:else}
-			{item[modelColumn]}
-			{/if} -->
-		<!-- </span> -->
 		<span style="position:relative">
 			<TrailingIcon
 				class="material-icons thumb-up-icon"
@@ -359,13 +336,25 @@
 		<br />
 		{#each requirementIds as reqId}
 			{#if evalColumns[reqId] !== "" && item[evalColumns[reqId]] !== null && item[evalColumns[reqId]] !== undefined}
-				<RequirementEvalChip
+				{#if modelColumn_compare && item != item_compare && item_compare[evalColumns_compare[reqId]] !== undefined && (item[evalColumns[reqId]] != item_compare[evalColumns_compare[reqId]])}
+					<RequirementEvalChip
 					id={reqId}
 					isPass={item[evalColumns[reqId]] === true}
 					rationale={item[rationaleColumns[reqId]]}
-					{item}
-					{evalColumns}
-					{reqId} />
+					item={item}
+					evalColumns={evalColumns}
+					reqId={reqId} 
+					versionCompare={true}/>
+				{:else}
+					<RequirementEvalChip
+					id={reqId}
+					isPass={item[evalColumns[reqId]] === true}
+					rationale={item[rationaleColumns[reqId]]}
+					item={item}
+					evalColumns={evalColumns}
+					reqId={reqId} 
+					versionCompare={false}/>
+				{/if}
 			{/if}
 		{/each}
 	{/if}

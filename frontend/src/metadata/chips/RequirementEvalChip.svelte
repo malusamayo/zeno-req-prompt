@@ -27,6 +27,7 @@
 	export let item;
 	export let evalColumns;
 	export let reqId;
+	export let versionCompare;
 
 	let name;
 	let menuX = 0;
@@ -87,7 +88,9 @@
 		data={name}
 		on:mouseover={handleMouseOver}
 		on:focus={handleMouseOver}
-		on:keydown={() => {}} />
+		on:keydown={() => {}}
+		style={versionCompare ? 'box-shadow: 0 0 10px 3px yellow;border-radius: 4px;transition: box-shadow 0.3s ease;' : ''}
+/>
 
 	{#if hovering}
 		<div
