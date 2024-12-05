@@ -54,6 +54,8 @@
 	let compareButton = false;
 	$: currentRequirementUpdating = requirement.name === "";
 
+	$: hasExamples = requirement.examples && requirement.examples.length > 0;
+
 	let editingPriority = false;
 	const priorities = ["soft", "hard"];
 	let editingCategory = false;
@@ -274,6 +276,17 @@
 							</div>
 						{/if}
 						<!-- <span class="category-tag">{requirement.category}</span> -->
+
+
+						{#if !hasExamples}
+							<span
+								class="example-tag"
+								style="background-color: #FFCCCC; color: #333; padding: 2px 5px; border-radius: 3px; font-size: 0.8em; cursor: default;"
+								title="This requirement does not have related examples."
+							>
+								No Examples
+							</span>
+						{/if}
 						<div class="dropdown-container">
 							<span
 								class="category-tag"
@@ -354,6 +367,9 @@
 								{/if}
 							</div>
 						</div>
+
+
+
 					{/if}
 
 					{#if currentRequirementUpdating}
