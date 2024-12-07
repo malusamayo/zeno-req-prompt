@@ -10,6 +10,7 @@
 		status,
 		promptToUpdate,
 		suggestedRequirements,
+		baseline
 	} from "../stores";
 	import { ZenoColumnType, ZenoService } from "../zenoservice";
 	import { clickOutside } from "../util/clickOutside";
@@ -45,6 +46,7 @@
 	let showExistingRequirementModal = false;
 
 	let isDraggable = true;
+	$: isDraggable = !$baseline;
 
 	$: {
 		$model;

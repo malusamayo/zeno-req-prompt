@@ -12,6 +12,7 @@
 		showNewRequirement,
 		showNewSlice,
 		showSliceFinder,
+		baseline,
 	} from "../../stores";
 
 	// export let requirement: Requirement;
@@ -51,6 +52,7 @@
 </script>
 
 <span>
+	{#if !$baseline}
 	<img
 		class="tag"
 		draggable="false"
@@ -59,6 +61,7 @@
 		data={name}
 		on:click={handleSpanClick}
 		on:keydown={() => {}} />
+	{/if}
 	<!-- {#if showOptions}
 		<div
 			id="options-container"

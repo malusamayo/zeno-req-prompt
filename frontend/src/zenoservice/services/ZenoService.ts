@@ -228,6 +228,23 @@ export class ZenoService {
 		});
 	}
 
+	/**Add prompt baseline
+	 * @param requestBody
+	 * @returns any Successful Response
+	 * @throws ApiError
+	 */
+	public static addPromptBaseline(requestBody: Prompt): CancelablePromise<Prompt> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/add-prompt-baseline",
+			body: requestBody,
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
 	/**
 	 * Optimize one requirement
 	 * @param requestBody
@@ -240,6 +257,26 @@ export class ZenoService {
 		return __request(OpenAPI, {
 			method: "POST",
 			url: "/optimize-requirement",
+			body: requestBody,
+			mediaType: "application/json",
+			errors: {
+				422: `Validation Error`,
+			},
+		});
+	}
+
+	/**
+	 * save testcases
+	 * @param requestBody
+	 * @returns any Successful Response
+	 * @throws ApiError
+	 */
+	public static saveTests(
+		requestBody: { [key: string]: Requirement }
+	): CancelablePromise<{ [key: string]: Requirement }> {
+		return __request(OpenAPI, {
+			method: "POST",
+			url: "/save-tests",
 			body: requestBody,
 			mediaType: "application/json",
 			errors: {

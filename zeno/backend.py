@@ -72,6 +72,7 @@ class ZenoBackend(object):
         self.view = self.params.view
         self.calculate_histogram_metrics = self.params.calculate_histogram_metrics
         self.model_names = self.params.models
+        self.baseline = self.params.baseline
 
         self.df = read_metadata(self.metadata)
         self.tests = read_functions(self.functions)
@@ -164,7 +165,7 @@ class ZenoBackend(object):
             output_path="",
         )
 
-        if self.prompts[self.current_prompt_id].text == "":
+        if self.prompts[self.current_prompt_id].text == "" and not self.baseline:
             self.compile_prompt(self.current_prompt_id)
 
     def __setup_dataframe(self, id_column: str, data_column: str, label_column: str):
@@ -525,7 +526,6 @@ class ZenoBackend(object):
                 for prompt_id in self.prompts.keys() 
                 for requirement_id in self.prompts[prompt_id].requirements.keys()
             ]
-        
         for req in requests:
             (model_name, prompt_id, requirement_id, tag_ids) = (req.model, req.prompt_id, req.requirement_id, req.filter_ids)
 
@@ -728,6 +728,13 @@ class ZenoBackend(object):
         with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
             pickle.dump(self.prompts, f)
         return self.prompts[new_version]
+    
+    def create_new_prompt_baseline(self, req: Prompt):
+        new_version = self.get_new_prompt_version()
+        req.version = new_version
+        self.prompts[new_version] = req
+        self.current_prompt_id = new_version
+        return self.prompts[new_version]
 
     def run_prompt(self, req: InferenceRequest):
         self.__inference([req])
@@ -840,6 +847,10 @@ class ZenoBackend(object):
         '''
         requirement = self.prompt_agent.complete_requirements(req.requirement)
         return requirement
+    
+    def save_tests(self, reqs):
+        self.prompts[self.current_prompt_id].requirements = reqs
+        return reqs
 
     def compile_prompt(self, prompt_id):
         ''' Use LLM to compile requirements to a prompt
@@ -897,14 +908,12 @@ class ZenoBackend(object):
             to_predict_indices = score_col.loc[pd.isna(score_col)].index
         else:
             to_predict_indices = pd.Index(to_predict_indices.ids)
-
         model_col_obj = ZenoColumn(
             column_type=ZenoColumnType.OUTPUT, name="output", model=model_name, prompt_id=prompt_id
         )
         model_hash = str(model_col_obj)
         model_col = self.df[model_hash].copy()
         data_col = self.df[str(self.data_column)].copy()
-
         results = self.prompt_agent.evaluate_requirements(
             requirements=[self.prompts[prompt_id].requirements[i] for i in requirement_ids],
             examples=[Example(

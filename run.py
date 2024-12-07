@@ -14,9 +14,11 @@ litellm.api_key = os.environ.get("LITELLM_API_KEY")
 litellm.api_base = "https://cmu-aiinfra.litellm-prod.ai/"
 litellm.verbose = True
 
+baseline = True
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='config.yaml')
+    parser.add_argument('--config', type=str, default='config_baseline.yaml')
     args = parser.parse_args()
     
     with open(args.config, 'r') as f:
@@ -24,19 +26,34 @@ if __name__ == '__main__':
 
     data = pd.read_csv(config["data"]["data_path"]).sample(config["data"]["sample_size"], random_state=42).reset_index(drop=True)
     data["label"] = ""
-    prompt = "<prompt></prompt>"
+    if not baseline:
+        prompt = "<prompt></prompt>"
+    else:
+        prompt = ''
     requirements = {}
-    for i, req in enumerate(config["prompt"]["requirements"]):
-        requirements[str(i)] = Requirement(
-            id=str(i),
-            name=req["name"],
-            description=req["description"],
-            prompt_snippet="",
-            evaluation_method="",
-            priority=req["priority"],
-            category=req["category"],
-            feature=req["feature"],
-        )
+
+    if not baseline:
+        for i, req in enumerate(config["prompt"]["requirements"]):
+            requirements[str(i)] = Requirement(
+                id=str(i),
+                name=req["name"],
+                description=req["description"],
+                prompt_snippet="",
+                evaluation_method="",
+                priority=req["priority"],
+                category=req["category"],
+                feature=req["feature"],
+            )
+    else:
+        for i, req in enumerate(config["prompt"]["requirements"]):
+            requirements[str(i)] = Requirement(
+                id=str(i),
+                name=req["name"],
+                description=req["description"],
+                prompt_snippet="",
+                evaluation_method="",
+            )
+
 
     params = ZenoParameters(
         metadata=data,
@@ -49,6 +66,7 @@ if __name__ == '__main__':
         multiprocessing=False,
         host=config["settings"]["host"],
         port=config["settings"]["port"],
+        baseline=baseline,
     )
     params = read_config(params)
     run_zeno(params)

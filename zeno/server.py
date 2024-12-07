@@ -107,6 +107,7 @@ def get_server(zeno: ZenoBackend):
             metrics=list(zeno.metric_functions.keys()),
             models=[str(n) for n in zeno.model_names],
             folders=zeno.folders,
+            baseline=zeno.baseline,
         )
 
     @api_app.get("/slices", response_model=Dict[str, Slice], tags=["zeno"])
@@ -139,6 +140,11 @@ def get_server(zeno: ZenoBackend):
         prompt = zeno.create_new_prompt(req)
         return [prompt]
 
+    @api_app.post("/add-prompt-baseline", response_model=Prompt, tags=["zeno"])
+    def create_new_prompt_baseline(req: Prompt):
+        prompt = zeno.create_new_prompt_baseline(req)
+        return prompt
+    
     @api_app.post("/run-prompt", tags=["zeno"])
     def run_prompt(req: InferenceRequest):
         zeno.run_prompt(req)
@@ -163,6 +169,11 @@ def get_server(zeno: ZenoBackend):
     @api_app.post("/optimize-requirement", response_model=Requirement, tags=["zeno"])
     def optimize_requirement(req: OptimizeRequirement):
         req = zeno.optimize_requirement(req)
+        return req
+    
+    @api_app.post("/save-tests", response_model=Dict[str, Requirement], tags=["zeno"])
+    def save_tests(req: Dict[str, Requirement]):
+        req = zeno.save_tests(req)
         return req
 
     @api_app.post("/suggest-requirements", response_model=Dict[str, Requirement], tags=["zeno"])

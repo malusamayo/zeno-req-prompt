@@ -63,6 +63,7 @@ export const rowsPerPage = writable(0);
 export const settings: Writable<ZenoSettings> = writable(null);
 export const metrics: Writable<string[]> = writable([]);
 export const models: Writable<string[]> = writable([]);
+export const baseline: Writable<boolean> = writable(false);
 
 export const model: Writable<string> = writable(undefined);
 export const metric: Writable<string> = writable(undefined);

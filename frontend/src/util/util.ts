@@ -16,6 +16,7 @@ import {
 	tags,
 	prompts,
 	currentPromptId,
+	baseline,
 } from "../stores";
 import { ZenoService } from "../zenoservice";
 import {
@@ -32,6 +33,7 @@ export async function getInitialData() {
 	models.set(inits.models);
 	metrics.set(inits.metrics);
 	folders.set(inits.folders);
+	baseline.set(inits.baseline);
 
 	model.set(inits.models.length > 0 ? inits.models[0] : "");
 	comparisonModel.set(inits.models[1]);

@@ -1,5 +1,5 @@
 settings:
-  cache_path: ".zeno_cache"
+  cache_path: ".zeno_cache06"
   host: 0.0.0.0
   port: 8000
 
@@ -16,31 +16,13 @@ prompt:
   requirements:
     - name: "num-options"
       description: "Write exactly 4 answer options."
-      priority: "hard"
-      category: "content"
-      feature: "clarity-to-student"
     - name: "short-options"
       description: "Each answer option is less than 10 words."
-      priority: "soft"
-      category: "content"
-      feature: "clarity-to-student"
     - name: "answer-format"
       description: "The answer options are ordered in (A) (B) (C) (D)."
-      priority: "hard"
-      category: "presentation"
-      feature: "clarity-to-student"
     - name: "single-correct-answer"
       description: "There is only one correct answer."
-      priority: "hard"
-      category: "content"
-      feature: "clarity-to-student"
     - name: "correct-answer"
       description: "The correct answer is included after the answer options."
-      priority: "hard"
-      category: "structure"
-      feature: "grading-for-teacher"
     - name: "correct-answer-justification"
       description: "Provide a justification for the correct answer."
-      priority: "hard"
-      category: "content"
-      feature: "grading-for-teacher"

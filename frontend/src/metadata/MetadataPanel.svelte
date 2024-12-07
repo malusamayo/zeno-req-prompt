@@ -50,6 +50,7 @@
 		currentPromptId,
 		showNewRequirement,
 		task,
+		baseline,
 	} from "../stores";
 	import { columnHash, updateModelDependentSlices } from "../util/util";
 	import { ZenoColumnType, type ZenoColumn } from "../zenoservice";
@@ -63,6 +64,7 @@
 	import PromptBox from "./PromptBox.svelte";
 	import RequirementPanel from "./RequirementPanel.svelte";
 	import { ZenoService } from "../zenoservice";
+	import TestlistPanel from "./TestlistPanel.svelte";
 
 	let metadataHistograms: InternMap<ZenoColumn, HistogramEntry[]> =
 		new InternMap([], columnHash);
@@ -71,28 +73,20 @@
 	// let newTaskInput = "";
 	let previousPromptId = null; // Track the previous prompt ID
 	let newTaskInput = "";
+	let newPromptInput = "";
 	$: if ($currentPromptId !== previousPromptId) {
 		previousPromptId = $currentPromptId; // Update the previous ID
 		const prompt = $prompts.get($currentPromptId);
 		if (prompt) {
 			newTaskInput = prompt.task || ""; 
+			newPromptInput = prompt.text || ""; 
 		}
 	}
-	// $: if ($currentPromptId) {
-	// 	const prompt = $prompts.get($currentPromptId);
-	// 	if (prompt) {
-	// 		newTaskInput = (prompt.task || ""); 
-	// 	}
-	// }
-	// $: if ($currentPromptId && newTaskInput != "") {
-	// 	const prompt = $prompts.get($currentPromptId);
-	// 	if (prompt) {
-	// 		newTaskInput = prompt.task || ""; 
-	// 	}
-	// }
 
+	
 	$: {
 		$prompts.get($currentPromptId).task;
+		$prompts.get($currentPromptId).text;
 	}
 
 	function add_task() {
@@ -104,6 +98,15 @@
 					prompt.task = new_task;
 				}
 				return currentPrompts;
+			});
+		});
+	}
+	function add_prompt() {
+		console.log("add-prompt");
+		ZenoService.addPromptBaseline( {task: '', version: '', text: newPromptInput, requirements: $prompts.get($currentPromptId).requirements}).then((new_prompt) => {
+			$currentPromptId = new_prompt.version;
+			prompts.update((pts) => {
+				return pts.set(new_prompt.version, new_prompt);
 			});
 		});
 	}
@@ -325,23 +328,40 @@
 <div class="side-container">
 	<MetadataHeader />
 
-	<div class="inline">
-		<h4>Task description</h4>
-	</div>
-	<div class="inline">
-		<!-- <textarea
-			placeholder="Write the task description here."
-			bind:value={newTaskInput}
-			on:change={add_task} /> -->
+	{#if $baseline}
+		<div class="inline">
+			<h4>Prompt</h4>
+		</div>
+	{:else}
+		<div class="inline">
+			<h4>Task description</h4>
+		</div>
+	{/if}
+
+
+	{#if $baseline}
 		<textarea
-			placeholder="Write the task description here."
-			bind:value={newTaskInput}
-			on:change={add_task} />
-	</div>
+		placeholder="Write the prompt here."
+		bind:value={newPromptInput} 
+		on:change={add_prompt}/>
+	{:else}
+		<div class="inline">
+			<textarea
+				placeholder="Write the task description here."
+				bind:value={newTaskInput}
+				on:change={add_task} />
+		</div>
+	{/if}
 
-	<RequirementPanel />
+	{#if $baseline}
+		<TestlistPanel />
+	{:else}
+		<RequirementPanel />
+	{/if}
 
-	<PromptBox />
+	{#if !$baseline}
+		<PromptBox />
+	{/if}
 
 	<div id="slice-header" class="inline">
 		<div class="inline">

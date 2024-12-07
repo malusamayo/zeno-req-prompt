@@ -22,6 +22,7 @@ class ZenoVariables(CamelModel):
     metrics: List[str]
     models: List[str]
     folders: List[str]
+    baseline: bool
 
 
 class StatusResponse(CamelModel):

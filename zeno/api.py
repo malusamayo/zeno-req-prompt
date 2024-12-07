@@ -62,6 +62,7 @@ class ZenoParameters(BaseModel):
     samples: int = 30
     port: int = 8000
     host: str = "localhost"
+    baseline: bool = False
 
     class Config:
         arbitrary_types_allowed = True
