@@ -297,7 +297,7 @@
 				{/if}
 			  </div>
 		<span style="position:relative">
-			<TrailingIcon
+			<!-- <TrailingIcon
 				class="material-icons thumb-up-icon"
 				style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; color: #97ca00;"
 				title="Add positive examples to existing requirements"
@@ -310,7 +310,7 @@
 				title="Add negative examples to existing requirements"
 				on:click={handleThumbDownClick}>
 				thumb_down
-			</TrailingIcon>
+			</TrailingIcon> -->
 			{#if showOptions}
 				<div
 					class="modal"

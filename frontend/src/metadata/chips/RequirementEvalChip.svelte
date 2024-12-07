@@ -102,14 +102,14 @@
 				<span class="rationale">
 					<b>Rationale:</b>
 					{rationale}
-					<TrailingIcon
+					<!-- <TrailingIcon
 						class="material-icons"
 						style="margin-bottom: 10px; margin-left:0px; margin-right: 5px; cursor: pointer; color: #e05d44;"
 						on:click={() => {
 							feedbackToEvaluators(item[evalColumns[reqId]], reqId);
 						}}>
 						thumb_down
-					</TrailingIcon>
+					</TrailingIcon> -->
 				</span>
 			</Paper>
 		</div>
