@@ -46,6 +46,7 @@
 
 	let confirmDelete = false;
 	let relatedReports = 0;
+	let passFail;
 
 	let hovering = false;
 	let showOptions = false;
@@ -168,13 +169,16 @@
 	}
 
 	function handlexampledrag(isFix) {
+
 		if (isFix) {
 			feedbackToEvaluators();
 		} else {
-			let feedbackPositive = draggedexample.isPositive
+			let feedbackPositive = passFail[requirement.id]
 				? "positive"
 				: "negative";
+			
 			let feedback = `This is a '${feedbackPositive}' example affirmed by users.`;
+			draggedexample.isPositive = passFail[requirement.id];
 			// requirement.examples.push(draggedexample);
 			feedbackToRequirements(draggedexample.isPositive, feedback);
 		}
@@ -192,6 +196,7 @@
 			typeof obj.feedback === "string"
 		);
 	}
+
 </script>
 
 <div
@@ -220,7 +225,9 @@
 		dragOver = false;
 
 		const data = ev.dataTransfer.getData("text/plain");
-		const example = JSON.parse(data);
+		const { example, passFailInfo } = JSON.parse(data);
+		passFail = passFailInfo;
+
 
 		if (isExample(example)) {
 			const exampleIds = requirement.examples.map((x) => x.id);
@@ -280,11 +287,11 @@
 
 						{#if !hasExamples}
 							<span
-								class="example-tag"
-								style="background-color: #FFCCCC; color: #333; padding: 2px 5px; border-radius: 3px; font-size: 0.8em; cursor: default;"
+								class="material-icons example-warning"
+								style="color: #FF0000; font-size: 18px; cursor: default;"
 								title="This requirement does not have related examples."
 							>
-								No Examples
+								warning
 							</span>
 						{/if}
 						<div class="dropdown-container">

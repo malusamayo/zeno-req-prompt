@@ -124,6 +124,12 @@
 		};
 	}
 
+	$: passFailInfo = requirementIds.reduce((acc, reqId) => {
+		acc[reqId] = item[evalColumns[reqId]] === true;
+		return acc;
+	}, {});
+
+
 	// function feedbackToRequirements() {
 	// 	requirementUpdating.set(true);
 	// 	ZenoService.suggestRequirementUpdates({
@@ -242,7 +248,10 @@
 		style="margin-left: -4px; cursor:pointer"
 		draggable={isDraggable}
 		on:dragstart={(ev) => {
-			let transferData = JSON.stringify(example);
+			const transferData = JSON.stringify({
+            example,
+            passFailInfo, // Include pass/fail dictionary
+			});
 			ev.dataTransfer.setData("text/plain", transferData);
 			ev.dataTransfer.dropEffect = "copy";
 		}}>
