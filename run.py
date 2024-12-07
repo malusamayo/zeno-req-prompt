@@ -29,7 +29,7 @@ if __name__ == '__main__':
     if not baseline:
         prompt = "<prompt></prompt>"
     else:
-        prompt = ''
+        prompt = 'Write quiz answer options for the following question.'
     requirements = {}
 
     if not baseline:
