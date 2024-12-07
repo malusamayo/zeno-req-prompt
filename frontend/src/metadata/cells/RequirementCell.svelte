@@ -51,6 +51,7 @@
 	let hovering = false;
 	let showOptions = false;
 	let dragOver = false;
+	let showTooltip = false;
 
 	let compareButton = false;
 	$: currentRequirementUpdating = requirement.name === "";
@@ -285,15 +286,6 @@
 						<!-- <span class="category-tag">{requirement.category}</span> -->
 
 
-						{#if !hasExamples}
-							<span
-								class="material-icons example-warning"
-								style="color: #FF0000; font-size: 18px; cursor: default;"
-								title="This requirement does not have related examples."
-							>
-								warning
-							</span>
-						{/if}
 						<div class="dropdown-container">
 							<span
 								class="category-tag"
@@ -375,7 +367,21 @@
 							</div>
 						</div>
 
-
+						<div class="tooltip-container">
+							{#if !hasExamples}
+								<span
+									class="material-icons example-warning"
+									style="color: #FF0000; font-size: 18px; cursor: default;"
+									on:mouseover={() => (showTooltip = true)}
+									on:mouseleave={() => (showTooltip = false)}
+								>
+									warning
+								</span>
+								{#if showTooltip}
+									<div class="tooltip">This requirement does not have related examples.</div>
+								{/if}
+							{/if}
+						</div>
 
 					{/if}
 
@@ -594,23 +600,33 @@
 
 <style>
 	.tooltip-container {
-		background: var(--G6);
-		position: absolute;
-		top: 100%;
-		max-width: 1000px;
-		width: fit-content;
-		background: var(--G6);
-		z-index: 10;
-		left: 0px;
+		position: relative; /* To position the tooltip relative to the icon */
+		display: inline-block;
 	}
+	.example-warning {
+		position: relative;
+		top: 5px;
+	}
+
 	.tooltip {
-		background: var(--G6);
-		padding-left: 10px;
-		padding-right: 10px;
-		box-shadow: 1px 1px 3px 1px var(--G3);
-		border-radius: 4px;
-		padding-top: 10px;
-		padding-bottom: 10px;
+		position: absolute;
+		bottom: -120%; /* Adjust to move the tooltip above the icon */
+		left: 50%;
+		transform: translateX(-50%);
+		background-color: #333; /* Tooltip background color */
+		color: #fff; /* Tooltip text color */
+		padding: 5px 10px; /* Tooltip padding */
+		border-radius: 4px; /* Rounded corners for the tooltip */
+		font-size: 12px; /* Font size for tooltip text */
+		white-space: nowrap; /* Prevent text from wrapping */
+		z-index: 100; /* Ensure tooltip appears above other elements */
+		opacity: 0; /* Start hidden */
+		transition: opacity 0.2s; /* Smooth fade-in/out */
+		pointer-events: none; /* Prevent the tooltip from blocking mouse events */
+	}
+
+	.tooltip-container:hover .tooltip {
+		opacity: 1; /* Show the tooltip on hover */
 	}
 	.cell {
 		position: relative;
