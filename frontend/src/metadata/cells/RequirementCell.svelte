@@ -170,14 +170,17 @@
 	}
 
 	function handlexampledrag(isFix) {
-
+		showNewRequirement.update((d) => !d);
+		requirementToEdit.set(requirement);
 		if (isFix) {
+			feedbackToRequirements(
+				draggedexample.isPositive,
+				draggedexample.feedback
+			);
 			feedbackToEvaluators();
 		} else {
-			let feedbackPositive = passFail[requirement.id]
-				? "positive"
-				: "negative";
-			
+			let feedbackPositive = passFail[requirement.id] ? "positive" : "negative";
+
 			let feedback = `This is a '${feedbackPositive}' example affirmed by users.`;
 			draggedexample.isPositive = passFail[requirement.id];
 			// requirement.examples.push(draggedexample);
@@ -197,7 +200,6 @@
 			typeof obj.feedback === "string"
 		);
 	}
-
 </script>
 
 <div
@@ -228,7 +230,6 @@
 		const data = ev.dataTransfer.getData("text/plain");
 		const { example, passFailInfo } = JSON.parse(data);
 		passFail = passFailInfo;
-
 
 		if (isExample(example)) {
 			const exampleIds = requirement.examples.map((x) => x.id);
@@ -284,7 +285,6 @@
 							</div>
 						{/if}
 						<!-- <span class="category-tag">{requirement.category}</span> -->
-
 
 						<div class="dropdown-container">
 							<span
@@ -373,16 +373,16 @@
 									class="material-icons example-warning"
 									style="color: #FF0000; font-size: 18px; cursor: default;"
 									on:mouseover={() => (showTooltip = true)}
-									on:mouseleave={() => (showTooltip = false)}
-								>
+									on:mouseleave={() => (showTooltip = false)}>
 									warning
 								</span>
 								{#if showTooltip}
-									<div class="tooltip">This requirement does not have related examples.</div>
+									<div class="tooltip">
+										This requirement does not have related examples.
+									</div>
 								{/if}
 							{/if}
 						</div>
-
 					{/if}
 
 					{#if currentRequirementUpdating}
