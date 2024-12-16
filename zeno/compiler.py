@@ -536,13 +536,13 @@ class PromptAgent:
                         )
                         completions.append((requirement.id, example.id, future))
 
-        for (requirement.id, example.id, future) in completions:
+        for (requirement_id, example_id, future) in completions:
             try:
                 result = future.result()
                 results.append(
                     {
-                        "requirement_id": requirement.id,
-                        "example_id": example.id,
+                        "requirement_id": requirement_id,
+                        "example_id": example_id,
                         "score": result.meets_requirement,
                         "rationale": result.reasoning,
                     }
@@ -628,7 +628,11 @@ if __name__ == '__main__':
         Example(id="3", input="I'm feeling great 😭", output="negative", is_positive=False),
     ]
 
-    optimizer = PromptAgent(task_description=task_description, input_variable=input_variable)
+    optimizer = PromptAgent(
+        model="gpt-4o-mini-2024-07-18",
+        task_description=task_description, 
+        input_variable=input_variable
+    )
     result = optimizer.suggest_requirements(
         requirements,
         [requirements[1].examples[0]],
