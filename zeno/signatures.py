@@ -9,11 +9,14 @@ class CompleteRequirements(dspy.Signature):
     category = dspy.OutputField(desc="The focus area of the requirement, classified as structure, content, or presentation")
 
 class SuggestRequirements(dspy.Signature):
-    """You are an experienced requirement engineer for an LLM application. Given the prompt, current requirements, and example inputs and outputs, suggest three new requirements."""
+    """You are an experienced requirement engineer for an LLM application. Given current requirements, and example inputs and outputs, suggest a new requirement.
+Use the following format: [1] «requirement-name: requirement description»"""
 
     current_requirements = dspy.InputField(desc="The current requirements for the LLM")
-    current_output = dspy.InputField(desc="Sampled current model inputs and outputs")
-    new_requirements = dspy.OutputField(desc="Suggested additional requirements for the LLM")
+    model_input = dspy.InputField(desc="The model input")
+    model_output = dspy.InputField(desc="The model output")
+    feedback = dspy.InputField(desc="Feedback on the model output")
+    new_requirement = dspy.OutputField(desc="Suggested additional requirement for the LLM")
 
 class EvaluateRequirement(dspy.Signature):
     """Given the requirement and evaluation criteria, determine if the model output meets the requirement. Answer yes or no."""
@@ -71,19 +74,29 @@ Your task is to propose a prompt will lead a good language model to perform the 
     incorrect_examples = dspy.InputField(desc="A list of incorrect examples")
     prompt = dspy.OutputField(desc="The proposed prompt")
 
-class RefinePromptWithFeedback(dspy.Signature):
-    """You are a prompt re-writer for large language models. I will give you a task description, a list of requirements that the large language model must satisfy when performing the task, and a prompt that was previously used for the task. I will also provide you with some feedback on the previous prompt.
+# class RefinePromptWithFeedback(dspy.Signature):
+#     """You are a prompt re-writer for large language models. I will give you a task description, a list of requirements that the large language model must satisfy when performing the task, and a prompt that was previously used for the task. I will also provide you with some feedback on the previous prompt.
 
-Your task is to propose a new prompt will lead a good language model to perform the task well, meet all the requirements, and incorporate the feedback. Don't be afraid to be creative."""
+# Your task is to propose a new prompt will lead a good language model to perform the task well, meet all the requirements, and incorporate the feedback. Don't be afraid to be creative."""
+
+#     task_description = dspy.InputField(desc="Description of the task")
+#     requirements = dspy.InputField(desc="A list of requirements that the prompt should include")
+#     previous_prompt = dspy.InputField(desc="The previous prompt")
+#     past_input = dspy.InputField(desc="The input that was used with the previous prompt")
+#     past_output = dspy.InputField(desc="The output that was generated with the previous prompt")
+#     feedback = dspy.InputField(desc="Feedback on the previous prompt")
+#     prompt = dspy.OutputField(desc="The proposed prompt")
+
+class RefinePromptWithFeedback(dspy.Signature):
+    """You are a prompt re-writer for large language models. I will give you a task description, a list of requirements that the large language model must satisfy when performing the task, a list of new requirements that the prompt should prioritize, and a prompt that was previously used for the task.
+
+Your task is to propose a new prompt will lead a good language model to perform the task well, incoporate all the requirements, especially the new ones. Don't be afraid to be creative."""
 
     task_description = dspy.InputField(desc="Description of the task")
     requirements = dspy.InputField(desc="A list of requirements that the prompt should include")
+    new_requirements = dspy.InputField(desc="A list of new requirements that the prompt should prioritize")
     previous_prompt = dspy.InputField(desc="The previous prompt")
-    past_input = dspy.InputField(desc="The input that was used with the previous prompt")
-    past_output = dspy.InputField(desc="The output that was generated with the previous prompt")
-    feedback = dspy.InputField(desc="Feedback on the previous prompt")
     prompt = dspy.OutputField(desc="The proposed prompt")
-
 
 class GenerateFieldDescription(dspy.Signature):
     """Generate a concise and informative description for a given field based on the provided name and task description. This description should be no longer than 10 words and should be in simple english."""

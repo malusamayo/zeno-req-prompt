@@ -67,6 +67,15 @@ def text2requirements(text: str) -> List[Requirement]:
             requirements.append(requirement)
     return requirements
 
+def merge_requirements(requirements: List[Requirement], new_requirements: List[Requirement]) -> List[Requirement]:
+    """Merge the new requirements with the existing requirements."""
+    for new_requirement in new_requirements:
+        if new_requirement.id == "-1":
+            new_requirement.id = str(max([int(req.id) for req in requirements]) + 1)
+        if new_requirement not in requirements:
+            requirements.append(new_requirement)
+    return requirements
+
 class TaskProgram(dspy.Signature):
     pass
 
@@ -306,7 +315,7 @@ class PromptAgent:
         self.prompt_refiner = dspy.Predict(RefinePromptWithFeedback)
         self.feedback_converter = dspy.Predict(ConvertFeedbackToRequirement)
 
-        self.requirement_suggester = dspy.ChainOfThought(SuggestRequirements)
+        self.requirement_suggester = dspy.Predict(SuggestRequirements)
         self.requirement_completer = dspy.Predict(CompleteRequirements)
         self.requirement_evaluator = dspy.ChainOfThought(EvaluateRequirement)
         self.requirement_updater = dspy.Predict(UpdateEvaluationMethod)
@@ -348,14 +357,20 @@ class PromptAgent:
             rounds = 0
             while not result.meets_requirement and rounds < max_rounds:
                 # Refine the prompt
+                requirement_text = self.requirement_suggester(
+                    current_requirements=requirements2text(requirements),
+                    model_input=example.input,
+                    model_output=example.output,
+                    feedback=example.feedback,
+                ).new_requirement
                 prompt = self.prompt_refiner(
                     task_description=self.task_description,
                     requirements=requirements2text(requirements),
+                    new_requirements=requirement_text,
                     previous_prompt=prompt,
-                    past_input=example.input,
-                    past_output=output,
-                    feedback=result.reasoning
                 ).prompt
+                dspy.inspect_history(n=1)
+                requirements = merge_requirements(requirements, text2requirements(requirement_text))
                 self.task_program.__doc__ = prompt
                 task_program_predictor = dspy.Predict(self.task_program)
                 
@@ -471,13 +486,17 @@ class PromptAgent:
         Returns:
             List[Requirement]: The suggested new requirements.
         """
+        new_requirements = []
         with dspy.context(lm=self.mini):
-            requirement_texts = self.requirement_suggester(
-                current_requirements=requirements2text(requirements),
-                current_output=examples2text(examples),
-            ).new_requirements
-        requirements = text2requirements(requirement_texts)
-        return requirements
+            for example in examples:
+                requirement_texts = self.requirement_suggester(
+                    current_requirements=requirements2text(requirements),
+                    model_input=example.input,
+                    model_output=example.output,
+                    feedback=example.feedback,
+                ).new_requirement
+                new_requirements += text2requirements(requirement_texts)
+        return new_requirements
 
     def run_inference(
         self,
