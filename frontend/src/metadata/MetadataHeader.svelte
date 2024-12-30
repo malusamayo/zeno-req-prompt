@@ -35,19 +35,7 @@
 <div class="inline">
 	<div id="selections">
 		{#if $model !== undefined}
-			{#if !$baseline}
-				<div style="margin-right: 10px;">
-					<div class="options-header">
-						{$tab === "comparison" ? "Model A" : "Model"}
-					</div>
-					<select bind:value={$model}>
-						{#each $models as mod}
-							<option value={mod}>{mod}</option>
-						{/each}
-					</select>
-				</div>
-			{:else}
-			<div style="margin-right: 50px;">
+			<div style="margin-right: 10px;">
 				<div class="options-header">
 					{$tab === "comparison" ? "Model A" : "Model"}
 				</div>
@@ -57,35 +45,8 @@
 					{/each}
 				</select>
 			</div>
-			{/if}
 		{/if}
 		{#if $tab !== "comparison" && $metric !== undefined}
-			<!-- <div>
-			<div class="options-header">Metric</div>
-			<select bind:value={$metric}>
-				{#each $metrics as met}
-					<option value={met}>{met}</option>
-				{/each}
-			</select>
-		</div> -->
-			{#if !$baseline}
-				<div style="margin-right: 10px;">
-					<div class="options-header">Version</div>
-					<select bind:value={$currentPromptId}>
-						{#each promptIds as pid}
-							<option value={pid}>{pid}</option>
-						{/each}
-					</select>
-				</div>
-				<div>
-					<div class="options-header">Version_To_Compare</div>
-					<select bind:value={$comparePromptId}>
-						{#each promptIds as pid}
-							<option value={pid}>{pid}</option>
-						{/each}
-					</select>
-				</div>
-			{:else}
 			<div style="margin-right: 10px;">
 				<div class="options-header">Version</div>
 				<select bind:value={$currentPromptId}>
@@ -94,7 +55,14 @@
 					{/each}
 				</select>
 			</div>
-			{/if}
+			<div>
+				<div class="options-header">Version_To_Compare</div>
+				<select bind:value={$comparePromptId}>
+					{#each promptIds as pid}
+						<option value={pid}>{pid}</option>
+					{/each}
+				</select>
+			</div>
 
 		{/if}
 		{#if $tab === "comparison"}

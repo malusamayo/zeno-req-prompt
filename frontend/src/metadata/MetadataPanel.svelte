@@ -340,10 +340,14 @@
 
 
 	{#if $baseline}
-		<textarea
-		placeholder="Write the prompt here."
-		bind:value={newPromptInput} 
-		on:change={add_prompt}/>
+	<textarea
+	placeholder="Write the prompt here."
+	bind:value={newPromptInput} 
+	on:change={add_prompt}
+	rows="10"
+	cols="80" 
+	style="width: 95%; height: 200px; resize: vertical;"
+></textarea>
 	{:else}
 		<div class="inline">
 			<textarea
