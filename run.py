@@ -18,7 +18,7 @@ baseline = True
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='config_baseline.yaml')
+    parser.add_argument('--config', type=str, default='config.yaml')
     args = parser.parse_args()
     
     with open(args.config, 'r') as f:
@@ -31,6 +31,8 @@ if __name__ == '__main__':
     else:
         prompt = 'Write quiz answer options for the following question.'
     requirements = {}
+
+    baseline = config["settings"]["baseline"]
 
     if not baseline:
         for i, req in enumerate(config["prompt"]["requirements"]):
