@@ -78,12 +78,11 @@
 		previousPromptId = $currentPromptId; // Update the previous ID
 		const prompt = $prompts.get($currentPromptId);
 		if (prompt) {
-			newTaskInput = prompt.task || ""; 
-			newPromptInput = prompt.text || ""; 
+			newTaskInput = prompt.task || "";
+			newPromptInput = prompt.text || "";
 		}
 	}
 
-	
 	$: {
 		$prompts.get($currentPromptId).task;
 		$prompts.get($currentPromptId).text;
@@ -91,7 +90,10 @@
 
 	function add_task() {
 		console.log("add-task");
-		ZenoService.addTask({ task: newTaskInput, promptId: $currentPromptId }).then((new_task) => {
+		ZenoService.addTask({
+			task: newTaskInput,
+			promptId: $currentPromptId,
+		}).then((new_task) => {
 			prompts.update((currentPrompts) => {
 				const prompt = currentPrompts.get($currentPromptId);
 				if (prompt) {
@@ -103,7 +105,12 @@
 	}
 	function add_prompt() {
 		console.log("add-prompt");
-		ZenoService.addPromptBaseline( {task: '', version: '', text: newPromptInput, requirements: $prompts.get($currentPromptId).requirements}).then((new_prompt) => {
+		ZenoService.addPromptBaseline({
+			task: "",
+			version: "",
+			text: newPromptInput,
+			requirements: $prompts.get($currentPromptId).requirements,
+		}).then((new_prompt) => {
 			$currentPromptId = new_prompt.version;
 			prompts.update((pts) => {
 				return pts.set(new_prompt.version, new_prompt);
@@ -338,16 +345,14 @@
 		</div>
 	{/if}
 
-
 	{#if $baseline}
-	<textarea
-	placeholder="Write the prompt here."
-	bind:value={newPromptInput} 
-	on:change={add_prompt}
-	rows="10"
-	cols="80" 
-	style="width: 95%; height: 200px; resize: vertical;"
-></textarea>
+		<textarea
+			placeholder="Write the prompt here."
+			bind:value={newPromptInput}
+			on:change={add_prompt}
+			rows="10"
+			cols="80"
+			style="width: 95%; height: 200px; resize: vertical;" />
 	{:else}
 		<div class="inline">
 			<textarea
