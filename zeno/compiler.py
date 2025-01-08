@@ -340,44 +340,10 @@ class PromptAgent:
             if len(examples) == 0:
                 continue
 
-            example = random.choice(examples)
-
-            with dspy.context(lm=self.pred_model):
-                output = task_program_predictor(
-                    **{self.input_variable: example.input},
-                ).output
-            result = self.requirement_evaluator(
-                model_input=example.input,
-                model_output=output, 
-                requirement=requirement2text(requirement),
-                evaluation_method=requirement.evaluation_method,
-            )
-
-            max_rounds = 3
-            rounds = 0
-            while not result.meets_requirement and rounds < max_rounds:
-                # Refine the prompt
-                requirement_text = self.requirement_suggester(
-                    current_requirements=requirements2text(requirements),
-                    model_input=example.input,
-                    model_output=example.output,
-                    feedback=example.feedback,
-                ).new_requirement
-                prompt = self.prompt_refiner(
-                    task_description=self.task_description,
-                    requirements=requirements2text(requirements),
-                    new_requirements=requirement_text,
-                    previous_prompt=prompt,
-                ).prompt
-                dspy.inspect_history(n=1)
-                requirements = merge_requirements(requirements, text2requirements(requirement_text))
-                self.task_program.__doc__ = prompt
-                task_program_predictor = dspy.Predict(self.task_program)
-                
-                # Evaluate the requirement again
+            for example in examples:
                 with dspy.context(lm=self.pred_model):
                     output = task_program_predictor(
-                        **{self.input_variable: example.output},
+                        **{self.input_variable: example.input},
                     ).output
                 result = self.requirement_evaluator(
                     model_input=example.input,
@@ -385,7 +351,40 @@ class PromptAgent:
                     requirement=requirement2text(requirement),
                     evaluation_method=requirement.evaluation_method,
                 )
-                rounds += 1
+
+                max_rounds = 3
+                rounds = 0
+                while not result.meets_requirement and rounds < max_rounds:
+                    # Refine the prompt
+                    requirement_text = self.requirement_suggester(
+                        current_requirements=requirements2text(requirements),
+                        model_input=example.input,
+                        model_output=example.output,
+                        feedback=example.feedback,
+                    ).new_requirement
+                    prompt = self.prompt_refiner(
+                        task_description=self.task_description,
+                        requirements=requirements2text(requirements),
+                        new_requirements=requirement_text,
+                        previous_prompt=prompt,
+                    ).prompt
+                    dspy.inspect_history(n=1)
+                    requirements = merge_requirements(requirements, text2requirements(requirement_text))
+                    self.task_program.__doc__ = prompt
+                    task_program_predictor = dspy.Predict(self.task_program)
+                    
+                    # Evaluate the requirement again
+                    with dspy.context(lm=self.pred_model):
+                        output = task_program_predictor(
+                            **{self.input_variable: example.output},
+                        ).output
+                    result = self.requirement_evaluator(
+                        model_input=example.input,
+                        model_output=output, 
+                        requirement=requirement2text(requirement),
+                        evaluation_method=requirement.evaluation_method,
+                    )
+                    rounds += 1
 
         return prompt
 
