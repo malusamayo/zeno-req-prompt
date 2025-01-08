@@ -29,7 +29,7 @@ if __name__ == '__main__':
     if not baseline:
         prompt = "<prompt></prompt>"
     else:
-        prompt = 'Write quiz answer options for the following question.'
+        prompt = config["prompt"]['task_description']
     requirements = {}
 
     baseline = config["settings"]["baseline"]
