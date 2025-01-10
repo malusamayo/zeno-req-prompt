@@ -708,12 +708,12 @@ class ZenoBackend(object):
         req.version = new_version
         self.prompts[new_version] = req
         update_req = True
-        if req.text == "":
-            self.compile_prompt(new_version)
-            update_req = False
-        else:
-            self.extract_requirements(new_version)
-            update_req = False
+        # if req.text == "":
+        self.compile_prompt(new_version)
+        update_req = False
+        # else:
+        #     self.extract_requirements(new_version)
+        #     update_req = False
         if update_req:
             current_requirements = req.requirements
             for rid in current_requirements:
