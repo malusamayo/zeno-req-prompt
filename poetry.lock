@@ -562,13 +562,13 @@ files = [
 
 [[package]]
 name = "dspy"
-version = "2.5.15"
+version = "2.5.18"
 description = "DSPy"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "dspy-2.5.15-py3-none-any.whl", hash = "sha256:040f3ec51039c35a4732980497a8b8ed17046007393d57af4f086cd194516212"},
-    {file = "dspy-2.5.15.tar.gz", hash = "sha256:396be2fb7326ed9dd1452da0b75b226755616bea66e740736426e45bc43f23f3"},
+    {file = "dspy-2.5.18-py3-none-any.whl", hash = "sha256:9ca8ced57646c3978c92a7e63cab39646d86e9f89826598963f0c7fa3d21fd80"},
+    {file = "dspy-2.5.18.tar.gz", hash = "sha256:bf67c61b51fb61234a12d7947820f543545ced4e3570f6e9bd5fca6d7c0c710c"},
 ]
 
 [package.dependencies]
@@ -577,6 +577,7 @@ datasets = "*"
 diskcache = "*"
 httpx = "*"
 joblib = ">=1.3,<2.0"
+json-repair = "*"
 litellm = "<=1.49.1"
 magicattr = ">=0.1.6,<0.2.0"
 openai = "*"
@@ -1177,6 +1178,17 @@ python-versions = ">=3.8"
 files = [
     {file = "joblib-1.4.2-py3-none-any.whl", hash = "sha256:06d478d5674cbc267e7496a410ee875abd68e4340feff4490bcb7afb88060ae6"},
     {file = "joblib-1.4.2.tar.gz", hash = "sha256:2382c5816b2636fbd20a09e0f4e9dad4736765fdfb7dca582943b9c1366b3f0e"},
+]
+
+[[package]]
+name = "json-repair"
+version = "0.35.0"
+description = "A package to repair broken json strings"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "json_repair-0.35.0-py3-none-any.whl", hash = "sha256:1d429407158474d28a996e745b8f8f7dc78957cb2cfbc92120b9f580b5230a9e"},
+    {file = "json_repair-0.35.0.tar.gz", hash = "sha256:e70f834865a4ae5fe64352c23c1c16d3b70c5dd62dc544a169d8b0932bdbdcaa"},
 ]
 
 [[package]]
@@ -3555,4 +3567,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "959b77d96a6939f7ab23be7a222847a0ec133d5962d19dbb3df4e3057a67ecea"
+content-hash = "fef31a53705956aa8a68416b1b85533b25ed33985f52fb021279a4609fa01b5b"
