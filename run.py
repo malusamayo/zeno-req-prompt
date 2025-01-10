@@ -61,6 +61,7 @@ if __name__ == '__main__':
         metadata=data,
         models=config["models"],
         prompts={'v1': Prompt(text=prompt, version='v1', requirements=requirements, task=config["prompt"]["task_description"])},
+        task_description=config["prompt"]["task_description"],
         view='text-classification',
         data_column=config["data"]["data_column"],
         label_column="label",
