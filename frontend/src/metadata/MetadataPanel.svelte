@@ -354,12 +354,13 @@
 			cols="80"
 			style="width: 95%; height: 200px; resize: vertical;" />
 	{:else}
-		<div class="inline">
-			<textarea
-				placeholder="Write the task description here."
-				bind:value={newTaskInput}
-				on:change={add_task} />
-		</div>
+		<!-- <div class="inline"> -->
+		<textarea
+			placeholder="Write the task description here."
+			bind:value={newTaskInput}
+			on:change={add_task}
+			style="width: 95%; resize: vertical;" />
+		<!-- </div> -->
 	{/if}
 
 	{#if $baseline}
