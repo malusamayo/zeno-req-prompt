@@ -9,7 +9,7 @@ class CompleteRequirements(dspy.Signature):
     category = dspy.OutputField(desc="The focus area of the requirement, classified as structure, content, or presentation")
 
 class SuggestRequirements(dspy.Signature):
-    """You are an experienced requirement engineer for an LLM application. Given current requirements, and example inputs and outputs, suggest a new requirement.
+    """You are an experienced requirement engineer for an LLM application. Given current requirements, and example inputs and outputs, suggest a new requirement. The suggested requirement should be applicable beyond the specific example provided.
 Use the following format: [1] «requirement-name: requirement description»"""
 
     current_requirements = dspy.InputField(desc="The current requirements for the LLM")

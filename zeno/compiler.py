@@ -7,8 +7,6 @@ import dsp
 import dspy
 import litellm
 from dspy import LabeledFewShot
-import threading
-import queue
 
 from zeno.classes.classes import MetricKey, PlotRequest, InferenceRequest, FeedbackRequest, TableRequest, ZenoColumn, Prompt, Requirement, Example, EvaluatorFeedback, SuggestNewReqRequest, RemoveExampleFeedback
 from zeno.signatures import *
@@ -360,7 +358,7 @@ class PromptAgent:
                         current_requirements=requirements2text(requirements),
                         model_input=example.input,
                         model_output=example.output,
-                        feedback=example.feedback,
+                        feedback=result.reasoning,
                     ).new_requirement
                     prompt = self.prompt_refiner(
                         task_description=self.task_description,
@@ -368,7 +366,6 @@ class PromptAgent:
                         new_requirements=requirement_text,
                         previous_prompt=prompt,
                     ).prompt
-                    dspy.inspect_history(n=1)
                     requirements = merge_requirements(requirements, text2requirements(requirement_text))
                     self.task_program.__doc__ = prompt
                     task_program_predictor = dspy.Predict(self.task_program)
@@ -376,7 +373,7 @@ class PromptAgent:
                     # Evaluate the requirement again
                     with dspy.context(lm=self.pred_model):
                         output = task_program_predictor(
-                            **{self.input_variable: example.output},
+                            **{self.input_variable: example.input},
                         ).output
                     result = self.requirement_evaluator(
                         model_input=example.input,
