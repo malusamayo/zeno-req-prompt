@@ -3,18 +3,21 @@ import os
 import yaml
 import argparse
 import litellm
+import mlflow
 from zeno.runner import run_zeno
 from zeno.api import model
 from zeno.api import ZenoParameters, ZenoOptions, ModelReturn
 from zeno.classes.classes import Prompt, Requirement
 from zeno.util import read_config
 
-
 litellm.api_key = os.environ.get("LITELLM_API_KEY")
 litellm.api_base = "https://cmu-aiinfra.litellm-prod.ai/"
 litellm.verbose = True
 
-baseline = True
+mlflow.litellm.autolog()
+mlflow.dspy.autolog()
+mlflow.set_experiment("reqprompt")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -26,13 +29,12 @@ if __name__ == '__main__':
 
     data = pd.read_csv(config["data"]["data_path"]).sample(config["data"]["sample_size"], random_state=42).reset_index(drop=True)
     data["label"] = ""
+    baseline = config["settings"]["baseline"]
     if not baseline:
         prompt = "<prompt></prompt>"
     else:
         prompt = config["prompt"]['task_description']
     requirements = {}
-
-    baseline = config["settings"]["baseline"]
 
     if not baseline:
         for i, req in enumerate(config["prompt"]["requirements"]):
