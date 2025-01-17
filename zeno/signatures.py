@@ -8,10 +8,18 @@ class CompleteRequirements(dspy.Signature):
     priority = dspy.OutputField(desc="Whether the requirement is a soft or hard requirement")
     category = dspy.OutputField(desc="The focus area of the requirement, classified as structure, content, or presentation")
 
+class ProvideFeedback(dspy.Signature):
+    """You are a user providing feedback on a model output. Given the model input, model output, provide feedback on the model output, particularly on where the model can improve."""
+    task_description = dspy.InputField(desc="Description of the task")
+    model_input = dspy.InputField(desc="The model input")
+    model_output = dspy.InputField(desc="The model output")
+    feedback = dspy.OutputField(desc="Feedback on the model output")
+
 class SuggestRequirements(dspy.Signature):
     """You are an experienced requirement engineer for an LLM application. Given current requirements, and example inputs and outputs, suggest a new requirement. The suggested requirement should be applicable beyond the specific example provided.
 Use the following format: [1] «requirement-name: requirement description»"""
 
+    task_description = dspy.InputField(desc="Description of the task")
     current_requirements = dspy.InputField(desc="The current requirements for the LLM")
     model_input = dspy.InputField(desc="The model input")
     model_output = dspy.InputField(desc="The model output")
@@ -118,6 +126,6 @@ class ConvertFeedbackToRequirement(dspy.Signature):
     """Convert user feedback to a new requirement that an LLM should satisfy."""
 
     task_description = dspy.InputField(desc="Description of the task")
-    existing_requirements = dspy.InputField(format=dsp.passages2text, desc="A list of existing requirements")
+    existing_requirements = dspy.InputField(desc="A list of existing requirements")
     feedback = dspy.InputField(desc="User feedback on concrete model observations")
     requirement = dspy.OutputField(desc="A new requirement for the prompt.")

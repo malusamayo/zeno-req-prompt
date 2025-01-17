@@ -311,6 +311,7 @@ class PromptAgent:
         self.compiler = dspy.Predict(CompilePrompt)
 
         self.prompt_refiner = dspy.Predict(RefinePromptWithFeedback)
+        self.feedback_provider = dspy.Predict(ProvideFeedback)
         self.feedback_converter = dspy.Predict(ConvertFeedbackToRequirement)
 
         self.requirement_suggester = dspy.Predict(SuggestRequirements)
@@ -355,6 +356,7 @@ class PromptAgent:
                 while not result.meets_requirement and rounds < max_rounds:
                     # Refine the prompt
                     requirement_text = self.requirement_suggester(
+                        task_description=self.task_description,
                         current_requirements=requirements2text(requirements),
                         model_input=example.input,
                         model_output=example.output,
@@ -482,16 +484,42 @@ class PromptAgent:
         Returns:
             List[Requirement]: The suggested new requirements.
         """
+        completions = []
         new_requirements = []
-        with dspy.context(lm=self.mini):
-            for example in examples:
-                requirement_texts = self.requirement_suggester(
+        def suggest_requirement(requirements, example):
+            if example.feedback == "":
+                example.feedback = self.feedback_provider(
+                    task_description=self.task_description,
                     current_requirements=requirements2text(requirements),
                     model_input=example.input,
                     model_output=example.output,
-                    feedback=example.feedback,
-                ).new_requirement
-                new_requirements += text2requirements(requirement_texts)
+                ).feedback
+                
+            requirement_texts = self.requirement_suggester(
+                task_description=self.task_description,
+                current_requirements=requirements2text(requirements),
+                model_input=example.input,
+                model_output=example.output,
+                feedback=example.feedback,
+            ).new_requirement
+            new_requirements = text2requirements(requirement_texts)
+            
+            for new_requirement in new_requirements:
+                new_requirement.examples = [example]
+                new_requirement = self.complete_requirements(new_requirement)
+            return new_requirements
+        
+        with ThreadPoolExecutor(max_workers=100) as executor:
+            for example in examples:
+                future = executor.submit(
+                    suggest_requirement,
+                    requirements,
+                    example,
+                )
+                completions.append(future)
+        for completion in completions:
+            result = completion.result()
+            new_requirements += result
         return new_requirements
 
     def run_inference(
@@ -510,14 +538,19 @@ class PromptAgent:
         self.task_program.__doc__ = prompt
         task_program_predictor = dspy.Predict(self.task_program)
 
-        with dspy.context(lm=self.pred_model):
-            with ThreadPoolExecutor(max_workers=100) as executor:
-                for example_input in example_inputs:
-                    future = executor.submit(
-                        task_program_predictor,
-                        **{self.input_variable: example_input},
-                    )
-                    completions.append(future)
+        def task_program_predict(model_input):
+            with dspy.context(lm=self.pred_model):
+                return task_program_predictor(
+                    **{self.input_variable: model_input},
+                )
+        
+        with ThreadPoolExecutor(max_workers=100) as executor:
+            for example_input in example_inputs:
+                future = executor.submit(
+                    task_program_predict,
+                    example_input,
+                )
+                completions.append(future)
         for completion in completions:
             result = completion.result()
             results.append(result.output)
@@ -538,18 +571,18 @@ class PromptAgent:
         completions = []
         results = []
 
-        with dspy.context(lm=self.mini):
-            with ThreadPoolExecutor(max_workers=100) as executor:
-                for example in examples:
-                    for requirement in requirements:
-                        future = executor.submit(
-                            self.requirement_evaluator,
-                            model_input=example.input,
-                            model_output=example.output, 
-                            requirement=requirement2text(requirement),
-                            evaluation_method=requirement.evaluation_method,
-                        )
-                        completions.append((requirement.id, example.id, future))
+        # with dspy.context(lm=self.mini):
+        with ThreadPoolExecutor(max_workers=100) as executor:
+            for example in examples:
+                for requirement in requirements:
+                    future = executor.submit(
+                        self.requirement_evaluator,
+                        model_input=example.input,
+                        model_output=example.output, 
+                        requirement=requirement2text(requirement),
+                        evaluation_method=requirement.evaluation_method,
+                    )
+                    completions.append((requirement.id, example.id, future))
 
         for (requirement_id, example_id, future) in completions:
             try:

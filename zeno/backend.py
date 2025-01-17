@@ -1020,7 +1020,7 @@ class ZenoBackend(object):
 
         for i, req in enumerate(suggested_requirement_list):
             req.id = str(max_id + i + 1)
-            suggested_requirement_list[i] = self.prompt_agent.complete_requirements(req)
+            suggested_requirement_list[i] = req
         
         suggested_requirements = {req.id: req for req in suggested_requirement_list}
         return suggested_requirements
