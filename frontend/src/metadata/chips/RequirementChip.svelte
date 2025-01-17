@@ -13,9 +13,9 @@
 		showNewSlice,
 		showSliceFinder,
 		baseline,
+		suggestedRequirements,
 	} from "../../stores";
 
-	// export let requirement: Requirement;
 	export let name; // = requirement.name;
 	export let id;
 	// export let color = "a463f2";
@@ -28,6 +28,9 @@
 	$: {
 		name;
 		requirement = $requirements[id];
+		if (requirement == null) {
+			requirement = $suggestedRequirements[id];
+		}
 	}
 	$: srcLink = `https://img.shields.io/badge/${name.replaceAll(
 		"-",
@@ -35,10 +38,6 @@
 	)}-${color.replaceAll("#", "")}`;
 
 	function handleSpanClick(event) {
-		// const spanRect = event.target.getBoundingClientRect();
-		// menuX = spanRect.left;
-		// menuY = spanRect.bottom;
-		// showOptions = !showOptions;
 		if (requirement == null) {
 			return;
 		}
@@ -53,14 +52,14 @@
 
 <span>
 	{#if !$baseline}
-	<img
-		class="tag"
-		draggable="false"
-		src={srcLink}
-		alt=""
-		data={name}
-		on:click={handleSpanClick}
-		on:keydown={() => {}} />
+		<img
+			class="tag"
+			draggable="false"
+			src={srcLink}
+			alt=""
+			data={name}
+			on:click={handleSpanClick}
+			on:keydown={() => {}} />
 	{/if}
 	<!-- {#if showOptions}
 		<div
