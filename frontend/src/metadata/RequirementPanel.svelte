@@ -283,7 +283,7 @@
 					"uncategorized"
 				].requirements.concat(requirementTree[goal].requirements);
 			}
-			requirementTree["uncategorized"].requirements.forEach((reqObj) => {
+			requirementTree[goal].requirements.forEach((reqObj) => {
 				reqObj.requirement.feature = "uncategorized";
 				requirements.update(($reqs) => {
 					$reqs[reqObj.requirement.id].feature = "uncategorized";
