@@ -16,7 +16,6 @@ litellm.verbose = True
 
 mlflow.litellm.autolog()
 mlflow.dspy.autolog()
-mlflow.set_experiment("reqprompt")
 
 
 if __name__ == '__main__':
@@ -26,6 +25,8 @@ if __name__ == '__main__':
     
     with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
+    
+    mlflow.set_experiment(config["settings"]["cache_path"])
 
     data = pd.read_csv(config["data"]["data_path"]).sample(config["data"]["sample_size"], random_state=42).reset_index(drop=True)
     data["label"] = ""
