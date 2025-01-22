@@ -36,10 +36,12 @@ class EvaluateRequirement(dspy.Signature):
     meets_requirement: bool = dspy.OutputField(desc="Whether the model output meets the requirement")
 
 class UpdateEvaluationMethod(dspy.Signature):
-    """Given an example, update the evaluation method to produce the expected evaluation result."""
+    """You are writing an evaluation method for a requirement. The previous evaluation method incorrectly evaluated the given model output.
+Given the requirement and the expected evaluation result, provide an updated evaluation method that correctly evaluates the model output."""
     
     model_input = dspy.InputField(desc="The model input")
     model_output = dspy.InputField(desc="The model output")
+    requirement = dspy.InputField(desc="The requirement")
     expected_evaluation_result = dspy.InputField(desc="The expected evaluation result")
     previous_evaluation_method = dspy.InputField(desc="The previous evaluation method")
     updated_evaluation_method = dspy.OutputField(desc="The updated evaluation method")

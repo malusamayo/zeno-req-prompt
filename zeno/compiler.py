@@ -481,6 +481,7 @@ class PromptAgent:
         """Suggest new requirements.
         Args:
             requirements (List[Requirement]): The current requirements for the prompt.
+            examples (List[Example]): The examples to suggest requirements for.
         Returns:
             List[Requirement]: The suggested new requirements.
         """
@@ -490,7 +491,6 @@ class PromptAgent:
             if example.feedback == "":
                 example.feedback = self.feedback_provider(
                     task_description=self.task_description,
-                    current_requirements=requirements2text(requirements),
                     model_input=example.input,
                     model_output=example.output,
                 ).feedback
@@ -625,6 +625,7 @@ class PromptAgent:
                     requirement.evaluation_method = self.requirement_updater(  
                         model_input=example.input,
                         model_output=example.output,
+                        requirement=requirement2text(requirement),
                         expected_evaluation_result=example.is_positive,
                         previous_evaluation_method=requirement.evaluation_method,
                     ).updated_evaluation_method
