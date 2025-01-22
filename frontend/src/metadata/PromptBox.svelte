@@ -36,7 +36,7 @@
 	}
 
 	function switchPrompt() {
-		prompt = $prompts.get($currentPromptId).text;
+		prompt = "<prompt>" + $prompts.get($currentPromptId).text + "</prompt>";
 	}
 
 	function getInnerText(el) {
