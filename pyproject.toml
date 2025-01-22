@@ -20,7 +20,7 @@ opentsne = ">=0.7.1,<1.1.0"
 pandas = "^2.0.0"
 pathos = "^0.3.0"
 pydantic = ">=2.0,<3.0"
-python = "^3.9"
+python = ">=3.11,<4.0"
 requests = "^2.28.1"
 setuptools = "*"
 tomli = "^2.0.1"
@@ -33,7 +33,7 @@ aioprocessing = "^2.0.1"
 tenacity = "^9.0.0"
 mlflow = "^2.19.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 black = "^23.9.1"
 httpx = "^0.25.0"
 pyright = "^1.1.329"
