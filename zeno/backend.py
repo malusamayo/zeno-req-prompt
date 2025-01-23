@@ -734,6 +734,8 @@ class ZenoBackend(object):
         req.version = new_version
         self.prompts[new_version] = req
         self.current_prompt_id = new_version
+        with open(os.path.join(self.cache_path, "prompts.pickle"), "wb") as f:
+            pickle.dump(self.prompts, f)
         return self.prompts[new_version]
 
     def run_prompt(self, req: InferenceRequest):

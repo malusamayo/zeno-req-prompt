@@ -333,7 +333,7 @@
 </script>
 
 <div class="side-container">
-	<MetadataHeader />
+	<MetadataHeader {newPromptInput}/>
 
 	{#if $baseline}
 		<div class="inline">
@@ -349,7 +349,6 @@
 		<textarea
 			placeholder="Write the prompt here."
 			bind:value={newPromptInput}
-			on:change={add_prompt}
 			rows="10"
 			cols="80"
 			style="width: 95%; height: 200px; resize: vertical;" />

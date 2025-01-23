@@ -26,10 +26,31 @@
 	import { ZenoService } from "../zenoservice";
 	import { compilePrompt, runPrompt } from "../api/prompt";
 
+	export let newPromptInput;
+
 	let confirmRunPrompt = false;
 
 	$: exludeModels = $models.filter((m) => m !== $model);
 	$: promptIds = Array.from($prompts.keys());
+
+	function add_prompt() {
+		console.log("add-prompt");
+		ZenoService.addPromptBaseline({
+			task: "",
+			version: "",
+			text: newPromptInput,
+			requirements: $prompts.get($currentPromptId).requirements,
+		}).then((new_prompt) => {
+			currentPromptId.set(new_prompt.version);
+			console.log(new_prompt.version);
+			console.log(new_prompt);
+			console.log($currentPromptId);
+			prompts.update((pts) => {
+				return pts.set(new_prompt.version, new_prompt);
+			});
+			runPrompt($model, $currentPromptId);
+		});
+	}
 </script>
 
 <div class="inline">
@@ -130,8 +151,9 @@
 		{:else}
 		<Button
 			use={[InitialFocus]}
-			on:click={() =>
-				runPrompt($model, $currentPromptId)}>
+			on:click={() => {
+				add_prompt();
+			}}>
 			<Label>Yes</Label>
 		</Button>
 		{/if}
