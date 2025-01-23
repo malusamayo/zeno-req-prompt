@@ -84,7 +84,6 @@
 					{/each}
 				</select>
 			</div>
-
 		{/if}
 		{#if $tab === "comparison"}
 			<div>
@@ -142,20 +141,20 @@
 			<Label>No</Label>
 		</Button>
 		{#if !$baseline}
-		<Button
-			use={[InitialFocus]}
-			on:click={() =>
-				compilePrompt($requirements, $prompts.get($currentPromptId).task)}>
-			<Label>Yes</Label>
-		</Button>
+			<Button
+				use={[InitialFocus]}
+				on:click={() =>
+					compilePrompt($requirements, $prompts.get($currentPromptId).task)}>
+				<Label>Yes</Label>
+			</Button>
 		{:else}
-		<Button
-			use={[InitialFocus]}
-			on:click={() => {
-				add_prompt();
-			}}>
-			<Label>Yes</Label>
-		</Button>
+			<Button
+				use={[InitialFocus]}
+				on:click={() => {
+					add_prompt();
+				}}>
+				<Label>Yes</Label>
+			</Button>
 		{/if}
 	</Actions>
 </Dialog>
