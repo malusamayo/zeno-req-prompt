@@ -993,7 +993,7 @@ class ZenoBackend(object):
 
         return new_requirements
 
-    def suggest_requirements(self,cur_info: SuggestNewReqRequest) -> Dict[str, Requirement]:
+    def suggest_requirements(self, cur_info: SuggestNewReqRequest) -> Dict[str, Requirement]:
         ''' Use LLM to brainstorm new requirements
 
         Output:
@@ -1007,8 +1007,11 @@ class ZenoBackend(object):
         requirements = list(self.prompts[cur_info.prompt_id].requirements.values())
         max_id = max([int(x) for x in self.prompts[cur_info.prompt_id].requirements.keys()])
 
+        # Current implementation: Randomly sample 5 examples to suggest requirements
+        # [TODO] Alternatively, we can over-generate requirements and do aggregation / filtering after
         examples = []
         random_indices = list(random.sample(range(len(data_col)), 5))
+        # random_indices = list(range(len(data_col)))
         for i in random_indices:
             examples.append(Example(
                 id=i,
