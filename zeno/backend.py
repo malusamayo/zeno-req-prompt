@@ -605,7 +605,7 @@ class ZenoBackend(object):
                 return_metrics.append(GroupMetric(metric=None, size=filt_df.shape[0]))
             else:
                 metric = self.calculate_metric(
-                    filt_df, metric_key.model, metric_key.metric
+                    filt_df, metric_key.model, metric_key.metric, metric_key.prompt_id,
                 )
                 return_metrics.append(GroupMetric(metric=metric, size=filt_df.shape[0]))
         return return_metrics
@@ -632,8 +632,16 @@ class ZenoBackend(object):
         if not self.done_running_inference:
             return None
         
-        if prompt_id is None or requirement_id is None:
+        if prompt_id is None:
             return None
+        
+        # return average score
+        if requirement_id is None:
+            output_col = ZenoColumn(
+                column_type=ZenoColumnType.OUTPUT, name=f"output", model=model, prompt_id=prompt_id
+            )
+            output_hash = str(output_col)
+            return (df[output_hash] == df[str(self.label_column)]).mean()
 
         if model is not None:
             # print(f"Calculating metric {metric} for model {model} on prompt {prompt_id} and requirement {requirement_id}")

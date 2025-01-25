@@ -17,6 +17,7 @@
 		metric,
 		tab,
 		comparisonModel,
+		currentPromptId,
 	} from "../stores";
 	import type { MetricKey, Slice } from "../zenoservice";
 
@@ -73,6 +74,7 @@
 				},
 				model: model,
 				metric: metric,
+				promptId: $currentPromptId,
 			},
 		];
 	}

@@ -10,7 +10,7 @@
 		status,
 		promptToUpdate,
 		suggestedRequirements,
-		baseline
+		baseline,
 	} from "../stores";
 	import { ZenoColumnType, ZenoService } from "../zenoservice";
 	import { clickOutside } from "../util/clickOutside";
@@ -131,7 +131,6 @@
 		return acc;
 	}, {});
 
-
 	// function feedbackToRequirements() {
 	// 	requirementUpdating.set(true);
 	// 	ZenoService.suggestRequirementUpdates({
@@ -241,7 +240,6 @@
 		showOptions = !showOptions;
 		updateModalPosition(event);
 	}
-
 </script>
 
 <div class="box svelte-ohpquu">
@@ -251,8 +249,8 @@
 		draggable={isDraggable}
 		on:dragstart={(ev) => {
 			const transferData = JSON.stringify({
-            example,
-            passFailInfo, // Include pass/fail dictionary
+				example,
+				passFailInfo, // Include pass/fail dictionary
 			});
 			ev.dataTransfer.setData("text/plain", transferData);
 			ev.dataTransfer.dropEffect = "copy";
@@ -280,24 +278,30 @@
 		}}>
 		play_circle
 	</TrailingIcon>
+	<br />
+	<span class="label svelte-ohpquu">label:</span>
+	<span class="value svelte-ohpquu">
+		{item[columnHash($settings.labelColumn)]}
+	</span>
 	{#if modelColumn !== "" && item[modelColumn] !== null}
 		<br />
 		<span class="label svelte-ohpquu">output:</span>
 
-			<div style="display: flex; justify-content: space-between; gap: 1rem; align-items: baseline;">
-				{#if modelColumn_compare && item != item_compare}
-				  <span class="value svelte-ohpquu">
+		<div
+			style="display: flex; justify-content: space-between; gap: 1rem; align-items: baseline;">
+			{#if modelColumn_compare && item != item_compare}
+				<span class="value svelte-ohpquu">
 					{item[modelColumn]}
-				  </span>
-				  <span class="value svelte-ohpquu">
+				</span>
+				<span class="value svelte-ohpquu">
 					{item_compare[modelColumn_compare]}
-				  </span>
-				{:else}
-				  <span class="value svelte-ohpquu">
+				</span>
+			{:else}
+				<span class="value svelte-ohpquu">
 					{item[modelColumn]}
-				  </span>
-				{/if}
-			  </div>
+				</span>
+			{/if}
+		</div>
 		<span style="position:relative">
 			<!-- <TrailingIcon
 				class="material-icons thumb-up-icon"
@@ -347,24 +351,24 @@
 		<br />
 		{#each requirementIds as reqId}
 			{#if evalColumns[reqId] !== "" && item[evalColumns[reqId]] !== null && item[evalColumns[reqId]] !== undefined}
-				{#if modelColumn_compare && item != item_compare && item_compare[evalColumns_compare[reqId]] !== undefined && (item[evalColumns[reqId]] != item_compare[evalColumns_compare[reqId]])}
+				{#if modelColumn_compare && item != item_compare && item_compare[evalColumns_compare[reqId]] !== undefined && item[evalColumns[reqId]] != item_compare[evalColumns_compare[reqId]]}
 					<RequirementEvalChip
-					id={reqId}
-					isPass={item[evalColumns[reqId]] === true}
-					rationale={item[rationaleColumns[reqId]]}
-					item={item}
-					evalColumns={evalColumns}
-					reqId={reqId} 
-					versionCompare={true}/>
+						id={reqId}
+						isPass={item[evalColumns[reqId]] === true}
+						rationale={item[rationaleColumns[reqId]]}
+						{item}
+						{evalColumns}
+						{reqId}
+						versionCompare={true} />
 				{:else}
 					<RequirementEvalChip
-					id={reqId}
-					isPass={item[evalColumns[reqId]] === true}
-					rationale={item[rationaleColumns[reqId]]}
-					item={item}
-					evalColumns={evalColumns}
-					reqId={reqId} 
-					versionCompare={false}/>
+						id={reqId}
+						isPass={item[evalColumns[reqId]] === true}
+						rationale={item[rationaleColumns[reqId]]}
+						{item}
+						{evalColumns}
+						{reqId}
+						versionCompare={false} />
 				{/if}
 			{/if}
 		{/each}
@@ -380,7 +384,7 @@
 	.value.svelte-ohpquu {
 		font-size: 12px;
 		white-space: pre-wrap;
-		line-height: 1.5; 
+		line-height: 1.5;
 	}
 	.box.svelte-ohpquu {
 		padding: 10px;
@@ -447,5 +451,4 @@
 		overflow-y: auto;
 		margin-bottom: 10px;
 	}
-	
 </style>
