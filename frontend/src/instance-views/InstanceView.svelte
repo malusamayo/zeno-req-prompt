@@ -61,7 +61,7 @@
 		}
 	});
 
-	function getMetricKeys(model, metric, predicates) {
+	function getMetricKeys(model, metric, predicates, currentPromptId = null) {
 		return [
 			<MetricKey>{
 				sli: <Slice>{
@@ -74,7 +74,7 @@
 				},
 				model: model,
 				metric: metric,
-				promptId: $currentPromptId,
+				promptId: currentPromptId,
 			},
 		];
 	}
@@ -90,7 +90,7 @@
 	}
 
 	$: currentResult = getMetricsForSlicesAndTags(
-		getMetricKeys($model, $metric, $selectionPredicates),
+		getMetricKeys($model, $metric, $selectionPredicates, $currentPromptId),
 		$tagIds,
 		$selectionIds,
 		$selections.tags,
