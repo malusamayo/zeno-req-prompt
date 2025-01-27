@@ -82,7 +82,7 @@ def construct_task_program(
     input_variable: str,
     output_variable: str,
     prompt: str,
-) -> dspy.Module:
+) -> dspy.Signature:
     """Construct a task program that takes in an input variable, performs a task, and outputs the result.
 
     Args:
@@ -526,7 +526,7 @@ class PromptAgent:
         self,
         prompt: str,
         example_inputs: List[str],
-    ):
+    ) -> List[str]:
         """Run inference on the examples.
         Args:
             examples (List[Example]): The examples to run inference on.
