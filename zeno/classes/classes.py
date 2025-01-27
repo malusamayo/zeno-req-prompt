@@ -122,6 +122,7 @@ class Example(CamelModel):
     output: str
     is_positive: bool
     feedback: Optional[str] = ""
+    label: Optional[str] = ""
 
 class Requirement(CamelModel):
     id: str

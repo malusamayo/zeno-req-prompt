@@ -1058,12 +1058,13 @@ class ZenoBackend(object):
         else:
             feedback = req.feedback
         new_example = Example(
-                            id=req.example_id,
-                            input=data_col.at[int(req.example_id)],
-                            output=model_col.at[int(req.example_id)],
-                            is_positive=is_positive,
-                            feedback=feedback,
-                    )
+            id=req.example_id,
+            input=data_col.at[int(req.example_id)],
+            output=model_col.at[int(req.example_id)],
+            is_positive=is_positive,
+            feedback=feedback,
+            label=self.df[str(self.label_column)].at[int(req.example_id)]
+        )
 
         for ex in requirement.examples:
             if ex.id == new_example.id and ex.input == new_example.input and ex.output == new_example.output and ex.is_positive == new_example.is_positive and ex.feedback == new_example.feedback:

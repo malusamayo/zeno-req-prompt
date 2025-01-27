@@ -123,6 +123,7 @@
 			output: modelColumn ? item[modelColumn] : "",
 			isPositive: true,
 			feedback: "",
+			label: item[columnHash($settings.labelColumn)],
 		};
 	}
 

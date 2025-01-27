@@ -55,6 +55,11 @@
 		{example.input}
 	</span>
 	<br />
+	<span class="label svelte-ohpquu">label:</span>
+	<span class="value svelte-ohpquu">
+		{example.label}
+	</span>
+	<br />
 	<span class="label svelte-ohpquu">output:</span>
 	<span class="value svelte-ohpquu">
 		{example.output}

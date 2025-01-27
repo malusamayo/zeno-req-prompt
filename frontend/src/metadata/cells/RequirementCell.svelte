@@ -129,6 +129,7 @@
 					output: draggedexample.output,
 					isPositive: feedbackPositive,
 					feedback: feedback,
+					label: draggedexample.label,
 				});
 			}
 			return reqs;

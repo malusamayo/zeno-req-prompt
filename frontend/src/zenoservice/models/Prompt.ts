@@ -8,6 +8,7 @@ export type Example = {
 	output: string;
 	isPositive: boolean;
 	feedback: string;
+	label?: string;
 };
 
 export type Requirement = {
