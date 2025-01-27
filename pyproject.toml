@@ -39,6 +39,7 @@ httpx = "^0.25.0"
 pyright = "^1.1.329"
 pytest = "^7.4.2"
 ruff = "^0.0.292"
+ipykernel = "^6.29.5"
 
 [tool.poetry.scripts]
 zeno = "zeno.runner:command_line"
