@@ -333,7 +333,7 @@
 </script>
 
 <div class="side-container">
-	<MetadataHeader {newPromptInput}/>
+	<MetadataHeader {newPromptInput} />
 
 	{#if $baseline}
 		<div class="inline">
@@ -358,6 +358,7 @@
 			placeholder="Write the task description here."
 			bind:value={newTaskInput}
 			on:change={add_task}
+			readonly
 			style="width: 95%; resize: vertical;" />
 		<!-- </div> -->
 	{/if}
