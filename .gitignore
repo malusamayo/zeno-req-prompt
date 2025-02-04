@@ -4,6 +4,7 @@ examples/
 data/
 mlruns/
 configs/
+poetry.lock
 
 *.parquet
 .ruff_cache
