@@ -29,7 +29,7 @@ if __name__ == '__main__':
     mlflow.set_experiment(config["settings"]["cache_path"])
 
     data = pd.read_csv(config["data"]["data_path"]).sample(config["data"]["sample_size"], random_state=42).reset_index(drop=True)
-    if config["data"]["label_column"]:
+    if "label_column" in config["data"]:
         data["label"] = data[config["data"]["label_column"]]
     else:
         data["label"] = ""

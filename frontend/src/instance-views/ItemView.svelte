@@ -269,7 +269,7 @@
 	<span class="value svelte-ohpquu">
 		{item[columnHash($settings.dataColumn)]}
 	</span>
-	<TrailingIcon
+	<!-- <TrailingIcon
 		class="material-icons"
 		style="margin-bottom: 5px; margin-left: 0px; cursor: pointer; opacity: 0.8;"
 		on:click={() => {
@@ -279,11 +279,13 @@
 		}}>
 		play_circle
 	</TrailingIcon>
-	<br />
-	<span class="label svelte-ohpquu">label:</span>
-	<span class="value svelte-ohpquu">
-		{item[columnHash($settings.labelColumn)]}
-	</span>
+	<br /> -->
+	{#if item[columnHash($settings.labelColumn)]}
+		<span class="label svelte-ohpquu">label:</span>
+		<span class="value svelte-ohpquu">
+			{item[columnHash($settings.labelColumn)]}
+		</span>
+	{/if}
 	{#if modelColumn !== "" && item[modelColumn] !== null}
 		<br />
 		<span class="label svelte-ohpquu">output:</span>
