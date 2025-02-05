@@ -3,7 +3,6 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import random
 import os
 import re
-import dsp
 import dspy
 import litellm
 from dspy import LabeledFewShot

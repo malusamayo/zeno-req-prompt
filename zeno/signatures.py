@@ -1,5 +1,5 @@
 import dspy
-import dsp
+
 class CompleteRequirements(dspy.Signature):
     """You are given a user-written requirement description. Your task is to generate additional fields: 'name', 'evaluation_method', 'priority', and 'category'. """
     requirement_description = dspy.InputField(desc="A user-written requirement descriotion")
