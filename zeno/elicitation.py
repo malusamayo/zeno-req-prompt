@@ -69,16 +69,30 @@ class EvaluateRequirement(dspy.Signature):
 
 class EvaluateGuideline(dspy.Signature):
     """You are a reviewer who is evaluating whether a model output satisfies the given guideline.
-    Given a task description, model input, model output, and guideline, first generate a step-by-step evaluation plan for the guideline, then execute the evaluation plan to evaluate if the model output meets the guideline."""
+Given a task description, model input, model output, and guideline, first evaluate the model output using the requirements in the guideline one by one. For each requirement in the guideline, do the evaluation step-by-step. 
+Then, calculate an overall score for how many requirements the model output satisfies."""
 
-    task_description = dspy.InputField(desc="Description of the task")
-    model_input = dspy.InputField(desc="The model input")
-    model_output = dspy.InputField(desc="The model output")
-    guideline = dspy.InputField(desc="The guideline for evaluation")
-    evaluation_plan: str = dspy.OutputField(desc="The evaluation plan for the guideline")
-    plan_execution: str = dspy.OutputField(desc="The execution of the evaluation plan")
-    score: float = dspy.OutputField(desc="A score indicating how well the model output meets the guideline from 0 to 10")
+    task_description: str = dspy.InputField(desc="Description of the task")
+    model_input: str = dspy.InputField(desc="The model input")
+    model_output: str = dspy.InputField(desc="The model output")
+    guideline: List[str] = dspy.InputField(desc="The guideline for evaluation")
+    evaluation_execution: str = dspy.OutputField(desc="The execution of the evaluation guideline")
+    score: int = dspy.OutputField(desc="A score indicating how many requirements in the guideline the model output satisfies")
 
+class CompareModelOutputsWithGuideline(dspy.Signature):
+    """You are a reviewer who is comparing two model outputs to determine which one better satisfies the given guideline.
+Given a task description, two model outputs, and a guideline, evaluate each model output using the requirements in the guideline one by one. For each requirement in the guideline, do the evaluation step-by-step.
+Then, compare the two model outputs based on how many requirements each output satisfies."""
+
+    task_description: str = dspy.InputField(desc="Description of the task")
+    model_input: str = dspy.InputField(desc="The model input")
+    model_output_a: str = dspy.InputField(desc="The first model output")
+    model_output_b: str = dspy.InputField(desc="The second model output")
+    guideline: List[str] = dspy.InputField(desc="The guideline for evaluation")
+    execution_a: str = dspy.OutputField(desc="The execution of the evaluation of the first model output")
+    execution_b: str = dspy.OutputField(desc="The execution of the evaluation of the second model output")
+    reasoning: str = dspy.OutputField(desc="The reasoning for the comparison")
+    better_output: str = dspy.OutputField(desc="The model output that better satisfies the guideline, either 'A' or 'B', or 'tie' if they are equal")
 
 class RefineResponseWithFeedback(dspy.Signature):
     """Given the task description, model input, model output, and feedback, refine the model output based on the feedback."""
@@ -229,44 +243,126 @@ class LLMJudge(dspy.Module):
         self.task_description = task_description
         self.input_variable = input_variable
         self.evaluator = use_lm(self.judge_lm)(dspy.Predict(EvaluateRequirement))
+        self.aggregate_evaluator = use_lm(self.judge_lm)(dspy.Predict(EvaluateGuideline))
+        self.compare_evaluator = use_lm(self.judge_lm)(dspy.Predict(CompareModelOutputsWithGuideline))
 
     def evaluate_requirement(self, example, requirement):
         return self.evaluator(task_description=self.task_description, 
                             model_input=getattr(example, self.input_variable), 
                             model_output=example.output, 
                             requirement=requirement)
-
-    def forward(self, examples, requirements):        
-        results = batch_inference(
-            self.evaluate_requirement,
-            [{"example": example, "requirement": requirement} for example in examples for requirement in requirements]
-        )
+    
+    def evaluate_guideline(self, example, guideline):
+        return self.aggregate_evaluator(task_description=self.task_description, 
+                            model_input=getattr(example, self.input_variable), 
+                            model_output=example.output, 
+                            guideline=guideline)
+    
+    def compare_outputs(self, example_a, example_b, guideline):
+        return self.compare_evaluator(task_description=self.task_description, 
+                            model_input=getattr(example_a, self.input_variable), 
+                            model_output_a=example_a.output, 
+                            model_output_b=example_b.output, 
+                            guideline=guideline)
+    
+    def compare(self, examples_a, examples_b, requirements):
+        def random_permute(example_a, example_b):
+            return example_a, example_b, 0
+            if np.random.rand() > 0.5:
+                return example_a, example_b, 0
+            else:
+                return example_b, example_a, 1
         
-        for i, result in enumerate(results):
-            example_id = i // len(requirements)
-            requirement_id = i % len(requirements)
-            # create the requirements field if it doesn't exist
-            if not hasattr(examples[example_id], "requirements"):
-                examples[example_id].requirements = []
-            examples[example_id].requirements.append({
-                "requirement": requirements[requirement_id],
-                "evaluation_plan": result.evaluation_plan,
-                "plan_execution": result.plan_execution,
-                "meets_requirement": result.meets_requirement
-            })
+        np.random.seed(42)
+        permuations = [random_permute(example_a, example_b) for example_a, example_b in zip(examples_a, examples_b)]
+
+        results = batch_inference(
+            self.compare_outputs,
+            [{"example_a": example_a, "example_b": example_b, "guideline": requirements} for example_a, example_b, _ in permuations]
+        )
+        # calculate win rate, mapping permutations back
+        win_rate_A = sum([(result.better_output == 'A' and not is_permutated) or (result.better_output == 'B' and is_permutated) 
+                            for result, (_, _, is_permutated) in zip(results, permuations)]) / len(results)
+        win_rate_B = sum([(result.better_output == 'B' and not is_permutated) or (result.better_output == 'A' and is_permutated)
+                            for result, (_, _, is_permutated) in zip(results, permuations)]) / len(results)
+        print(f"Win rate for A: {win_rate_A}")
+        print(f"Win rate for B: {win_rate_B}")
+
+        eval_results = []
+        for result, (example_a, example_b, is_permutated) in zip(results, permuations):
+            eval_results.append({
+                "input": getattr(example_a, self.input_variable),
+                "output_a": example_a.output,
+                "output_b": example_b.output,
+                "permutated": is_permutated,
+                "execution_a": result.execution_a,
+                "execution_b": result.execution_b,
+                "reasoning": result.reasoning,
+                "better_output": result.better_output,
+            }) 
+
+        return eval_results
+
+    def forward(self, examples, requirements, aggregate=False):
+        if aggregate:        
+            results = batch_inference(
+                self.evaluate_guideline,
+                [{"example": example, "guideline": requirements} for example in examples]
+            )
+            for example, result in zip(examples, results):
+                example.evaluation_result = {
+                    # "evaluation_plan": result.evaluation_plan,
+                    # "plan_execution": result.plan_execution,
+                    "evaluation_execution": result.evaluation_execution,
+                    "score": result.score
+                }
+        
+        else:
+            results = batch_inference(
+                self.evaluate_requirement,
+                [{"example": example, "requirement": requirement} for example in examples for requirement in requirements]
+            )
+            
+            for i, result in enumerate(results):
+                example_id = i // len(requirements)
+                requirement_id = i % len(requirements)
+                # create the requirements field if it doesn't exist
+                if not hasattr(examples[example_id], "requirements"):
+                    examples[example_id].requirements = []
+                examples[example_id].requirements.append({
+                    "requirement": requirements[requirement_id],
+                    "evaluation_plan": result.evaluation_plan,
+                    "plan_execution": result.plan_execution,
+                    "meets_requirement": result.meets_requirement
+                })
 
         return examples
 
-    def evaluate(self, examples, requirements):
-        evaluate_examples = self.forward(examples, requirements)
-        pass_rates = []
-        for i, requirement in enumerate(requirements):
-            print(f"Requirement: {requirement}")
-            pass_rate = sum([example.requirements[i]['meets_requirement'] for example in evaluate_examples]) / len(evaluate_examples)
-            print(f"Pass rate for requirement: {pass_rate}")
-            pass_rates.append(pass_rate)
-        print(f"Average pass rate: {sum(pass_rates) / len(pass_rates)}")
-        return pass_rates
+    def evaluate(self, examples, requirements, program=None, aggregate=False):
+        examples = copy.deepcopy(examples)
+
+        # run the program to generate the output if provided
+        if program is not None:
+            results = batch_inference(
+                program,
+                [example.inputs().toDict() for example in examples]
+            )
+            for example, result in zip(examples, results):
+                example.output = result.output
+
+        if aggregate:
+            evaluate_examples = self.forward(examples, requirements, aggregate=aggregate)
+            print(f"Average score: {sum([example.evaluation_result['score'] for example in evaluate_examples]) / len(evaluate_examples)}")
+        else:
+            evaluate_examples = self.forward(examples, requirements)
+            pass_rates = []
+            for i, requirement in enumerate(requirements):
+                print(f"Requirement: {requirement}")
+                pass_rate = sum([example.requirements[i]['meets_requirement'] for example in evaluate_examples]) / len(evaluate_examples)
+                print(f"Pass rate for requirement: {pass_rate}")
+                pass_rates.append(pass_rate)
+            print(f"Average pass rate: {sum(pass_rates) / len(pass_rates)}")
+        return evaluate_examples
 
 
 
