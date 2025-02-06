@@ -6,7 +6,7 @@ from copy import deepcopy
 from random import sample
 from pydantic import BaseModel
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, List, Tuple, Optional
+from typing import Callable, List, Tuple, Optional, Any
 
 
 class EvalResult(BaseModel):
@@ -62,6 +62,8 @@ class TextGradOptimizer(Teleprompter):
     def __init__(
         self,
         metric: Callable,
+        prompt_model: Optional[Any] = None,
+        task_model: Optional[Any] = None,
         max_iters: int = 10,
         lower_bound: float = 0.0,
         upper_bound: float = 1.0,
@@ -83,6 +85,9 @@ class TextGradOptimizer(Teleprompter):
         self.metric = metric
         self.optimize_for = optimize_for
 
+        self.task_model = task_model if task_model else dspy.settings.lm
+        self.prompt_model = prompt_model if prompt_model else dspy.settings.lm
+
         self.max_iters = max_iters
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
@@ -99,7 +104,8 @@ class TextGradOptimizer(Teleprompter):
 
         try:
 
-            output = model(example.inputs().toDict())
+            with dspy.context(lm=self.task_model):
+                output = model(example.inputs().toDict())
 
             # Evaluate
             feedback, score = self.metric(example, output)
@@ -219,18 +225,20 @@ class TextGradOptimizer(Teleprompter):
             if len(neg_inputs) > self.max_negative_inputs:
                 neg_inputs = sample(neg_inputs, self.max_negative_inputs)
 
-            # 2) Generate feedback to improve the prompt
-            feedback = self.comparator(
-                current_prompt=current_model.model.signature.instructions,
-                pos_input_with_metrics=pos_inputs,
-                neg_input_with_metrics=neg_inputs
-            ).feedback
+            with dspy.context(lm=self.prompt_model):
 
-            # 3) Propose a refined prompt using the feedback
-            new_prompt = self.feedback_instruction(
-                previous_prompt=current_model.model.signature.instructions,
-                feedback=feedback
-            ).new_prompt
+                # 2) Generate feedback to improve the prompt
+                feedback = self.comparator(
+                    current_prompt=current_model.model.signature.instructions,
+                    pos_input_with_metrics=pos_inputs,
+                    neg_input_with_metrics=neg_inputs
+                ).feedback
+
+                # 3) Propose a refined prompt using the feedback
+                new_prompt = self.feedback_instruction(
+                    previous_prompt=current_model.model.signature.instructions,
+                    feedback=feedback
+                ).new_prompt
 
             print(f"Feedback:\n{feedback}\n")
             # print(f"Proposed new prompt:\n{new_prompt}\n")
