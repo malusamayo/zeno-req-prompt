@@ -8,9 +8,9 @@ import pandas as pd
 from sklearn.cluster import KMeans
 import numpy as np
 import pickle
-
-from typing import List, Dict
-from concurrent.futures import ThreadPoolExecutor
+import tqdm
+from typing import List, Dict, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from .textgrad_optimizer import TextGradOptimizer
 
 class JustifyResponseAndExtractRequirements(dspy.Signature):
@@ -158,21 +158,22 @@ def use_lm(lm):
         return wrapper
     return decorator
 
-def batch_inference(program, args_list):
-    completions = []
-    results = []
+def batch_inference(program, args_list) -> List[Any]:
+    futures = {}
+    results = [None] * len(args_list)
     
-    with ThreadPoolExecutor(max_workers=100) as executor:
-        for args in args_list:
+    with ThreadPoolExecutor(max_workers=64) as executor:
+        for i, args in enumerate(args_list):
             future = executor.submit(
                 program,
                 **args
             )
-            completions.append(future)
+            futures[future] = i
 
-    for completion in completions:
-        result = completion.result()
-        results.append(result)
+        for future in tqdm.tqdm(as_completed(futures), total=len(futures)):
+            result = future.result()
+            index = futures[future]
+            results[index] = result
     return results
 
 class InferRequirements(dspy.Module):
@@ -267,7 +268,6 @@ class LLMJudge(dspy.Module):
     
     def compare(self, examples_a, examples_b, requirements):
         def random_permute(example_a, example_b):
-            return example_a, example_b, 0
             if np.random.rand() > 0.5:
                 return example_a, example_b, 0
             else:
@@ -320,12 +320,12 @@ class LLMJudge(dspy.Module):
         else:
             results = batch_inference(
                 self.evaluate_requirement,
-                [{"example": example, "requirement": requirement} for example in examples for requirement in requirements]
+                [{"example": example, "requirement": requirement} for requirement in requirements for example in examples]
             )
             
             for i, result in enumerate(results):
-                example_id = i // len(requirements)
-                requirement_id = i % len(requirements)
+                requirement_id = i // len(examples)
+                example_id = i % len(examples)
                 # create the requirements field if it doesn't exist
                 if not hasattr(examples[example_id], "requirements"):
                     examples[example_id].requirements = []
