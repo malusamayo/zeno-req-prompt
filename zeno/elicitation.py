@@ -79,6 +79,18 @@ Then, calculate an overall score for how many requirements the model output sati
     evaluation_execution: str = dspy.OutputField(desc="The execution of the evaluation guideline")
     score: int = dspy.OutputField(desc="A score indicating how many requirements in the guideline the model output satisfies")
 
+class IdentifyMistakes(dspy.Signature):
+    """You are a reviewer who is evaluating whether a model output satisfies the given guideline.
+Given a task description, model input, model output, and guideline, first evaluate the model output using the requirements in the guideline one by one to identify mistakes. For each requirement in the guideline, do the evaluation step-by-step. 
+Then, list all requirements that the model output does not satisfy."""
+
+    task_description: str = dspy.InputField(desc="Description of the task")
+    model_input: str = dspy.InputField(desc="The model input")
+    model_output: str = dspy.InputField(desc="The model output")
+    guideline: List[str] = dspy.InputField(desc="The guideline for evaluation")
+    evaluation_execution: str = dspy.OutputField(desc="The execution of the evaluation guideline")
+    unsatisfied_requirements: List[str] = dspy.OutputField(desc="A list of requirements that the model output does not satisfy")
+
 class CompareModelOutputsWithGuideline(dspy.Signature):
     """You are a reviewer who is comparing two model outputs to determine which one better satisfies the given guideline.
 Given a task description, two model outputs, and a guideline, evaluate each model output using the requirements in the guideline one by one. For each requirement in the guideline, do the evaluation step-by-step.
@@ -116,10 +128,17 @@ Your task is to refine the prompt based on the feedback provided. The refined pr
     feedback = dspy.InputField(desc="Feedback on the model output")
     prompt = dspy.OutputField(desc="The proposed prompt")
 
+class BrainstormRequirements(dspy.Signature):
+    """Given a task description, brainstorm a list of requirements that a model output should satisfy when performing the task."""
+
+    task_description: str = dspy.InputField(desc="Description of the task")
+    n: int = dspy.InputField(desc="Number of requirements to brainstorm")
+    requirements: List[str] = dspy.OutputField(desc="A list of requirements")
+
 class SuggestDesignDecisions(dspy.Signature):
     """You are a developer working on LLM application. Given a task description, suggest potential design choices to make for model's outputs."""
 
-    task_description = dspy.InputField(desc="Description of the task")
+    task_description: str = dspy.InputField(desc="Description of the task")
     n: int = dspy.InputField(desc="Number of design chocies to suggest")
     design_choices: List[str] = dspy.OutputField(desc="A list of suggested design chocies")
 
@@ -176,24 +195,33 @@ def batch_inference(program, args_list) -> List[Any]:
             results[index] = result
     return results
 
-class InferRequirements(dspy.Module):
+def run_model(program, examples):
+    examples = copy.deepcopy(examples)
+    results = batch_inference(
+        program,
+        [example.inputs().toDict() for example in examples]
+    )
+    for example, result in zip(examples, results):
+        example.output = result.output
+    return examples
+
+class InferRequirementsFromTask(dspy.Module):
 
     def __init__(self, task_description):
         self.lm = dspy.LM('openai/gpt-4o-2024-08-06')
         self.task_description = task_description
-        self.suggest = use_lm(self.lm)(dspy.Predict(SuggestDesignDecisions))
+        self.suggest = use_lm(self.lm)(dspy.Predict(BrainstormRequirements))
     
     def forward(self, n=10):
-        return self.suggest(task_description=self.task_description, n=n).design_choices
+        return self.suggest(task_description=self.task_description, n=n).requirements
     
 
 class InferRequirementsFromData(dspy.Module):
 
-    def __init__(self, task_description, input_variable):
+    def __init__(self, task_description):
         self.lm = dspy.LM('openai/gpt-4o-2024-08-06')
         self.judge_lm = dspy.LM('openai/gpt-4o-mini-2024-07-18')
         self.task_description = task_description
-        self.input_variable = input_variable
         self.extract = use_lm(self.lm)(dspy.Predict(JustifyResponseAndExtractRequirements))
         self.suggest = use_lm(self.lm)(dspy.Predict(CritiqueResponseAndSuggestRequirements))
         self.classify = use_lm(self.judge_lm)(dspy.ChainOfThought(ClassifyRequirement))
@@ -204,12 +232,11 @@ class InferRequirementsFromData(dspy.Module):
         
         results = batch_inference(self.suggest, [
             {"task_description": self.task_description, 
-             "model_input": getattr(example, self.input_variable), 
+             "model_input": example.inputs().toDict(), 
              "model_output": example.output} for example in examples
         ])
 
         for example, result in zip(examples, results):
-            # example.justification, example.requirements = result.justification, result.requirements
             example.critique, example.requirements = result.critique, result.suggested_requirements
             
         all_requirements = [req for example in examples for req in example.requirements]
@@ -233,6 +260,39 @@ class InferRequirementsFromData(dspy.Module):
         
         return all_requirements
         
+class InferRequirements(dspy.Module):
+
+    def __init__(self, task_description):
+        self.lm = dspy.LM('openai/gpt-4o-2024-08-06')
+        self.task_description = task_description
+        self.suggest = use_lm(self.lm)(dspy.Predict(BrainstormRequirements))
+        self.identify = use_lm(self.lm)(dspy.Predict(IdentifyMistakes))
+    
+    def forward(self, examples, n=10):
+        requirements = self.suggest(task_description=self.task_description, n=n).requirements
+        requirements_unsat_result = {
+            requirement: [] for requirement in requirements
+        }
+        arg_list = [{
+            "task_description": self.task_description, 
+            "model_input": example.inputs().toDict(),
+            "model_output": example.output,
+            "guideline": requirements
+        } for example in examples]
+        results = batch_inference(self.identify, arg_list)
+        for example, result in zip(examples, results):
+            for requirement in result.unsatisfied_requirements:
+                if requirement not in requirements_unsat_result:
+                    requirements_unsat_result[requirement] = []
+                requirements_unsat_result[requirement].append({
+                    "input": example.inputs().toDict(),
+                    "output": example.output,
+                    "execution": result.evaluation_execution,
+                })
+        # sort the requirements by the number of examples that don't meet them
+        requirements_unsat_result = {k: v for k, v in sorted(requirements_unsat_result.items(), key=lambda item: len(item[1]), reverse=True)}
+        return requirements_unsat_result
+    
 
 class LLMJudge(dspy.Module):
     def __init__(self, task_description, input_variable, judge_lm=None):
