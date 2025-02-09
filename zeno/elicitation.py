@@ -243,7 +243,7 @@ class InferRequirementsFromData(dspy.Module):
 
         # arg_list = [{
         #     "task_description": self.task_description, 
-        #     "model_input": getattr(example, self.input_variable),
+        #     "model_input": example.inputs().toDict(),
         #     "requirement": requirement
         # } for example in examples for requirement in example.requirements]
 
@@ -295,33 +295,32 @@ class InferRequirements(dspy.Module):
     
 
 class LLMJudge(dspy.Module):
-    def __init__(self, task_description, input_variable, judge_lm=None):
+    def __init__(self, task_description, judge_lm=None):
         if judge_lm is None:
             self.judge_lm = dspy.LM('openai/o3-mini', temperature=1.0, max_tokens=10000)
             self.judge_lm.kwargs['max_completion_tokens'] = self.judge_lm.kwargs.pop('max_tokens')
         else:
             self.judge_lm = judge_lm
         self.task_description = task_description
-        self.input_variable = input_variable
         self.evaluator = use_lm(self.judge_lm)(dspy.Predict(EvaluateRequirement))
         self.aggregate_evaluator = use_lm(self.judge_lm)(dspy.Predict(EvaluateGuideline))
         self.compare_evaluator = use_lm(self.judge_lm)(dspy.Predict(CompareModelOutputsWithGuideline))
 
     def evaluate_requirement(self, example, requirement):
         return self.evaluator(task_description=self.task_description, 
-                            model_input=getattr(example, self.input_variable), 
+                            model_input=example.inputs().toDict(), 
                             model_output=example.output, 
                             requirement=requirement)
     
     def evaluate_guideline(self, example, guideline):
         return self.aggregate_evaluator(task_description=self.task_description, 
-                            model_input=getattr(example, self.input_variable), 
+                            model_input=example.inputs().toDict(), 
                             model_output=example.output, 
                             guideline=guideline)
     
     def compare_outputs(self, example_a, example_b, guideline):
         return self.compare_evaluator(task_description=self.task_description, 
-                            model_input=getattr(example_a, self.input_variable), 
+                            model_input=example_a.inputs().toDict(), 
                             model_output_a=example_a.output, 
                             model_output_b=example_b.output, 
                             guideline=guideline)
@@ -351,7 +350,7 @@ class LLMJudge(dspy.Module):
         eval_results = []
         for result, (example_a, example_b, is_permutated) in zip(results, permuations):
             eval_results.append({
-                "input": getattr(example_a, self.input_variable),
+                "input": example_a.inputs().toDict(),
                 "output_a": example_a.output,
                 "output_b": example_b.output,
                 "permutated": is_permutated,
@@ -433,7 +432,6 @@ class IterativeRefine(dspy.Module):
         self.judge_lm = dspy.LM('openai/o3-mini', temperature=1.0, max_tokens=10000)
         self.judge_lm.kwargs['max_completion_tokens'] = self.judge_lm.kwargs.pop('max_tokens')
         self.task_description = task_description
-        self.input_variable = input_variable
         self.pred = use_lm(self.lm)(dspy.Predict(task_program))
         self.evaluator = use_lm(self.lm)(dspy.Predict(EvaluateRequirement))
         self.refine = use_lm(self.lm)(dspy.Predict(RefineResponseWithFeedback))
@@ -441,15 +439,15 @@ class IterativeRefine(dspy.Module):
 
     def generate_and_refine(self, example, requirement):
         # generate the response
-        response = self.pred(**{self.input_variable: getattr(example, self.input_variable)}).output
+        response = self.pred(**example.inputs().toDict()).output
         # get the feedback
-        result = self.evaluator(task_description=self.task_description, model_input=getattr(example, self.input_variable), model_output=response, requirement=requirement)
+        result = self.evaluator(task_description=self.task_description, model_input=example.inputs().toDict(), model_output=response, requirement=requirement)
         i = 0
         while not result.meets_requirement and i < 3:
             feedback = result.plan_execution
             # refine the response
-            response = self.refine(task_description=self.task_description, model_input=getattr(example, self.input_variable), model_output=response, feedback=feedback).refined_output
-            result = self.evaluator(task_description=self.task_description, model_input=getattr(example, self.input_variable), model_output=response, requirement=requirement)
+            response = self.refine(task_description=self.task_description, model_input=example.inputs().toDict(), model_output=response, feedback=feedback).refined_output
+            result = self.evaluator(task_description=self.task_description, model_input=example.inputs().toDict(), model_output=response, requirement=requirement)
             i += 1
         return response
 
