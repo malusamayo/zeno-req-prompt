@@ -3,7 +3,7 @@ from dspy.teleprompt import Teleprompter
 
 from tqdm import tqdm
 from copy import deepcopy
-from random import sample
+import random
 from pydantic import BaseModel
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, List, Tuple, Optional, Any
@@ -204,6 +204,7 @@ class TextGradOptimizer(Teleprompter):
         """
         # Keep a copy of the original model so we can modify the prompt
         current_model = deepcopy(model)
+        random.seed(42)
 
         # Initialize best_score according to whether we are maximizing or minimizing
         best_score = float("-inf") if self.optimize_for == "max" else float("inf")
@@ -221,9 +222,9 @@ class TextGradOptimizer(Teleprompter):
 
             # Subsample if we have too many pos/neg examples
             if len(pos_inputs) > self.max_positive_inputs:
-                pos_inputs = sample(pos_inputs, self.max_positive_inputs)
+                pos_inputs = random.sample(pos_inputs, self.max_positive_inputs)
             if len(neg_inputs) > self.max_negative_inputs:
-                neg_inputs = sample(neg_inputs, self.max_negative_inputs)
+                neg_inputs = random.sample(neg_inputs, self.max_negative_inputs)
 
             with dspy.context(lm=self.prompt_model):
 
