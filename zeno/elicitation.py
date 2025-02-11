@@ -303,7 +303,7 @@ class LLMJudge(dspy.Module):
             self.judge_lm = judge_lm
         self.task_description = task_description
         self.evaluator = use_lm(self.judge_lm)(dspy.Predict(EvaluateRequirement))
-        self.aggregate_evaluator = use_lm(self.judge_lm)(dspy.Predict(EvaluateGuideline))
+        self.aggregate_evaluator = use_lm(self.judge_lm)(dspy.Predict(IdentifyMistakes))
         self.compare_evaluator = use_lm(self.judge_lm)(dspy.Predict(CompareModelOutputsWithGuideline))
 
     def evaluate_requirement(self, example, requirement):
@@ -370,10 +370,9 @@ class LLMJudge(dspy.Module):
             )
             for example, result in zip(examples, results):
                 example.evaluation_result = {
-                    # "evaluation_plan": result.evaluation_plan,
-                    # "plan_execution": result.plan_execution,
                     "evaluation_execution": result.evaluation_execution,
-                    "score": result.score
+                    "unsatisfied_requirements": result.unsatisfied_requirements,
+                    "score": 1 - len(result.unsatisfied_requirements) / len(requirements)
                 }
         
         else:
