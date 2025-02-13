@@ -268,8 +268,9 @@ class InferRequirements(dspy.Module):
         self.suggest = use_lm(self.lm)(dspy.Predict(BrainstormRequirements))
         self.identify = use_lm(self.lm)(dspy.Predict(IdentifyMistakes))
     
-    def forward(self, examples, n=10):
-        requirements = self.suggest(task_description=self.task_description, n=n).requirements
+    def forward(self, examples, requirements=None, n=10):
+        if requirements == None:
+            requirements = self.suggest(task_description=self.task_description, n=n).requirements
         requirements_unsat_result = {
             requirement: [] for requirement in requirements
         }
@@ -289,9 +290,15 @@ class InferRequirements(dspy.Module):
                     "output": example.output,
                     "execution": result.evaluation_execution,
                 })
+        return requirements_unsat_result
+    
+    def rank_and_filter(self, examples, requirements=None, n=10):
+        MIN_UNSAT_CUTOFF = 5
+        requirements_unsat_result = self.forward(examples, requirements=requirements, n=n)
         # sort the requirements by the number of examples that don't meet them
         requirements_unsat_result = {k: v for k, v in sorted(requirements_unsat_result.items(), key=lambda item: len(item[1]), reverse=True)}
-        return requirements_unsat_result
+        filtered_requirements = [k for k, v in requirements_unsat_result.items() if len(v) >= MIN_UNSAT_CUTOFF]
+        return filtered_requirements
     
 
 class LLMJudge(dspy.Module):
@@ -401,12 +408,7 @@ class LLMJudge(dspy.Module):
 
         # run the program to generate the output if provided
         if program is not None:
-            results = batch_inference(
-                program,
-                [example.inputs().toDict() for example in examples]
-            )
-            for example, result in zip(examples, results):
-                example.output = result.output
+            examples = run_model(program, examples)
 
         if aggregate:
             evaluate_examples = self.forward(examples, requirements, aggregate=aggregate)
