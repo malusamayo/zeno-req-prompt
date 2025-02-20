@@ -205,6 +205,18 @@ def run_model(program, examples):
         example.output = result.output
     return examples
 
+def find_nearest_requirement(requirement, requirements):
+    distances = []
+    requirement_embedding = litellm.embedding(model='openai/text-embedding-ada-002', input=[requirement]).data[0]['embedding']
+    requirements_embedding = batch_inference(
+        lambda requirement: litellm.embedding(model='openai/text-embedding-ada-002', input=[requirement]).data[0]['embedding'],
+        [{"requirement": req} for req in requirements]
+    )
+    # calculate the cosine similarity
+    for req_embedding in requirements_embedding:
+        distances.append(np.dot(requirement_embedding, req_embedding) / (np.linalg.norm(requirement_embedding) * np.linalg.norm(req_embedding)))
+    return requirements[np.argmax(distances)]
+
 class InferRequirementsFromTask(dspy.Module):
 
     def __init__(self, task_description):
@@ -412,6 +424,35 @@ class LLMJudge(dspy.Module):
 
         if aggregate:
             evaluate_examples = self.forward(examples, requirements, aggregate=aggregate)
+            requirements_unsat = { requirement: [] for requirement in requirements }
+            for example in evaluate_examples:
+                example.requirements = {}
+                for requirement in example.evaluation_result['unsatisfied_requirements']:
+                    if requirement not in requirements_unsat:
+                        # print(f"Requirement not found: {requirement}")
+                        requirement = find_nearest_requirement(requirement, requirements)
+                        # print(f"Nearest requirement: {requirement}")
+
+                    requirements_unsat[requirement].append({
+                        "input": example.inputs().toDict(),
+                        "output": example.output,
+                        "execution": example.evaluation_result['evaluation_execution']
+                    })
+
+                    example.requirements[requirement] = {
+                        "requirement": requirement,
+                        "meets_requirement": False,
+                    }
+                for requirement in requirements:
+                    if requirement not in example.requirements:
+                        example.requirements[requirement] = {
+                            "requirement": requirement,
+                            "meets_requirement": True,
+                        }
+            for requirement, examples in requirements_unsat.items():
+                print(f"Requirement: {requirement}")
+                pass_rate = 1 - len(examples) / len(evaluate_examples)
+                print(f"Pass rate for requirement: {pass_rate}")
             print(f"Average score: {sum([example.evaluation_result['score'] for example in evaluate_examples]) / len(evaluate_examples)}")
         else:
             evaluate_examples = self.forward(examples, requirements)
