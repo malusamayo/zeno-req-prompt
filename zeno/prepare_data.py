@@ -25,6 +25,7 @@ def prepare_dataset(data_path, input_key, data_size=100):
 def prepare_data_quiz_making():
     data_path = "data/mmlu_econ_100.csv"
     input_key = "question"
+    requirement_path = "data/requirements/requirements_quiz_v6.json"
 
     trainset, valset = prepare_dataset(data_path, input_key)
 
@@ -35,28 +36,19 @@ def prepare_data_quiz_making():
 
         question = dspy.InputField(desc="The question for which options are needed.")
         output = dspy.OutputField(desc="List of four possible answers for a quiz question.")
-    
-    return task_description, TaskProgram, trainset, valset
 
-def prepare_data_quiz_making_v0():
-    data_path = "data/mmlu_econ_100.csv"
-    input_key = "question"
-
-    trainset, valset = prepare_dataset(data_path, input_key)
-
-    task_description = "Write quiz answer options for the following question."
-
-    class TaskProgram(dspy.Signature):
+    class TaskProgramV2(dspy.Signature):
         """Write quiz answer options for the following question."""
 
         question = dspy.InputField(desc="The question for which options are needed.")
         output = dspy.OutputField(desc="List of possible answers for a quiz question.")
     
-    return task_description, TaskProgram, trainset, valset
+    return task_description, TaskProgram, trainset, valset, requirement_path
 
 def prepare_data_product_descrp_gen():
     data_path = "data/esci_100.csv"
     input_key = "product_bullet_point"
+    requirement_path = "data/requirements/requirements_product_v0.json"
 
     trainset, valset = prepare_dataset(data_path, input_key)
 
@@ -68,11 +60,12 @@ def prepare_data_product_descrp_gen():
         product_bullet_point = dspy.InputField(desc="The bullet points of the product.")
         output = dspy.OutputField(desc="The generated product description.")
     
-    return task_description, TaskProgram, trainset, valset
+    return task_description, TaskProgram, trainset, valset, requirement_path
 
 def prepare_data_recipe_gen():
     data_path = "data/recipe.csv"
     input_key = "ingredients"
+    requirement_path = "data/requirements/requirements_recipe_v0.json"
 
     trainset, valset = prepare_dataset(data_path, input_key)
 
@@ -84,11 +77,12 @@ def prepare_data_recipe_gen():
         ingredients = dspy.InputField(desc="A list of ingredients.")
         output = dspy.OutputField(desc="Generated recipe.")
     
-    return task_description, TaskProgram, trainset, valset
+    return task_description, TaskProgram, trainset, valset, requirement_path
 
 def prepare_data_story():
     data_path = "data/stories.csv"
     input_key = "application"
+    requirement_path = "data/requirements/requirements_story_v0.json"
 
     trainset, valset = prepare_dataset(data_path, input_key)
 
@@ -100,26 +94,72 @@ def prepare_data_story():
         application = dspy.InputField(desc="A description of user-given application.")
         output = dspy.OutputField(desc="Generated story.")
     
-    return task_description, TaskProgram, trainset, valset
+    return task_description, TaskProgram, trainset, valset, requirement_path
+
+
+def prepare_data_arxiv_summarization(configs):
+    data_path = "data/arxiv.csv"
+    input_key = "article"
+    requirement_path = "data/requirements/requirements_arxiv_v0.json"
+
+    trainset, valset = prepare_dataset(data_path, input_key)
+
+    task_description = "Generate a summary of the arXiv paper."
+
+    class TaskProgram(dspy.Signature):
+        """Generate a summary of the arXiv paper."""
+
+        article = dspy.InputField(desc="The content of the arXiv paper.")
+        output = dspy.OutputField(desc="Generated summary.")
+
+    class TaskProgramV2(dspy.Signature):
+        """You will be given the content of a newly published arXiv paper and asked to write a summary of it.
+
+Here are some things to keep in mind:
+- Summarize the paper in a way that is understandable to the general public
+- Use a professional tone
+- Don't use the word "quest" or similar flowery language
+- Don't say this is a recent paper, since this summary may be referenced in the future
+- Limit your summary to about 4 paragraphs
+- Do not prefix the article with a title
+- Do not mention the author's names
+- You can use the following markdown tags in your summary: ordered list, unordered list, and h3 headings
+- Divide the summary into sections using markdown h3 headings
+- Do not include a title for the summary; only include headings to divide the summary into sections
+- The first line should be an h3 heading as well.
+- Assume readers know what common AI acronyms stand for like LLM and AI
+- Don't mention any part of this prompt"""
+
+        article = dspy.InputField(desc="The content of the arXiv paper.")
+        output = dspy.OutputField(desc="Generated summary.")
+
+    final_task_program = TaskProgramV2 if configs and configs.get("version") == "v2" else TaskProgram
+
+    return task_description, final_task_program, trainset, valset, requirement_path
 
 def prepare_data(
     task_name,
-    requirement_path
+    configs=None,
 ):
-    
-    with open(requirement_path, "r") as f:
-        requirements = json.load(f)
 
     match task_name:
         case "quiz_making":
-            task_description, TaskProgram, trainset, valset = prepare_data_quiz_making_v0()
+            task_description, TaskProgram, trainset, valset, requirement_path = prepare_data_quiz_making()
         case "product_descrp_gen":
-            task_description, TaskProgram, trainset, valset = prepare_data_product_descrp_gen()
+            task_description, TaskProgram, trainset, valset, requirement_path = prepare_data_product_descrp_gen()
         case "recipe":
-            task_description, TaskProgram, trainset, valset = prepare_data_recipe_gen()
+            task_description, TaskProgram, trainset, valset, requirement_path = prepare_data_recipe_gen()
         case "story":
-            task_description, TaskProgram, trainset, valset = prepare_data_story()
+            task_description, TaskProgram, trainset, valset, requirement_path = prepare_data_story()
+        case "arxiv":
+            task_description, TaskProgram, trainset, valset, requirement_path = prepare_data_arxiv_summarization(configs)
         case _:
-            task_description, TaskProgram, trainset, valset = "", None, [], []
+            task_description, TaskProgram, trainset, valset, requirement_path = "", None, [], [], ""
+    
+    if requirement_path:
+        with open(requirement_path, "r") as f:
+            requirements = json.load(f)
+    else:
+        requirements = {}
 
     return task_description, TaskProgram, trainset, valset, requirements
