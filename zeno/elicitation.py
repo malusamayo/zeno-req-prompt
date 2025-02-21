@@ -106,6 +106,27 @@ Then, compare the two model outputs based on how many requirements each output s
     reasoning: str = dspy.OutputField(desc="The reasoning for the comparison")
     better_output: str = dspy.OutputField(desc="The model output that better satisfies the guideline, either 'A' or 'B', or 'tie' if they are equal")
 
+class CompareModelOutputs(dspy.Signature):
+    """You are a reviewer who is comparing two model outputs. List all high-level differences of these two outputs -- do not over-focus on concrete details.
+
+Examples:
+- Output1 mention references but Output2 does not
+- Output1 uses significantly more formulas and equations than Output2"""
+
+    task_description = dspy.InputField(desc="Description of the task")
+    model_output_a = dspy.InputField(desc="The first model output")
+    model_output_b = dspy.InputField(desc="The second model output")
+    differences: List[str] = dspy.OutputField(desc="List of high-level differences between the two model outputs")
+
+class SummarizeDifferences(dspy.Signature):
+    """Given a list of differences between two model outputs, first summarize the differences into a few key points. Then expand the differences into a list of requirements for each model respectively."""
+    
+    task_description = dspy.InputField(desc="Description of the task")
+    differences = dspy.InputField(desc="List of example-level differences between two model outputs")
+    summary: List[str] = dspy.OutputField(desc="A summary list of the key high-level differences between the two model outputs")
+    requirements_a: List[str] = dspy.OutputField(desc="A list of requirements for the first model output based on the summary")
+    requirements_b: List[str] = dspy.OutputField(desc="A list of requirements for the second model output based on the summary")
+
 class RefineResponseWithFeedback(dspy.Signature):
     """Given the task description, model input, model output, and feedback, refine the model output based on the feedback."""
 
@@ -271,6 +292,34 @@ class InferRequirementsFromData(dspy.Module):
         # grouped_requirements = self.group(task_description=self.task_description, requirements=all_requirements).groups
         
         return all_requirements
+class InferRequirementsFromCompareData(dspy.Module):
+
+    def __init__(self, task_description):
+        self.lm = dspy.LM('openai/gpt-4o-2024-08-06')
+        self.task_description = task_description
+        self.compare = use_lm(self.lm)(dspy.Predict(CompareModelOutputs))
+        self.summarize = use_lm(self.lm)(dspy.Predict(SummarizeDifferences))
+
+
+    def forward(self, examples_a, examples_b, n=10):
+        
+        results = batch_inference(self.compare, [
+            {"task_description": self.task_description, 
+             "model_output_a": example_a.output,
+            "model_output_b": example_b.output} for (example_a, example_b) in zip(examples_a, examples_b)
+        ])
+
+        all_differences = []
+
+        for (example_a, example_b), result in zip(zip(examples_a, examples_b), results):
+            example_a.differences = result.differences
+            example_b.differences = result.differences
+            all_differences.extend(result.differences)
+
+        # summarize the differences
+        result = self.summarize(task_description=self.task_description, differences=all_differences)
+
+        return result.summary, result.requirements_a + result.requirements_b
         
 class InferRequirements(dspy.Module):
 
