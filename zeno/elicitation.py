@@ -454,15 +454,16 @@ class LLMJudge(dspy.Module):
             for i, result in enumerate(results):
                 requirement_id = i // len(examples)
                 example_id = i % len(examples)
+                requirement = requirements[requirement_id]
                 # create the requirements field if it doesn't exist
                 if not hasattr(examples[example_id], "requirements"):
-                    examples[example_id].requirements = []
-                examples[example_id].requirements.append({
-                    "requirement": requirements[requirement_id],
+                    examples[example_id].requirements = {}
+                examples[example_id].requirements[requirement] = {
+                    "requirement": requirement,
                     "evaluation_plan": result.evaluation_plan,
                     "plan_execution": result.plan_execution,
                     "meets_requirement": result.meets_requirement
-                })
+                }
 
         return examples
 
@@ -508,9 +509,9 @@ class LLMJudge(dspy.Module):
         else:
             evaluate_examples = self.forward(examples, requirements)
             pass_rates = []
-            for i, requirement in enumerate(requirements):
+            for requirement in requirements:
                 print(f"Requirement: {requirement}")
-                pass_rate = sum([example.requirements[i]['meets_requirement'] for example in evaluate_examples]) / len(evaluate_examples)
+                pass_rate = sum([example.requirements[requirement]['meets_requirement'] for example in evaluate_examples]) / len(evaluate_examples)
                 print(f"Pass rate for requirement: {pass_rate}")
                 pass_rates.append(pass_rate)
             print(f"Average pass rate: {sum(pass_rates) / len(pass_rates)}")
