@@ -376,9 +376,9 @@ class LLMJudge(dspy.Module):
         self.aggregate_evaluator = use_lm(self.judge_lm)(dspy.Predict(IdentifyMistakes))
         self.compare_evaluator = use_lm(self.judge_lm)(dspy.Predict(CompareModelOutputsWithGuideline))
 
-    def evaluate_requirement(self, example, requirement):
+    def evaluate_requirement(self, example, requirement, omit_input=False):
         return self.evaluator(task_description=self.task_description, 
-                            model_input=example.inputs().toDict(), 
+                            model_input="" if omit_input else example.inputs().toDict(), 
                             model_output=example.output, 
                             requirement=requirement)
     
