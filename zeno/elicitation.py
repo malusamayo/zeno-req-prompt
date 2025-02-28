@@ -240,8 +240,8 @@ def find_nearest_requirement(requirement, requirements):
 
 class InferRequirementsFromTask(dspy.Module):
 
-    def __init__(self, task_description):
-        self.lm = dspy.LM('openai/gpt-4o-2024-08-06')
+    def __init__(self, task_description, lm):
+        self.lm = lm
         self.task_description = task_description
         self.suggest = use_lm(self.lm)(dspy.Predict(BrainstormRequirements))
     
@@ -296,9 +296,11 @@ class InferRequirementsFromCompareData(dspy.Module):
 
     def __init__(self, task_description):
         self.lm = dspy.LM('openai/gpt-4o-2024-08-06')
+        self.judge_lm = dspy.LM('openai/o3-mini', temperature=1.0, max_tokens=10000)
+        self.judge_lm.kwargs['max_completion_tokens'] = self.judge_lm.kwargs.pop('max_tokens')
         self.task_description = task_description
         self.compare = use_lm(self.lm)(dspy.Predict(CompareModelOutputs))
-        self.summarize = use_lm(self.lm)(dspy.Predict(SummarizeDifferences))
+        self.summarize = use_lm(self.judge_lm)(dspy.Predict(SummarizeDifferences))
 
 
     def forward(self, examples_a, examples_b, n=10):
