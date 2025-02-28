@@ -107,19 +107,19 @@ Then, compare the two model outputs based on how many requirements each output s
     better_output: str = dspy.OutputField(desc="The model output that better satisfies the guideline, either 'A' or 'B', or 'tie' if they are equal")
 
 class CompareModelOutputs(dspy.Signature):
-    """You are a reviewer who is comparing two model outputs. List all high-level differences of these two outputs -- do not over-focus on concrete details.
+    """You are a reviewer who is comparing two model outputs. List all differences of these two outputs -- consider different aspects like length, style, content, structure, etc.
 
 Examples:
-- Output1 mention references but Output2 does not
-- Output1 uses significantly more formulas and equations than Output2"""
+- Model Output A mention references but Model Output B does not
+- Model Output A uses significantly more formulas and equations than Model Output B"""
 
     task_description = dspy.InputField(desc="Description of the task")
     model_output_a = dspy.InputField(desc="The first model output")
     model_output_b = dspy.InputField(desc="The second model output")
-    differences: List[str] = dspy.OutputField(desc="List of high-level differences between the two model outputs")
+    differences: List[str] = dspy.OutputField(desc="List of differences between the two model outputs")
 
 class SummarizeDifferences(dspy.Signature):
-    """Given a list of differences between two model outputs, first summarize the differences into a few key points. Then expand the differences into a list of requirements for each model respectively."""
+    """Given a list of differences between two model outputs, first summarize the differences into key high-level differences. Then expand the differences into a list of requirements for each model respectively."""
     
     task_description = dspy.InputField(desc="Description of the task")
     differences = dspy.InputField(desc="List of example-level differences between two model outputs")
