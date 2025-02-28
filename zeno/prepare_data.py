@@ -137,6 +137,23 @@ Here are some things to keep in mind:
 
     return task_description, final_task_program, trainset, valset, requirement_path
 
+def prepare_data_explain_code():
+    data_path = "data/humaneval.csv"
+    input_key = "code"
+    requirement_path = "data/requirements/requirements_code_v0.json"
+
+    trainset, valset = prepare_dataset(data_path, input_key)
+
+    task_description = "Explain the code snippet."
+
+    class TaskProgram(dspy.Signature):
+        """Explain the code snippet."""
+
+        code = dspy.InputField(desc="The code snippet.")
+        output = dspy.OutputField(desc="Explanation of the code snippet.")
+
+    return task_description, TaskProgram, trainset, valset, requirement_path
+
 def prepare_data(
     task_name,
     configs=None,
@@ -153,9 +170,14 @@ def prepare_data(
             task_description, TaskProgram, trainset, valset, requirement_path = prepare_data_story()
         case "arxiv":
             task_description, TaskProgram, trainset, valset, requirement_path = prepare_data_arxiv_summarization(configs)
+        case "code":
+            task_description, TaskProgram, trainset, valset, requirement_path = prepare_data_explain_code()
         case _:
             task_description, TaskProgram, trainset, valset, requirement_path = "", None, [], [], ""
     
+    if configs and configs.get("requirement"):
+        requirement_path = configs.get("requirement")
+
     if requirement_path:
         with open(requirement_path, "r") as f:
             requirements = json.load(f)
